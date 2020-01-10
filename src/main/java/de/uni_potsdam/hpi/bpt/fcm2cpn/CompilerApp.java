@@ -1,12 +1,16 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
+import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
-import org.camunda.bpm.model.bpmn.impl.instance.BpmnModelElementInstanceImpl;
-import org.camunda.bpm.model.bpmn.impl.instance.DataOutputImpl;
-import org.camunda.bpm.model.bpmn.impl.instance.MessageEventDefinitionImpl;
 import org.camunda.bpm.model.bpmn.impl.instance.SourceRef;
-import org.camunda.bpm.model.bpmn.impl.instance.StartEventImpl;
 import org.camunda.bpm.model.bpmn.impl.instance.TargetRef;
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.CatchEvent;
@@ -16,35 +20,24 @@ import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataState;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
-import org.camunda.bpm.model.bpmn.instance.Event;
 import org.camunda.bpm.model.bpmn.instance.Gateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
-import org.camunda.bpm.model.xml.type.ModelElementType;
 import org.cpntools.accesscpn.model.Arc;
+import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.ModelPrinter;
 import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Place;
+import org.cpntools.accesscpn.model.RefPlace;
 import org.cpntools.accesscpn.model.Transition;
-import org.cpntools.accesscpn.model.TransitionNode;
 import org.cpntools.accesscpn.model.cpntypes.CPNEnum;
 import org.cpntools.accesscpn.model.cpntypes.CPNRecord;
 import org.cpntools.accesscpn.model.cpntypes.CpntypesFactory;
-import org.cpntools.accesscpn.model.cpntypes.impl.CpntypesFactoryImpl;
 import org.cpntools.accesscpn.model.exporter.DOMGenerator;
+import org.cpntools.accesscpn.model.impl.PageImpl;
 import org.cpntools.accesscpn.model.util.BuildCPNUtil;
-
-import java.io.File;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 
 public class CompilerApp {
@@ -53,7 +46,7 @@ public class CompilerApp {
 	private BpmnModelInstance bpmn;
 	private BuildCPNUtil builder;
 	private PetriNet petriNet;
-	private Map<String, Page> activityPages;
+	private Map<String, SubpageElement> subpages;
 	private Map<String, Node> idsToNodes;
 
     public static void main(final String[] args) throws Exception {
@@ -67,7 +60,7 @@ public class CompilerApp {
     private CompilerApp(BpmnModelInstance bpmn) {
     	this.bpmn = bpmn;
         this.builder = new BuildCPNUtil();
-        this.activityPages = new HashMap<>();
+        this.subpages = new HashMap<>();
         this.idsToNodes = new HashMap<>();
 	}
     
@@ -85,11 +78,13 @@ public class CompilerApp {
         translateEvents();
         translateGateways();
         translateControlFlow();
+        populateSubpages();
         //translateDataFlow();
+        layout();
         return petriNet;
     }
-    
-    private void initializeCPNModel() {
+
+	private void initializeCPNModel() {
         System.out.print("Initalizing CPN model... ");
         petriNet = builder.createPetriNet();
         mainPage = builder.addPage(petriNet, "Main Page");
@@ -158,10 +153,9 @@ public class CompilerApp {
         activities.forEach(each -> {
         	String name = each.getName();
         	Page activityPage = builder.addPage(petriNet, normalizeActivityName(name));
-        	builder.addTransition(activityPage, name);
-            //TODO Node node = builder.createSubPageTransition(activityPage, mainPage, name);
-        	Node node = builder.addTransition(mainPage, name);
-            activityPages.put(name, activityPage);
+        	Transition subpageTransition = builder.addTransition(activityPage, name);
+        	Instance node = builder.createSubPageTransition(activityPage, mainPage, name);
+            subpages.put(each.getId(), new SubpageElement(each.getId(), activityPage, node, subpageTransition));
             idsToNodes.put(each.getId(), node);
 
             Map<Node, Arc> outgoingArcs = new HashMap<>();
@@ -193,7 +187,12 @@ public class CompilerApp {
     private void translateEvents() {
         Collection<CatchEvent> events = bpmn.getModelElementsByType(CatchEvent.class);
         events.forEach(each -> {
-        	Node node = builder.addTransition(mainPage, each.getName());
+        	String name = each.getName();
+        	Page eventPage = builder.addPage(petriNet, normalizeActivityName(name));
+        	Transition subpageTransition = builder.addTransition(eventPage, name);
+            Instance node = builder.createSubPageTransition(eventPage, mainPage, name);
+            subpages.put(each.getId(), new SubpageElement(each.getId(), eventPage, node, subpageTransition));
+            
         	idsToNodes.put(each.getId(), node);
             Map<Node, Arc> outgoingArcs = new HashMap<>();
             each.getDataOutputAssociations().forEach(assoc -> {
@@ -229,6 +228,38 @@ public class CompilerApp {
         });
     }
     
+    
+    private void populateSubpages() {
+		subpages.forEach((id, subpage) -> {
+			//Incoming
+			subpage.mainTransition.getTargetArc().forEach(sourceArc -> {
+				Place sourcePlace = (Place) sourceArc.getSource();
+				RefPlace copyPlace = builder.addReferencePlace(
+					subpage.page, 
+					sourcePlace.getName().asString(), 
+					sourcePlace.getSort().getText(), 
+					"", 
+					sourcePlace, 
+					subpage.mainTransition);
+				//TODO fusion the places; there also seems to be an error when arcs go in both directions
+				builder.addArc(subpage.page, copyPlace, subpage.subpageTransition, "");				
+			});
+			
+			//Outgoing
+			subpage.mainTransition.getSourceArc().forEach(sourceArc -> {
+				Place targetPlace = (Place) sourceArc.getTarget();
+				RefPlace copyPlace = builder.addReferencePlace(
+					subpage.page, 
+					targetPlace.getName().asString()+"_", 
+					targetPlace.getSort().getText(), 
+					"", 
+					targetPlace, 
+					subpage.mainTransition);
+				builder.addArc(subpage.page, subpage.subpageTransition, copyPlace, "");				
+			});
+		});
+	}
+    
     private static <T extends ModelElementInstance> List<String> getReferenceIds(DataAssociation association, Class<T> referenceClass) {
 		return association.getChildElementsByType(referenceClass).stream()
 				.map(each -> each.getTextContent())
@@ -251,21 +282,21 @@ public class CompilerApp {
     	return node instanceof Place;
     }
     
-    private static boolean isTransition(Node node) {
-    	return node instanceof Transition;
+    private void layout() {
     }
+    
+    private class SubpageElement {
+    	String id;
+    	Page page;
+    	Instance mainTransition;
+    	Transition subpageTransition;
+    	public SubpageElement(String id, Page page, Instance mainTransition, Transition subpageTransition) {
+			this.id = id;
+			this.page = page;
+			this.mainTransition = mainTransition;
+			this.subpageTransition = subpageTransition;
+		}
+    }
+    
 
-    private static class ActivityNode {
-            String name;
-            String id;
-            List<List<DataCondition>> preCondition;
-            List<List<DataCondition>> postCondition;
-    }
-
-    private static class DataCondition {
-            String dataObjectName;
-            String dataObjectId;
-            String dataObjectState;
-            String dataObjectStateId;
-    }
 }
