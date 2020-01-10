@@ -231,6 +231,7 @@ public class CompilerApp {
     
     private void populateSubpages() {
 		subpages.forEach((id, subpage) -> {
+			Map<Place, RefPlace> existingRefs = new HashMap<>();
 			//Incoming
 			subpage.mainTransition.getTargetArc().forEach(sourceArc -> {
 				Place sourcePlace = (Place) sourceArc.getSource();
@@ -241,20 +242,20 @@ public class CompilerApp {
 					"", 
 					sourcePlace, 
 					subpage.mainTransition);
-				//TODO fusion the places; there also seems to be an error when arcs go in both directions
+				existingRefs.put(sourcePlace, copyPlace);
 				builder.addArc(subpage.page, copyPlace, subpage.subpageTransition, "");				
 			});
 			
 			//Outgoing
 			subpage.mainTransition.getSourceArc().forEach(sourceArc -> {
-				Place targetPlace = (Place) sourceArc.getTarget();
-				RefPlace copyPlace = builder.addReferencePlace(
+				Place targetPlace_ = (Place) sourceArc.getTarget();
+				RefPlace copyPlace = existingRefs.computeIfAbsent(targetPlace_, targetPlace -> builder.addReferencePlace(
 					subpage.page, 
 					targetPlace.getName().asString()+"_", 
 					targetPlace.getSort().getText(), 
 					"", 
 					targetPlace, 
-					subpage.mainTransition);
+					subpage.mainTransition));
 				builder.addArc(subpage.page, subpage.subpageTransition, copyPlace, "");				
 			});
 		});
