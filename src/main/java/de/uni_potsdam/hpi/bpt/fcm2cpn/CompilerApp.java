@@ -4,9 +4,12 @@ import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.impl.instance.BpmnModelElementInstanceImpl;
 import org.camunda.bpm.model.bpmn.impl.instance.DataOutputImpl;
+import org.camunda.bpm.model.bpmn.impl.instance.MessageEventDefinitionImpl;
 import org.camunda.bpm.model.bpmn.impl.instance.SourceRef;
+import org.camunda.bpm.model.bpmn.impl.instance.StartEventImpl;
 import org.camunda.bpm.model.bpmn.impl.instance.TargetRef;
 import org.camunda.bpm.model.bpmn.instance.Activity;
+import org.camunda.bpm.model.bpmn.instance.CatchEvent;
 import org.camunda.bpm.model.bpmn.instance.DataAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
@@ -18,6 +21,7 @@ import org.camunda.bpm.model.bpmn.instance.Gateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.camunda.bpm.model.xml.type.ModelElementType;
+import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.ModelPrinter;
 import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Page;
@@ -81,7 +85,7 @@ public class CompilerApp {
         translateEvents();
         translateGateways();
         translateControlFlow();
-        translateDataFlow();
+        //translateDataFlow();
         return petriNet;
     }
     
@@ -159,6 +163,26 @@ public class CompilerApp {
         	Node node = builder.addTransition(mainPage, name);
             activityPages.put(name, activityPage);
             idsToNodes.put(each.getId(), node);
+
+            Map<Node, Arc> outgoingArcs = new HashMap<>();
+            each.getDataOutputAssociations().forEach(assoc -> {
+            	String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
+        		outgoingArcs.computeIfAbsent(idsToNodes.get(target), targetNode -> {
+        			return builder.addArc(mainPage, node, targetNode, "");
+        		});//TODO add annotations to arc
+            });
+            Map<Node, Arc> ingoingArcs = new HashMap<>();
+            each.getDataInputAssociations().forEach(assoc -> {
+            	String source = findKnownParent(getReferenceIds(assoc, SourceRef.class).get(0));
+        		ingoingArcs.computeIfAbsent(idsToNodes.get(source), sourceNode -> {
+        			return builder.addArc(mainPage, sourceNode, node, "");
+        		});//TODO add annotations to arc
+        		
+        		/**Assert that when reading and not writing, the unchanged token is put back*/
+        		outgoingArcs.computeIfAbsent(idsToNodes.get(source), targetNode -> {
+        			return builder.addArc(mainPage, node, targetNode, "");
+        		});//TODO add annotations to arc
+            });
         });
     }
     
@@ -167,10 +191,17 @@ public class CompilerApp {
     }
     
     private void translateEvents() {
-        Collection<Event> events = bpmn.getModelElementsByType(Event.class);
+        Collection<CatchEvent> events = bpmn.getModelElementsByType(CatchEvent.class);
         events.forEach(each -> {
         	Node node = builder.addTransition(mainPage, each.getName());
         	idsToNodes.put(each.getId(), node);
+            Map<Node, Arc> outgoingArcs = new HashMap<>();
+            each.getDataOutputAssociations().forEach(assoc -> {
+            	String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
+        		outgoingArcs.computeIfAbsent(idsToNodes.get(target), targetNode -> {
+        			return builder.addArc(mainPage, node, targetNode, "");
+        		});//TODO add annotations to arc
+            });
         });
     }
     
@@ -204,29 +235,16 @@ public class CompilerApp {
 				.collect(Collectors.toList());
     }
     
-    private Node findKnownParentNode(String sourceId) {
+    private String findKnownParent(String sourceId) {
     	ModelElementInstance element = bpmn.getModelElementById(sourceId);
     	String id = sourceId;
     	while(element != null && !idsToNodes.containsKey(id)) {
     		element = element.getParentElement();
     		id = element.getAttributeValue("id");
     	}
-    	if(element != null)return idsToNodes.get(id);
+    	if(element != null)return id;
     	else throw new Error("Could not find known parent element for element with id "+id);
 		
-    }
-    
-    private void translateDataFlow() {
-    	Collection<DataAssociation> dataAssociations = bpmn.getModelElementsByType(DataAssociation.class);
-    	dataAssociations.forEach(each -> {
-    		List<String> sourceIds = getReferenceIds(each, SourceRef.class);
-    		List<String> targetIds = getReferenceIds(each, TargetRef.class);
-    		assert sourceIds.size() == 1 && targetIds.size() == 1;
-    		Node sourceNode = findKnownParentNode(sourceIds.get(0));
-    		Node targetNode = findKnownParentNode(targetIds.get(0));
-    		assert Objects.nonNull(sourceNode) && Objects.nonNull(targetNode);
-        	builder.addArc(mainPage, sourceNode, targetNode, "");
-    	});
     }
     
     private static boolean isPlace(Node node) {
