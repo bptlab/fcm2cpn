@@ -141,6 +141,7 @@
           <inputSetRefs>sid-b8344061-a24b-42a6-8770-c9c0db8c1cc5</inputSetRefs>
         </outputSet>
       </ioSpecification>
+      <property id="Property_0m3njgq" name="__targetRef_placeholder" />
       <dataInputAssociation id="sid-41996C2A-07C9-415F-966C-4B905027460F">
         <extensionElements>
           <signavio:signavioMetaData metaKey="bordercolor" metaValue="#000000" />
@@ -157,6 +158,10 @@
         <sourceRef>sid-FBC79CEA-6DFC-4DCE-9619-0A7DD9631A51</sourceRef>
         <targetRef>sid-68a8b3e6-2799-42e9-a794-9a75124c72c0</targetRef>
       </dataInputAssociation>
+      <dataInputAssociation id="DataInputAssociation_1bibvwt">
+        <sourceRef>sid-E1154C8D-C202-4806-8835-E5ED912E76B0</sourceRef>
+        <targetRef>Property_0m3njgq</targetRef>
+      </dataInputAssociation>
       <dataOutputAssociation id="sid-216FD355-146F-4069-A4A7-8A9827BF2385">
         <extensionElements>
           <signavio:signavioMetaData metaKey="bordercolor" metaValue="#000000" />
@@ -172,14 +177,6 @@
         </extensionElements>
         <sourceRef>sid-a4869e3b-0d16-40c0-9170-c085c82aa942</sourceRef>
         <targetRef>sid-7E1153CC-F5F3-4490-8DCA-8A1378EDB932</targetRef>
-      </dataOutputAssociation>
-      <dataOutputAssociation id="sid-CBCE2F77-74A9-426D-A00A-2C11A01EF10C">
-        <extensionElements>
-          <signavio:signavioMetaData metaKey="bordercolor" metaValue="#000000" />
-          <signavio:signavioLabel bold="" edge="midtop" fill="" fontFamily="" fontSize="14.0" italic="" ref="name" />
-        </extensionElements>
-        <sourceRef>sid-99918DB2-7BE6-46EF-99EC-415EB30B0FC4</sourceRef>
-        <targetRef>sid-E1154C8D-C202-4806-8835-E5ED912E76B0</targetRef>
       </dataOutputAssociation>
     </task>
     <task id="sid-A081EEA9-1369-48A9-95EC-884E5DB140E4" name="translate&#10;text">
@@ -520,7 +517,7 @@
         <signavio:signavioLabel bold="" edge="starttop" fill="" fontFamily="" fontSize="14.0" italic="" ref="text_name" />
       </extensionElements>
     </sequenceFlow>
-    <dataObjectReference id="sid-F417D8CF-86A0-4A9B-A5AA-33CD6D713203" name="job" dataObjectRef="sid-77c12626-d84c-4dc0-b5e7-88f6b5dfbb21">
+    <dataObjectReference id="sid-F417D8CF-86A0-4A9B-A5AA-33CD6D713203" name="job [[received]]" dataObjectRef="sid-77c12626-d84c-4dc0-b5e7-88f6b5dfbb21">
       <extensionElements>
         <signavio:signavioMetaData metaKey="bgcolor" metaValue="#ffffff" />
         <signavio:signavioMetaData metaKey="bordercolor" metaValue="#000000" />
@@ -528,6 +525,7 @@
         <signavio:signavioLabel bold="" fill="" fontFamily="" fontSize="14.0" italic="" ref="text_name" />
         <signavio:signavioLabel bold="" fill="" fontFamily="" fontSize="14.0" italic="" ref="text_state" />
       </extensionElements>
+      <dataState id="sid-7205966a-6a74-4ad5-80b5-1710ed4352c4" name="[received]" />
     </dataObjectReference>
     <dataObjectReference id="sid-8C6005CF-8124-4A1B-8FF0-51F27404957D" name="job [[rejected]]" dataObjectRef="sid-77c12626-d84c-4dc0-b5e7-88f6b5dfbb21">
       <extensionElements>
@@ -823,7 +821,7 @@
       <bpmndi:BPMNShape id="sid-F417D8CF-86A0-4A9B-A5AA-33CD6D713203_gui" bpmnElement="sid-F417D8CF-86A0-4A9B-A5AA-33CD6D713203">
         <omgdc:Bounds x="208" y="7" width="88" height="97" />
         <bpmndi:BPMNLabel labelStyle="sid-6854276b-49ec-4a83-a67b-e0a19c8bd544">
-          <omgdc:Bounds x="241.6500015258789" y="46.5" width="20.699996948242188" height="14" />
+          <omgdc:Bounds x="224" y="39" width="16" height="13" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="sid-8C6005CF-8124-4A1B-8FF0-51F27404957D_gui" bpmnElement="sid-8C6005CF-8124-4A1B-8FF0-51F27404957D">
@@ -1049,10 +1047,6 @@
         <omgdi:waypoint xsi:type="omgdc:Point" x="309" y="734.3119658119658" />
         <omgdi:waypoint xsi:type="omgdc:Point" x="341.8283261802575" y="767" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sid-CBCE2F77-74A9-426D-A00A-2C11A01EF10C_gui" bpmnElement="sid-CBCE2F77-74A9-426D-A00A-2C11A01EF10C">
-        <omgdi:waypoint xsi:type="omgdc:Point" x="935.0002042619251" y="160" />
-        <omgdi:waypoint xsi:type="omgdc:Point" x="935.0003463618398" y="187.827" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sid-792B0964-DA8F-4AB4-8AC5-BE50F932740F_gui" bpmnElement="sid-792B0964-DA8F-4AB4-8AC5-BE50F932740F">
         <omgdi:waypoint xsi:type="omgdc:Point" x="382" y="767" />
         <omgdi:waypoint xsi:type="omgdc:Point" x="382" y="736.827" />
@@ -1117,6 +1111,10 @@
       <bpmndi:BPMNEdge id="DataOutputAssociation_14sdbda_di" bpmnElement="DataOutputAssociation_14sdbda">
         <omgdi:waypoint xsi:type="omgdc:Point" x="375" y="473" />
         <omgdi:waypoint xsi:type="omgdc:Point" x="393" y="498" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataInputAssociation_1bibvwt_di" bpmnElement="DataInputAssociation_1bibvwt">
+        <omgdi:waypoint xsi:type="omgdc:Point" x="935" y="188" />
+        <omgdi:waypoint xsi:type="omgdc:Point" x="935" y="160" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
     <bpmndi:BPMNLabelStyle id="sid-6854276b-49ec-4a83-a67b-e0a19c8bd544">
