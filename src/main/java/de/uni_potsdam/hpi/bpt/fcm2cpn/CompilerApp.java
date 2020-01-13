@@ -15,15 +15,19 @@ import org.camunda.bpm.model.bpmn.impl.instance.TargetRef;
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.CatchEvent;
 import org.camunda.bpm.model.bpmn.instance.DataAssociation;
+import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
+import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataState;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.Gateway;
+import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.model.Arc;
+import org.cpntools.accesscpn.model.Code;
 import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.ModelPrinter;
 import org.cpntools.accesscpn.model.Node;
@@ -32,11 +36,14 @@ import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.RefPlace;
 import org.cpntools.accesscpn.model.Transition;
+import org.cpntools.accesscpn.model.TransitionNode;
 import org.cpntools.accesscpn.model.cpntypes.CPNEnum;
 import org.cpntools.accesscpn.model.cpntypes.CPNRecord;
 import org.cpntools.accesscpn.model.cpntypes.CpntypesFactory;
 import org.cpntools.accesscpn.model.exporter.DOMGenerator;
+import org.cpntools.accesscpn.model.impl.CodeImpl;
 import org.cpntools.accesscpn.model.impl.PageImpl;
+import org.cpntools.accesscpn.model.impl.TransitionNodeImpl;
 import org.cpntools.accesscpn.model.util.BuildCPNUtil;
 
 
@@ -48,6 +55,8 @@ public class CompilerApp {
 	private PetriNet petriNet;
 	private Map<String, SubpageElement> subpages;
 	private Map<String, Node> idsToNodes;
+	
+	private Map<Arc, String> arcsToAnnotations;
 
     public static void main(final String[] args) throws Exception {
         BpmnModelInstance bpmn = loadBPMNFile("./src/main/resources/cat_example.bpmn");
@@ -62,6 +71,7 @@ public class CompilerApp {
         this.builder = new BuildCPNUtil();
         this.subpages = new HashMap<>();
         this.idsToNodes = new HashMap<>();
+        this.arcsToAnnotations = new HashMap<>();
 	}
     
     private static BpmnModelInstance loadBPMNFile(String bpmnFileUri) {
@@ -89,6 +99,7 @@ public class CompilerApp {
         petriNet = builder.createPetriNet();
         mainPage = builder.addPage(petriNet, "Main Page");
         initializeDefaultColorSets();
+        initializeDefaultVariables();
         System.out.println("DONE");
     }
     
@@ -109,6 +120,11 @@ public class CompilerApp {
         dataObject.addValue("caseId", "STRING");
         dataObject.addValue("state", "STATE");
         builder.declareColorSet(petriNet, "DATA_OBJECT", dataObject);
+    }
+    
+    private void initializeDefaultVariables() {
+    	builder.declareVariable(petriNet, "count", "INT");
+    	builder.declareVariable(petriNet, "caseId", "CaseID");
     }
     
     private static String dataObjectStateToNetColor(String state) {
@@ -157,26 +173,7 @@ public class CompilerApp {
         	Instance node = builder.createSubPageTransition(activityPage, mainPage, name);
             subpages.put(each.getId(), new SubpageElement(each.getId(), activityPage, node, subpageTransition));
             idsToNodes.put(each.getId(), node);
-
-            Map<Node, Arc> outgoingArcs = new HashMap<>();
-            each.getDataOutputAssociations().forEach(assoc -> {
-            	String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
-        		outgoingArcs.computeIfAbsent(idsToNodes.get(target), targetNode -> {
-        			return builder.addArc(mainPage, node, targetNode, "");
-        		});//TODO add annotations to arc
-            });
-            Map<Node, Arc> ingoingArcs = new HashMap<>();
-            each.getDataInputAssociations().forEach(assoc -> {
-            	String source = findKnownParent(getReferenceIds(assoc, SourceRef.class).get(0));
-        		ingoingArcs.computeIfAbsent(idsToNodes.get(source), sourceNode -> {
-        			return builder.addArc(mainPage, sourceNode, node, "");
-        		});//TODO add annotations to arc
-        		
-        		/**Assert that when reading and not writing, the unchanged token is put back*/
-        		outgoingArcs.computeIfAbsent(idsToNodes.get(source), targetNode -> {
-        			return builder.addArc(mainPage, node, targetNode, "");
-        		});//TODO add annotations to arc
-            });
+            translateDataAssociations(node, each.getDataOutputAssociations(), each.getDataInputAssociations());
         });
     }
     
@@ -193,14 +190,56 @@ public class CompilerApp {
             Instance node = builder.createSubPageTransition(eventPage, mainPage, name);
             subpages.put(each.getId(), new SubpageElement(each.getId(), eventPage, node, subpageTransition));
             
+            Place caseTokenPlace = builder.addPlace(eventPage, "Case Count", "INT", "1`0");
+            builder.addArc(eventPage, caseTokenPlace, subpageTransition, "count");
+            builder.addArc(eventPage, subpageTransition, caseTokenPlace, "count + 1");
+            
+
+            subpageTransition.getCode().setText(
+            	"input (count);\n"
+	            +"output (caseId);\n"
+    			+"action (String.concat[\"case\", Int.toString(count)]);"
+            );
+            
+            
         	idsToNodes.put(each.getId(), node);
-            Map<Node, Arc> outgoingArcs = new HashMap<>();
-            each.getDataOutputAssociations().forEach(assoc -> {
-            	String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
-        		outgoingArcs.computeIfAbsent(idsToNodes.get(target), targetNode -> {
-        			return builder.addArc(mainPage, node, targetNode, "");
-        		});//TODO add annotations to arc
-            });
+        	translateDataAssociations(node, each.getDataOutputAssociations(), Collections.emptyList());
+        });
+    }
+    
+    private void translateDataAssociations(Node node, Collection<DataOutputAssociation> outputs, Collection<DataInputAssociation> inputs) {
+        Map<Node, Arc> outgoingArcs = new HashMap<>();
+        outputs.forEach(assoc -> {
+        	String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
+        	ItemAwareElement dataObject = bpmn.getModelElementById(target);
+        	String annotation;
+        	if(dataObject instanceof DataObjectReference) {
+        		String dataType = ((DataObjectReference) dataObject).getDataObject().getName();
+            	String dataState = dataObject.getDataState().getName();
+            	annotation = "{id = \""+dataType+"#TBD\", caseId = caseId, state = "+dataObjectStateToNetColor(dataState)+"}";     	
+        	} else {
+        		annotation = "storeData";
+        	}
+        	outgoingArcs.computeIfAbsent(idsToNodes.get(target), targetNode -> {
+    			Arc arc = builder.addArc(mainPage, node, targetNode, "");
+    			arcsToAnnotations.put(arc, annotation);
+    			return arc;
+    		});
+        });
+        Map<Node, Arc> ingoingArcs = new HashMap<>();
+        inputs.forEach(assoc -> {
+        	String source = findKnownParent(getReferenceIds(assoc, SourceRef.class).get(0));
+    		ingoingArcs.computeIfAbsent(idsToNodes.get(source), sourceNode -> {
+    			Arc arc = builder.addArc(mainPage, sourceNode, node, "");
+    			return arc;
+    		});//TODO add annotations to arc
+    		
+    		/**Assert that when reading and not writing, the unchanged token is put back*/
+    		outgoingArcs.computeIfAbsent(idsToNodes.get(source), targetNode -> {
+            	String annotation;
+    			Arc arc = builder.addArc(mainPage, node, targetNode, "");
+    			return arc;
+    		});//TODO add annotations to arc
         });
     }
     
@@ -219,11 +258,11 @@ public class CompilerApp {
         	Node source = idsToNodes.get(each.getSource().getId());
         	Node target = idsToNodes.get(each.getTarget().getId());
         	if(isPlace(source) || isPlace(target)) {
-            	builder.addArc(mainPage, source, target, "");
+            	arcsToAnnotations.put(builder.addArc(mainPage, source, target, ""), "caseId");
         	} else {
             	Node place = builder.addPlace(mainPage, null, "CaseID");
-            	builder.addArc(mainPage, source, place, "");
-            	builder.addArc(mainPage, place, target, "");
+            	arcsToAnnotations.put(builder.addArc(mainPage, source, place, ""), "caseId");
+            	arcsToAnnotations.put(builder.addArc(mainPage, place, target, ""), "caseId");
         	}
         });
     }
@@ -243,7 +282,7 @@ public class CompilerApp {
 					sourcePlace, 
 					subpage.mainTransition);
 				existingRefs.put(sourcePlace, copyPlace);
-				builder.addArc(subpage.page, copyPlace, subpage.subpageTransition, "");				
+				builder.addArc(subpage.page, copyPlace, subpage.subpageTransition, arcsToAnnotations.getOrDefault(sourceArc, "TBD"));				
 			});
 			
 			//Outgoing
@@ -251,12 +290,12 @@ public class CompilerApp {
 				Place targetPlace_ = (Place) sourceArc.getTarget();
 				RefPlace copyPlace = existingRefs.computeIfAbsent(targetPlace_, targetPlace -> builder.addReferencePlace(
 					subpage.page, 
-					targetPlace.getName().asString()+"_", 
+					targetPlace.getName().asString(), 
 					targetPlace.getSort().getText(), 
 					"", 
 					targetPlace, 
 					subpage.mainTransition));
-				builder.addArc(subpage.page, subpage.subpageTransition, copyPlace, "");				
+				builder.addArc(subpage.page, subpage.subpageTransition, copyPlace, arcsToAnnotations.getOrDefault(sourceArc, "TBD"));				
 			});
 		});
 	}
