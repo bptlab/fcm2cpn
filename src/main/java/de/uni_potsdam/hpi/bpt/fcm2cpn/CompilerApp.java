@@ -237,15 +237,26 @@ public class CompilerApp {
         Map<Node, Arc> ingoingArcs = new HashMap<>();
         inputs.forEach(assoc -> {
         	String source = findKnownParent(getReferenceIds(assoc, SourceRef.class).get(0));
+            ItemAwareElement dataObject = bpmn.getModelElementById(source);
+            String annotation;
+            if(dataObject instanceof DataObjectReference) {
+                // TODO: Add arc inscription for data objects;
+                annotation = "TBD";
+            } else if (dataObject instanceof  DataStoreReference){
+                String dataType = ((DataStoreReference) dataObject).getDataStore().getName().replaceAll("\\s", "_");
+                annotation = dataType + "Id";
+            } else {
+                annotation = "UNKNOWN";
+            }
     		ingoingArcs.computeIfAbsent(idsToNodes.get(source), sourceNode -> {
     			Arc arc = builder.addArc(mainPage, sourceNode, node, "");
+                arcsToAnnotations.put(arc, annotation);
     			return arc;
-    		});//TODO add annotations to arc
-    		
+    		});
     		/**Assert that when reading and not writing, the unchanged token is put back*/
     		outgoingArcs.computeIfAbsent(idsToNodes.get(source), targetNode -> {
-            	String annotation;
     			Arc arc = builder.addArc(mainPage, node, targetNode, "");
+                arcsToAnnotations.put(arc, annotation);
     			return arc;
     		});//TODO add annotations to arc
         });
