@@ -1,11 +1,7 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.camunda.bpm.model.bpmn.Bpmn;
@@ -176,6 +172,36 @@ public class CompilerApp {
         	Page activityPage = builder.addPage(petriNet, normalizeActivityName(name));
         	Transition subpageTransition = builder.addTransition(activityPage, name);
         	Instance node = builder.createSubPageTransition(activityPage, mainPage, name);
+            Set<String> dataInputs = each.getDataInputAssociations().stream()
+                    .map(assoc -> findKnownParent(getReferenceIds(assoc, SourceRef.class).get(0)))
+                    .map(source -> bpmn.getModelElementById(source))
+                    .filter(object -> object instanceof DataObjectReference)
+                    .map(object -> ((DataObjectReference)object).getDataObject().getName().replaceAll("\\s", "_"))
+                    .collect(Collectors.toSet());
+            Set<String> createObjects = each.getDataOutputAssociations().stream()
+                    .map(assoc -> findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0)))
+                    .map(target -> bpmn.getModelElementById(target))
+                    .filter(object -> object instanceof DataObjectReference)
+                    .map(object -> ((DataObjectReference)object).getDataObject().getName().replaceAll("\\s", "_"))
+                    .filter(output -> !dataInputs.contains(output))
+                    .collect(Collectors.toSet());
+            if (createObjects.size() > 0) {
+                String countVariables = createObjects.stream().map(object -> object + "Count").collect(Collectors.joining(",\n"));
+                String idVariables = createObjects.stream().map(object -> object + "Id").collect(Collectors.joining(",\n"));
+                String idGeneration = createObjects.stream().map(object -> "String.concat[\"" + object + "\", Int.toString(" + object + "Count)]").collect(Collectors.joining(",\n"));
+                subpageTransition.getCode().setText(String.format(
+                        "input (%s);\n"
+                                + "output (%s);\n"
+                                + "action (%s);",
+                        countVariables,
+                        idVariables,
+                        idGeneration));
+                createObjects.forEach(object -> {
+                    Place caseTokenPlace = builder.addPlace(activityPage, object + " Count", "INT", "1`0");
+                    builder.addArc(activityPage, caseTokenPlace, subpageTransition, object + "Count");
+                    builder.addArc(activityPage, subpageTransition, caseTokenPlace, object + "Count + 1");
+                });
+            }
             subpages.put(each.getId(), new SubpageElement(each.getId(), activityPage, node, subpageTransition));
             idsToNodes.put(each.getId(), node);
             translateDataAssociations(node, each.getDataOutputAssociations(), each.getDataInputAssociations());
