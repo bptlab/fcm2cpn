@@ -198,13 +198,30 @@ public class CompilerApp {
             Place caseTokenPlace = builder.addPlace(eventPage, "Case Count", "INT", "1`0");
             builder.addArc(eventPage, caseTokenPlace, subpageTransition, "count");
             builder.addArc(eventPage, subpageTransition, caseTokenPlace, "count + 1");
-            
 
-            subpageTransition.getCode().setText(
+            String idVariables = each.getDataOutputAssociations().stream()
+                    .map(assoc -> {
+                        String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
+                        ItemAwareElement dataObject = bpmn.getModelElementById(target);
+                        return ((DataObjectReference) dataObject).getDataObject().getName().replaceAll("\\s", "_") + "Id";
+                    })
+                    .distinct()
+                    .collect(Collectors.joining(","));
+            String idGeneration = each.getDataOutputAssociations().stream()
+                    .map(assoc -> {
+                        String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
+                        ItemAwareElement dataObject = bpmn.getModelElementById(target);
+                        return ((DataObjectReference) dataObject).getDataObject().getName().replaceAll("\\s", "_");
+                    })
+                    .map(n -> "String.concat[\"" + n + "\", Int.toString(count)]")
+                    .distinct()
+                    .collect(Collectors.joining(",\n"));
+            subpageTransition.getCode().setText(String.format(
             	"input (count);\n"
-	            +"output (caseId);\n"
-    			+"action (String.concat[\"case\", Int.toString(count)]);"
-            );
+	            +"output (caseId,%s);\n"
+    			+"action (String.concat[\"case\", Int.toString(count)],\n%s);",
+                idVariables,
+                idGeneration));
             
             
         	idsToNodes.put(each.getId(), node);
@@ -221,7 +238,7 @@ public class CompilerApp {
         	if(dataObject instanceof DataObjectReference) {
                 String dataType = ((DataObjectReference) dataObject).getDataObject().getName().replaceAll("\\s", "_");
             	String dataState = dataObject.getDataState().getName();
-            	annotation = "{id = \""+dataType+"#TBD\", caseId = caseId, state = "+dataObjectStateToNetColor(dataState)+"}";     	
+            	annotation = "{id = "+dataType+"Id, caseId = caseId, state = "+dataObjectStateToNetColor(dataState)+"}";
         	} else if (dataObject instanceof  DataStoreReference){
                 String dataType = ((DataStoreReference) dataObject).getDataStore().getName().replaceAll("\\s", "_");
         		annotation = dataType + "Id";
@@ -258,7 +275,7 @@ public class CompilerApp {
     			Arc arc = builder.addArc(mainPage, node, targetNode, "");
                 arcsToAnnotations.put(arc, annotation);
     			return arc;
-    		});//TODO add annotations to arc
+    		});
         });
     }
     
