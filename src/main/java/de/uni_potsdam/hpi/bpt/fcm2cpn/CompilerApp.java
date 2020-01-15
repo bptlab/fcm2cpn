@@ -258,7 +258,9 @@ public class CompilerApp {
             String annotation;
             if(dataObject instanceof DataObjectReference) {
                 // TODO: Add arc inscription for data objects;
-                annotation = "TBD";
+                String dataType = ((DataObjectReference) dataObject).getDataObject().getName().replaceAll("\\s", "_");
+                String dataState = dataObject.getDataState().getName();
+                annotation = "{id = "+dataType+"Id, caseId = caseId, state = "+dataObjectStateToNetColor(dataState)+"}";
             } else if (dataObject instanceof  DataStoreReference){
                 String dataType = ((DataStoreReference) dataObject).getDataStore().getName().replaceAll("\\s", "_");
                 annotation = dataType + "Id";
