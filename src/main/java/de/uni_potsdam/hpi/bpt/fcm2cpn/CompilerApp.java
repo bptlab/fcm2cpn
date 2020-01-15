@@ -141,7 +141,9 @@ public class CompilerApp {
     	Collection<DataObject> dataObjects = bpmn.getModelElementsByType(DataObject.class);
         Map<DataObject, Node> dataObjectsToPlaces = new HashMap<>();
         dataObjects.forEach(each -> {
-        	Node node = builder.addPlace(mainPage, each.getName().trim().toLowerCase(), "DATA_OBJECT");
+            String name = each.getName().trim().toLowerCase();
+        	Node node = builder.addPlace(mainPage, name, "DATA_OBJECT");
+            builder.declareVariable(petriNet, name.replaceAll("\\s", "_") + "Id", "STRING");
         	dataObjectsToPlaces.put(each, node);
         });
         
@@ -155,7 +157,9 @@ public class CompilerApp {
         Collection<DataStore> dataStores = bpmn.getModelElementsByType(DataStore.class);
         Map<DataStore, Node> dataStoresToPlaces = new HashMap<>();
         dataStores.forEach(each -> {
-        	Node node = builder.addPlace(mainPage, each.getName().trim().toLowerCase(), "DATA_STORE");
+            String name = each.getName().trim().toLowerCase();
+        	Node node = builder.addPlace(mainPage, name, "DATA_STORE");
+            builder.declareVariable(petriNet, name.replaceAll("\\s", "_") + "Id", "STRING");
         	dataStoresToPlaces.put(each, node);
         });
         Collection<DataStoreReference> dataStoreRefs = bpmn.getModelElementsByType(DataStoreReference.class);
