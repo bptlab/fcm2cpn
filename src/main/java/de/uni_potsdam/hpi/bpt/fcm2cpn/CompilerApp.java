@@ -144,6 +144,7 @@ public class CompilerApp {
             String name = each.getName().trim().toLowerCase();
         	Node node = builder.addPlace(mainPage, name, "DATA_OBJECT");
             builder.declareVariable(petriNet, name.replaceAll("\\s", "_") + "Id", "STRING");
+            builder.declareVariable(petriNet, name.replaceAll("\\s", "_") + "Count", "INT");
         	dataObjectsToPlaces.put(each, node);
         });
         
@@ -218,12 +219,15 @@ public class CompilerApp {
         	ItemAwareElement dataObject = bpmn.getModelElementById(target);
         	String annotation;
         	if(dataObject instanceof DataObjectReference) {
-        		String dataType = ((DataObjectReference) dataObject).getDataObject().getName();
+                String dataType = ((DataObjectReference) dataObject).getDataObject().getName().replaceAll("\\s", "_");
             	String dataState = dataObject.getDataState().getName();
             	annotation = "{id = \""+dataType+"#TBD\", caseId = caseId, state = "+dataObjectStateToNetColor(dataState)+"}";     	
+        	} else if (dataObject instanceof  DataStoreReference){
+                String dataType = ((DataStoreReference) dataObject).getDataStore().getName().replaceAll("\\s", "_");
+        		annotation = dataType + "Id";
         	} else {
-        		annotation = "storeData";
-        	}
+        	    annotation = "UNKNOWN";
+            }
         	outgoingArcs.computeIfAbsent(idsToNodes.get(target), targetNode -> {
     			Arc arc = builder.addArc(mainPage, node, targetNode, "");
     			arcsToAnnotations.put(arc, annotation);
