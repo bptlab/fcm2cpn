@@ -30,6 +30,7 @@ import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Place;
+import org.cpntools.accesscpn.model.PlaceNode;
 import org.cpntools.accesscpn.model.RefPlace;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.accesscpn.model.TransitionNode;
@@ -52,13 +53,17 @@ public class CompilerApp {
 	private Map<String, SubpageElement> subpages;
 	private Map<String, Node> idsToNodes;
 	
+	private Map<String, Place> dataObjectCounters;
+	
 	private Map<Arc, String> arcsToAnnotations;
 
     public static void main(final String[] args) throws Exception {
-        BpmnModelInstance bpmn = loadBPMNFile("./src/main/resources/cat_example.bpmn");
+    	String fileName = "duplicate_dataObject_generation";
+//    	String fileName = "cat_example";
+        BpmnModelInstance bpmn = loadBPMNFile("./src/main/resources/"+fileName+".bpmn");
         PetriNet petriNet = new CompilerApp(bpmn).translateBPMN2CPN();
         ModelPrinter.printModel(petriNet);
-        DOMGenerator.export(petriNet, "./test.cpn");
+        DOMGenerator.export(petriNet, "./"+fileName+".cpn");
 
     }
     
@@ -68,6 +73,7 @@ public class CompilerApp {
         this.subpages = new HashMap<>();
         this.idsToNodes = new HashMap<>();
         this.arcsToAnnotations = new HashMap<>();
+        this.dataObjectCounters = new HashMap<>();
 	}
     
     private static BpmnModelInstance loadBPMNFile(String bpmnFileUri) {
@@ -197,7 +203,7 @@ public class CompilerApp {
                         idVariables,
                         idGeneration));
                 createObjects.forEach(object -> {
-                    Place caseTokenPlace = builder.addPlace(activityPage, object + " Count", "INT", "1`0");
+                    PlaceNode caseTokenPlace = builder.addFusionPlace(activityPage, object + " Count", "INT", "1`0", object + "Count");
                     builder.addArc(activityPage, caseTokenPlace, subpageTransition, object + "Count");
                     builder.addArc(activityPage, subpageTransition, caseTokenPlace, object + "Count + 1");
                 });
