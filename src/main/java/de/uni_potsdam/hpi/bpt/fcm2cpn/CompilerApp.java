@@ -225,27 +225,23 @@ public class CompilerApp {
             builder.addArc(eventPage, caseTokenPlace, subpageTransition, "count");
             builder.addArc(eventPage, subpageTransition, caseTokenPlace, "count + 1");
 
-            String idVariables = each.getDataOutputAssociations().stream()
-                    .map(assoc -> {
-                        String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
-                        ItemAwareElement dataObject = bpmn.getModelElementById(target);
-                        return ((DataObjectReference) dataObject).getDataObject().getName().replaceAll("\\s", "_") + "Id";
-                    })
-                    .distinct()
-                    .collect(Collectors.joining(","));
-            String idGeneration = each.getDataOutputAssociations().stream()
+            //TODO all is using case count?
+            List<String> ids = each.getDataOutputAssociations().stream()
                     .map(assoc -> {
                         String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
                         ItemAwareElement dataObject = bpmn.getModelElementById(target);
                         return ((DataObjectReference) dataObject).getDataObject().getName().replaceAll("\\s", "_");
                     })
-                    .map(n -> "String.concat[\"" + n + "\", Int.toString(count)]")
                     .distinct()
-                    .collect(Collectors.joining(",\n"));
+                    .collect(Collectors.toList());
+            ids.add(0, "case");
+            
+            String idVariables = ids.stream().map(n -> n + "Id").collect(Collectors.joining(", "));
+            String idGeneration = ids.stream().map(n -> "String.concat[\"" + n + "\", Int.toString(count)]").collect(Collectors.joining(",\n"));
             subpageTransition.getCode().setText(String.format(
             	"input (count);\n"
-	            +"output (caseId,%s);\n"
-    			+"action (String.concat[\"case\", Int.toString(count)],\n%s);",
+	            +"output (%s);\n"
+    			+"action (%s);",
                 idVariables,
                 idGeneration));
             
