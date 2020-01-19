@@ -23,7 +23,6 @@ import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.model.Arc;
-import org.cpntools.accesscpn.model.Code;
 import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.ModelPrinter;
 import org.cpntools.accesscpn.model.Node;
@@ -33,14 +32,10 @@ import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.PlaceNode;
 import org.cpntools.accesscpn.model.RefPlace;
 import org.cpntools.accesscpn.model.Transition;
-import org.cpntools.accesscpn.model.TransitionNode;
 import org.cpntools.accesscpn.model.cpntypes.CPNEnum;
 import org.cpntools.accesscpn.model.cpntypes.CPNRecord;
 import org.cpntools.accesscpn.model.cpntypes.CpntypesFactory;
 import org.cpntools.accesscpn.model.exporter.DOMGenerator;
-import org.cpntools.accesscpn.model.impl.CodeImpl;
-import org.cpntools.accesscpn.model.impl.PageImpl;
-import org.cpntools.accesscpn.model.impl.TransitionNodeImpl;
 import org.cpntools.accesscpn.model.util.BuildCPNUtil;
 
 
@@ -58,8 +53,8 @@ public class CompilerApp {
 	private Map<Arc, String> arcsToAnnotations;
 
     public static void main(final String[] args) throws Exception {
-    	String fileName = "duplicate_dataObject_generation";
-//    	String fileName = "cat_example";
+//    	String fileName = "duplicate_dataObject_generation";
+    	String fileName = "cat_example";
         BpmnModelInstance bpmn = loadBPMNFile("./src/main/resources/"+fileName+".bpmn");
         PetriNet petriNet = new CompilerApp(bpmn).translateBPMN2CPN();
         ModelPrinter.printModel(petriNet);
@@ -86,7 +81,7 @@ public class CompilerApp {
     private PetriNet translateBPMN2CPN() throws Exception {
     	initializeCPNModel();
         translateData();
-        translateActivites();
+        translateActivities();
         translateEvents();
         translateGateways();
         translateControlFlow();
@@ -171,46 +166,110 @@ public class CompilerApp {
         });
     }
     
-    private void translateActivites() {
+    private void translateActivities() {
         Collection<Activity> activities = bpmn.getModelElementsByType(Activity.class);
         activities.forEach(each -> {
         	String name = each.getName();
         	Page activityPage = builder.addPage(petriNet, normalizeActivityName(name));
-        	Transition subpageTransition = builder.addTransition(activityPage, name);
-        	Instance node = builder.createSubPageTransition(activityPage, mainPage, name);
-            Set<String> dataInputs = each.getDataInputAssociations().stream()
-                    .map(assoc -> findKnownParent(getReferenceIds(assoc, SourceRef.class).get(0)))
-                    .map(source -> bpmn.getModelElementById(source))
-                    .filter(object -> object instanceof DataObjectReference)
-                    .map(object -> ((DataObjectReference)object).getDataObject().getName().replaceAll("\\s", "_"))
-                    .collect(Collectors.toSet());
-            Set<String> createObjects = each.getDataOutputAssociations().stream()
-                    .map(assoc -> findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0)))
-                    .map(target -> bpmn.getModelElementById(target))
-                    .filter(object -> object instanceof DataObjectReference)
-                    .map(object -> ((DataObjectReference)object).getDataObject().getName().replaceAll("\\s", "_"))
-                    .filter(output -> !dataInputs.contains(output))
-                    .collect(Collectors.toSet());
-            if (createObjects.size() > 0) {
-                String countVariables = createObjects.stream().map(object -> object + "Count").collect(Collectors.joining(",\n"));
-                String idVariables = createObjects.stream().map(object -> object + "Id").collect(Collectors.joining(",\n"));
-                String idGeneration = createObjects.stream().map(object -> "String.concat[\"" + object + "\", Int.toString(" + object + "Count)]").collect(Collectors.joining(",\n"));
-                subpageTransition.getCode().setText(String.format(
-                        "input (%s);\n"
-                                + "output (%s);\n"
-                                + "action (%s);",
-                        countVariables,
-                        idVariables,
-                        idGeneration));
-                createObjects.forEach(object -> {
-                    PlaceNode caseTokenPlace = builder.addFusionPlace(activityPage, object + " Count", "INT", "1`0", object + "Count");
-                    builder.addArc(activityPage, caseTokenPlace, subpageTransition, object + "Count");
-                    builder.addArc(activityPage, subpageTransition, caseTokenPlace, object + "Count + 1");
-                });
+            Instance node = builder.createSubPageTransition(activityPage, mainPage, name);
+            Map<String, List<DataInputAssociation>> inputsPerObject = each.getDataInputAssociations().stream()
+                    .collect(Collectors.toConcurrentMap(assoc ->  {
+                        ModelElementInstance element = bpmn.getModelElementById(findKnownParent(getReferenceIds(assoc, SourceRef.class).get(0)));
+                        if (element instanceof DataObjectReference) {
+                            return ((DataObjectReference)element).getDataObject().getName().trim().replaceAll("\\s", "");
+                        } else {
+                            return ((DataStoreReference)element).getDataStore().getName().trim().replaceAll("\\s", "");
+                        }
+                    },
+                            Arrays::asList,
+                            (a,b) -> {
+                                a = new ArrayList<>(a);
+                                a.addAll(b);
+                                return a;
+                            }));
+            Map<String, List<DataOutputAssociation>> outputsPerObject = each.getDataOutputAssociations().stream()
+                    .collect(Collectors.toConcurrentMap(assoc ->  {
+                                ModelElementInstance element = bpmn.getModelElementById(findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0)));
+                                if (element instanceof DataObjectReference) {
+                                    return ((DataObjectReference)element).getDataObject().getName().trim().replaceAll("\\s", "");
+                                } else {
+                                    return ((DataStoreReference)element).getDataStore().getName().trim().replaceAll("\\s", "");
+                                }
+                            },
+                            Arrays::asList,
+                            (a,b) -> {
+                                a = new ArrayList<>(a);
+                                a.addAll(b);
+                                return a;
+                            }));
+            int noInputSets = inputsPerObject.values().stream()
+                    .mapToInt(List::size)
+                    .reduce(1, (a,b) -> a*b);
+            List<List<DataInputAssociation>> inputSets = new ArrayList<>(noInputSets);
+            for(int i = 0; i < noInputSets; i++) {
+                int j = 1;
+                List<DataInputAssociation> inputSet = new ArrayList<>();
+                for(List<DataInputAssociation> objectVariants : inputsPerObject.values()) {
+                    inputSet.add(objectVariants.get((i/j)%objectVariants.size()));
+                    j *= objectVariants.size();
+                }
+                inputSets.add(inputSet);
             }
-            subpages.put(each.getId(), new SubpageElement(each.getId(), activityPage, node, subpageTransition));
+            int noOutputSets = outputsPerObject.values().stream()
+                    .mapToInt(List::size)
+                    .reduce(1, (a,b) -> a*b);
+            List<List<DataOutputAssociation>> outputSets = new ArrayList<>(noInputSets);
+            for(int i = 0; i < noOutputSets; i++) {
+                int j = 1;
+                List<DataOutputAssociation> outputSet = new ArrayList<>();
+                for(List<DataOutputAssociation> objectVariants : outputsPerObject.values()) {
+                    outputSet.add(objectVariants.get((i/j)%objectVariants.size()));
+                    j *= objectVariants.size();
+                }
+                outputSets.add(outputSet);
+            }
+            List<Transition> subpageTransitions = new ArrayList<>(noInputSets * noOutputSets);
+            for (ListIterator<List<DataInputAssociation>> inputSetIterator = inputSets.listIterator(); inputSetIterator.hasNext();) {
+                for (ListIterator<List<DataOutputAssociation>> outputSetIterator = outputSets.listIterator(); outputSetIterator.hasNext();) {
+                    Transition subpageTransition = builder.addTransition(activityPage, name + inputSetIterator.nextIndex() + "_" + outputSetIterator.nextIndex());
+                    List<DataInputAssociation> inputSet  = inputSetIterator.next();
+                    List<DataOutputAssociation> outputSet = outputSetIterator.next();
+                    Set<String> dataInputs = inputSet.stream()
+                            .map(assoc -> findKnownParent(getReferenceIds(assoc, SourceRef.class).get(0)))
+                            .map(source -> bpmn.getModelElementById(source))
+                            .filter(object -> object instanceof DataObjectReference)
+                            .map(object -> ((DataObjectReference)object).getDataObject().getName().replaceAll("\\s", "_"))
+                            .collect(Collectors.toSet());
+                    Set<String> createObjects = outputSet.stream()
+                            .map(assoc -> findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0)))
+                            .map(target -> bpmn.getModelElementById(target))
+                            .filter(object -> object instanceof DataObjectReference)
+                            .map(object -> ((DataObjectReference)object).getDataObject().getName().replaceAll("\\s", "_"))
+                            .filter(output -> !dataInputs.contains(output))
+                            .collect(Collectors.toSet());
+                    if (createObjects.size() > 0) {
+                        String countVariables = createObjects.stream().map(object -> object + "Count").collect(Collectors.joining(",\n"));
+                        String idVariables = createObjects.stream().map(object -> object + "Id").collect(Collectors.joining(",\n"));
+                        String idGeneration = createObjects.stream().map(object -> "String.concat[\"" + object + "\", Int.toString(" + object + "Count)]").collect(Collectors.joining(",\n"));
+                        subpageTransition.getCode().setText(String.format(
+                                "input (%s);\n"
+                                        + "output (%s);\n"
+                                        + "action (%s);",
+                                countVariables,
+                                idVariables,
+                                idGeneration));
+                        createObjects.forEach(object -> {
+                            PlaceNode caseTokenPlace = builder.addFusionPlace(activityPage, object + " Count", "INT", "1`0", object + "Count");
+                            builder.addArc(activityPage, caseTokenPlace, subpageTransition, object + "Count");
+                            builder.addArc(activityPage, subpageTransition, caseTokenPlace, object + "Count + 1");
+                        });
+                    }
+                    translateDataAssociations(node, outputSet, inputSet);
+                    subpageTransitions.add(subpageTransition);
+                }
+            }
+            subpages.putIfAbsent(each.getId(), new SubpageElement(each.getId(), activityPage, node, subpageTransitions));
             idsToNodes.put(each.getId(), node);
-            translateDataAssociations(node, each.getDataOutputAssociations(), each.getDataInputAssociations());
         });
     }
     
@@ -225,7 +284,7 @@ public class CompilerApp {
         	Page eventPage = builder.addPage(petriNet, normalizeActivityName(name));
         	Transition subpageTransition = builder.addTransition(eventPage, name);
             Instance node = builder.createSubPageTransition(eventPage, mainPage, name);
-            subpages.put(each.getId(), new SubpageElement(each.getId(), eventPage, node, subpageTransition));
+            subpages.put(each.getId(), new SubpageElement(each.getId(), eventPage, node, Arrays.asList(subpageTransition)));
             
             Place caseTokenPlace = builder.addPlace(eventPage, "Case Count", "INT", "1`0");
             builder.addArc(eventPage, caseTokenPlace, subpageTransition, "count");
@@ -339,16 +398,16 @@ public class CompilerApp {
 			Map<Place, RefPlace> existingRefs = new HashMap<>();
 			//Incoming
 			subpage.mainTransition.getTargetArc().forEach(sourceArc -> {
-				Place sourcePlace = (Place) sourceArc.getSource();
-				RefPlace copyPlace = builder.addReferencePlace(
+				Place sourcePlace_ = (Place) sourceArc.getSource();
+				RefPlace copyPlace = existingRefs.computeIfAbsent(sourcePlace_, sourcePlace -> builder.addReferencePlace(
 					subpage.page, 
 					sourcePlace.getName().asString(), 
 					sourcePlace.getSort().getText(), 
 					"", 
 					sourcePlace, 
-					subpage.mainTransition);
-				existingRefs.put(sourcePlace, copyPlace);
-				builder.addArc(subpage.page, copyPlace, subpage.subpageTransition, arcsToAnnotations.getOrDefault(sourceArc, "TBD"));				
+					subpage.mainTransition));
+				subpage.subpageTransitions.forEach(subpageTransition ->
+				builder.addArc(subpage.page, copyPlace, subpageTransition, arcsToAnnotations.getOrDefault(sourceArc, "TBD")));
 			});
 			
 			//Outgoing
@@ -361,7 +420,8 @@ public class CompilerApp {
 					"", 
 					targetPlace, 
 					subpage.mainTransition));
-				builder.addArc(subpage.page, subpage.subpageTransition, copyPlace, arcsToAnnotations.getOrDefault(sourceArc, "TBD"));				
+				subpage.subpageTransitions.forEach(subpageTransition ->
+				builder.addArc(subpage.page, subpageTransition, copyPlace, arcsToAnnotations.getOrDefault(sourceArc, "TBD")));
 			});
 		});
 	}
@@ -395,12 +455,12 @@ public class CompilerApp {
     	String id;
     	Page page;
     	Instance mainTransition;
-    	Transition subpageTransition;
-    	public SubpageElement(String id, Page page, Instance mainTransition, Transition subpageTransition) {
+    	List<Transition> subpageTransitions;
+    	public SubpageElement(String id, Page page, Instance mainTransition, List<Transition> subpageTransitions) {
 			this.id = id;
 			this.page = page;
 			this.mainTransition = mainTransition;
-			this.subpageTransition = subpageTransition;
+			this.subpageTransitions = subpageTransitions;
 		}
     }
     
