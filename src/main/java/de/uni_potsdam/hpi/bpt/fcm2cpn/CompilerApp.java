@@ -1,3 +1,21 @@
+/**
+ *     fcm2cpn is a compiler, translating process fragments to CPNtools compatible Petri nets.
+ *     Copyright (C) 2020  Hasso Plattner Institute gGmbH, University of Potsdam
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import java.io.File;
@@ -38,9 +56,16 @@ import org.cpntools.accesscpn.model.cpntypes.CpntypesFactory;
 import org.cpntools.accesscpn.model.exporter.DOMGenerator;
 import org.cpntools.accesscpn.model.util.BuildCPNUtil;
 
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 
 public class CompilerApp {
-	
+
+    public final static String licenseInfo = "fCM2CPN translator  Copyright (C) 2020  Hasso Plattner Institute gGmbH, University of Potsdam, Germany\n" +
+            "This program comes with ABSOLUTELY NO WARRANTY.\n" +
+            "This is free software, and you are welcome to redistribute it under certain conditions.\n";
+
 	private Page mainPage;
 	private BpmnModelInstance bpmn;
 	private BuildCPNUtil builder;
@@ -48,46 +73,60 @@ public class CompilerApp {
 	private Map<String, SubpageElement> subpages;
 	private Map<String, Node> idsToNodes;
 	
-	private Map<String, Place> dataObjectCounters;
-	
 	private Map<Arc, String> arcsToAnnotations;
 
     public static void main(final String[] args) throws Exception {
-//    	String fileName = "duplicate_dataObject_generation";
-    	String fileName = "cat_example";
-        BpmnModelInstance bpmn = loadBPMNFile("./src/main/resources/"+fileName+".bpmn");
+        System.out.println(licenseInfo);
+        File bpmnFile = getFile();
+        if (null == bpmnFile) {
+            System.exit(0);
+        }
+        BpmnModelInstance bpmn = loadBPMNFile(bpmnFile);
         PetriNet petriNet = new CompilerApp(bpmn).translateBPMN2CPN();
         ModelPrinter.printModel(petriNet);
-        DOMGenerator.export(petriNet, "./"+fileName+".cpn");
-
+        System.out.print("Writing CPN file... ");
+        DOMGenerator.export(petriNet, "./"+bpmnFile.getName().replaceAll("\\.bpmn", "")+".cpn");
+        System.out.println("DONE");
     }
-    
+
+    private static File getFile() {
+        JFileChooser chooser = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                "BPMN Process Model", "bpmn");
+        chooser.setFileFilter(filter);
+        int returnVal = chooser.showOpenDialog(null);
+        if(returnVal == JFileChooser.APPROVE_OPTION) {
+            return chooser.getSelectedFile();
+        }
+        return  null;
+    }
+
     private CompilerApp(BpmnModelInstance bpmn) {
     	this.bpmn = bpmn;
         this.builder = new BuildCPNUtil();
         this.subpages = new HashMap<>();
         this.idsToNodes = new HashMap<>();
         this.arcsToAnnotations = new HashMap<>();
-        this.dataObjectCounters = new HashMap<>();
 	}
     
-    private static BpmnModelInstance loadBPMNFile(String bpmnFileUri) {
+    private static BpmnModelInstance loadBPMNFile(File bpmnFile) {
         System.out.print("Load and parse BPMN file... ");
-        File bpmnFile = new File(bpmnFileUri);
+        BpmnModelInstance bpmn = Bpmn.readModelFromFile(bpmnFile);
         System.out.println("DONE");
-        return Bpmn.readModelFromFile(bpmnFile);
+        return bpmn;
     }
 
     private PetriNet translateBPMN2CPN() throws Exception {
     	initializeCPNModel();
+    	System.out.print("Translating BPMN... ");
         translateData();
         translateActivities();
         translateEvents();
         translateGateways();
         translateControlFlow();
         populateSubpages();
-        //translateDataFlow();
         layout();
+        System.out.println("DONE");
         return petriNet;
     }
 
