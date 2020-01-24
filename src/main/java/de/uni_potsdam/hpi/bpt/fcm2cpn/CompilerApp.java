@@ -90,7 +90,7 @@ public class CompilerApp {
     }
 
     private static File getFile() {
-        JFileChooser chooser = new JFileChooser();
+        JFileChooser chooser = new JFileChooser("./");
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
                 "BPMN Process Model", "bpmn");
         chooser.setFileFilter(filter);
@@ -195,7 +195,7 @@ public class CompilerApp {
         Map<DataStore, Node> dataStoresToPlaces = new HashMap<>();
         dataStores.forEach(each -> {
             String name = each.getName().trim().toLowerCase();
-        	Node node = builder.addPlace(mainPage, name, "DATA_STORE");
+        	Node node = builder.addPlace(mainPage, name, "DATA_STORE", "1`\"store_"+name.replaceAll("\\s", "_")+"\"");
             builder.declareVariable(petriNet, name.replaceAll("\\s", "_") + "Id", "STRING");
         	dataStoresToPlaces.put(each, node);
         });
