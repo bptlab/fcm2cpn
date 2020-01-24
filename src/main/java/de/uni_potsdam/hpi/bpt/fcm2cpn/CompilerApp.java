@@ -20,6 +20,7 @@ package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import java.io.File;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.camunda.bpm.model.bpmn.Bpmn;
@@ -72,12 +73,15 @@ public class CompilerApp {
 	private PetriNet petriNet;
 	private Map<String, SubpageElement> subpages;
 	private Map<String, Node> idsToNodes;
-	
-	private Map<Arc, String> arcsToAnnotations;
 
     public static void main(final String[] args) throws Exception {
         System.out.println(licenseInfo);
-        File bpmnFile = getFile();
+        File bpmnFile;
+        if(args.length > 0) {
+        	bpmnFile = new File(args[0]);
+        } else {
+        	bpmnFile = getFile();
+        }
         if (null == bpmnFile) {
             System.exit(0);
         }
@@ -106,7 +110,6 @@ public class CompilerApp {
         this.builder = new BuildCPNUtil();
         this.subpages = new HashMap<>();
         this.idsToNodes = new HashMap<>();
-        this.arcsToAnnotations = new HashMap<>();
 	}
     
     private static BpmnModelInstance loadBPMNFile(File bpmnFile) {
@@ -124,7 +127,6 @@ public class CompilerApp {
         translateEvents();
         translateGateways();
         translateControlFlow();
-        populateSubpages();
         layout();
         System.out.println("DONE");
         return petriNet;
@@ -210,42 +212,34 @@ public class CompilerApp {
         activities.forEach(each -> {
         	String name = each.getName();
         	Page activityPage = builder.addPage(petriNet, normalizeActivityName(name));
-            Instance node = builder.createSubPageTransition(activityPage, mainPage, name);
+            Instance mainPageTransition = builder.createSubPageTransition(activityPage, mainPage, name);
             Map<String, List<DataInputAssociation>> inputsPerObject = each.getDataInputAssociations().stream()
                     .collect(Collectors.toConcurrentMap(assoc ->  {
                         ModelElementInstance element = bpmn.getModelElementById(findKnownParent(getReferenceIds(assoc, SourceRef.class).get(0)));
-                        if (element instanceof DataObjectReference) {
-                            return ((DataObjectReference)element).getDataObject().getName().trim().replaceAll("\\s", "");
-                        } else {
-                            return ((DataStoreReference)element).getDataStore().getName().trim().replaceAll("\\s", "");
-                        }
+                        return dataElementId(element);
                     },
-                            Arrays::asList,
-                            (a,b) -> {
-                                a = new ArrayList<>(a);
-                                a.addAll(b);
-                                return a;
-                            }));
+                    Arrays::asList,
+                    (a,b) -> {
+                        a = new ArrayList<>(a);
+                        a.addAll(b);
+                        return a;
+                    }));
             Map<String, List<DataOutputAssociation>> outputsPerObject = each.getDataOutputAssociations().stream()
                     .collect(Collectors.toConcurrentMap(assoc ->  {
-                                ModelElementInstance element = bpmn.getModelElementById(findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0)));
-                                if (element instanceof DataObjectReference) {
-                                    return ((DataObjectReference)element).getDataObject().getName().trim().replaceAll("\\s", "");
-                                } else {
-                                    return ((DataStoreReference)element).getDataStore().getName().trim().replaceAll("\\s", "");
-                                }
-                            },
-                            Arrays::asList,
-                            (a,b) -> {
-                                a = new ArrayList<>(a);
-                                a.addAll(b);
-                                return a;
-                            }));
-            int noInputSets = inputsPerObject.values().stream()
+                        ModelElementInstance element = bpmn.getModelElementById(findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0)));
+                        return dataElementId(element);
+                    },
+                    Arrays::asList,
+                    (a,b) -> {
+                        a = new ArrayList<>(a);
+                        a.addAll(b);
+                        return a;
+                    }));
+            int numberOfInputSets = inputsPerObject.values().stream()
                     .mapToInt(List::size)
                     .reduce(1, (a,b) -> a*b);
-            List<List<DataInputAssociation>> inputSets = new ArrayList<>(noInputSets);
-            for(int i = 0; i < noInputSets; i++) {
+            List<List<DataInputAssociation>> inputSets = new ArrayList<>(numberOfInputSets);
+            for(int i = 0; i < numberOfInputSets; i++) {
                 int j = 1;
                 List<DataInputAssociation> inputSet = new ArrayList<>();
                 for(List<DataInputAssociation> objectVariants : inputsPerObject.values()) {
@@ -254,11 +248,11 @@ public class CompilerApp {
                 }
                 inputSets.add(inputSet);
             }
-            int noOutputSets = outputsPerObject.values().stream()
+            int numberOfOutputSets = outputsPerObject.values().stream()
                     .mapToInt(List::size)
                     .reduce(1, (a,b) -> a*b);
-            List<List<DataOutputAssociation>> outputSets = new ArrayList<>(noInputSets);
-            for(int i = 0; i < noOutputSets; i++) {
+            List<List<DataOutputAssociation>> outputSets = new ArrayList<>(numberOfInputSets);
+            for(int i = 0; i < numberOfOutputSets; i++) {
                 int j = 1;
                 List<DataOutputAssociation> outputSet = new ArrayList<>();
                 for(List<DataOutputAssociation> objectVariants : outputsPerObject.values()) {
@@ -267,12 +261,16 @@ public class CompilerApp {
                 }
                 outputSets.add(outputSet);
             }
-            List<Transition> subpageTransitions = new ArrayList<>(noInputSets * noOutputSets);
-            for (ListIterator<List<DataInputAssociation>> inputSetIterator = inputSets.listIterator(); inputSetIterator.hasNext();) {
-                for (ListIterator<List<DataOutputAssociation>> outputSetIterator = outputSets.listIterator(); outputSetIterator.hasNext();) {
-                    Transition subpageTransition = builder.addTransition(activityPage, name + inputSetIterator.nextIndex() + "_" + outputSetIterator.nextIndex());
-                    List<DataInputAssociation> inputSet  = inputSetIterator.next();
-                    List<DataOutputAssociation> outputSet = outputSetIterator.next();
+            List<Transition> subpageTransitions = new ArrayList<>(numberOfInputSets * numberOfOutputSets);
+            Map<DataOutputAssociation, List<Transition>> outputs = each.getDataOutputAssociations().stream()
+            		.collect(Collectors.toMap(Function.identity(), x -> new ArrayList<>()));
+            Map<DataInputAssociation, List<Transition>> inputs = each.getDataInputAssociations().stream()
+            		.collect(Collectors.toMap(Function.identity(), x -> new ArrayList<>()));
+            int inputSetIndex = 0;
+            for (List<DataInputAssociation> inputSet : inputSets) {
+            	int outputSetIndex = 0;
+            	for (List<DataOutputAssociation> outputSet : outputSets) {
+                    Transition subpageTransition = builder.addTransition(activityPage, name + inputSetIndex + "_" + outputSetIndex);
                     Set<String> dataInputs = inputSet.stream()
                             .map(assoc -> findKnownParent(getReferenceIds(assoc, SourceRef.class).get(0)))
                             .map(source -> bpmn.getModelElementById(source))
@@ -287,33 +285,51 @@ public class CompilerApp {
                             .filter(output -> !dataInputs.contains(output))
                             .collect(Collectors.toSet());
                     if (createObjects.size() > 0) {
-                        String countVariables = createObjects.stream().map(object -> object + "Count").collect(Collectors.joining(",\n"));
-                        String idVariables = createObjects.stream().map(object -> object + "Id").collect(Collectors.joining(",\n"));
-                        String idGeneration = createObjects.stream().map(object -> "String.concat[\"" + object + "\", Int.toString(" + object + "Count)]").collect(Collectors.joining(",\n"));
-                        subpageTransition.getCode().setText(String.format(
-                                "input (%s);\n"
-                                        + "output (%s);\n"
-                                        + "action (%s);",
-                                countVariables,
-                                idVariables,
-                                idGeneration));
-                        createObjects.forEach(object -> {
-                            PlaceNode caseTokenPlace = builder.addFusionPlace(activityPage, object + " Count", "INT", "1`0", object + "Count");
-                            builder.addArc(activityPage, caseTokenPlace, subpageTransition, object + "Count");
-                            builder.addArc(activityPage, subpageTransition, caseTokenPlace, object + "Count + 1");
-                        });
+                    	attachObjectCreationCounters(subpageTransition, createObjects);
                     }
-                    translateDataAssociations(node, outputSet, inputSet);
+                    inputSet.forEach(input -> inputs.get(input).add(subpageTransition));
+                    outputSet.forEach(output -> outputs.get(output).add(subpageTransition));
                     subpageTransitions.add(subpageTransition);
+                    outputSetIndex++;
                 }
+                inputSetIndex++;
             }
-            subpages.putIfAbsent(each.getId(), new SubpageElement(each.getId(), activityPage, node, subpageTransitions));
-            idsToNodes.put(each.getId(), node);
+            SubpageElement subPage = new SubpageElement(each.getId(), activityPage, mainPageTransition, subpageTransitions);
+            subpages.putIfAbsent(each.getId(), subPage);
+            idsToNodes.put(each.getId(), mainPageTransition);
+            translateDataAssociations(subPage, outputs, inputs);
         });
     }
     
-    private String normalizeActivityName(String name) {
+    private void attachObjectCreationCounters(Transition transition, Set<String> createObjects) {
+        String countVariables = createObjects.stream().map(object -> object + "Count").collect(Collectors.joining(",\n"));
+        String idVariables = createObjects.stream().map(object -> object + "Id").collect(Collectors.joining(",\n"));
+        String idGeneration = createObjects.stream().map(object -> "String.concat[\"" + object + "\", Int.toString(" + object + "Count)]").collect(Collectors.joining(",\n"));
+        Page page = transition.getPage();
+        transition.getCode().setText(String.format(
+                "input (%s);\n"
+                        + "output (%s);\n"
+                        + "action (%s);",
+                countVariables,
+                idVariables,
+                idGeneration));
+        createObjects.forEach(object -> {
+            PlaceNode caseTokenPlace = builder.addFusionPlace(page, object + " Count", "INT", "1`0", object + "Count");
+            builder.addArc(page, caseTokenPlace, transition, object + "Count");
+            builder.addArc(page, transition, caseTokenPlace, object + "Count + 1");
+        });
+    }
+    
+    private static String normalizeActivityName(String name) {
     	return name.replace('\n', ' ');
+    }
+    
+    private static String dataElementId(ModelElementInstance element) {
+        if (element instanceof DataObjectReference) {
+            return ((DataObjectReference)element).getDataObject().getName().trim().replaceAll("\\s", "");
+        } else {
+            return ((DataStoreReference)element).getDataStore().getName().trim().replaceAll("\\s", "");
+        }
     }
     
     private void translateEvents() {
@@ -322,14 +338,19 @@ public class CompilerApp {
         	String name = each.getName();
         	Page eventPage = builder.addPage(petriNet, normalizeActivityName(name));
         	Transition subpageTransition = builder.addTransition(eventPage, name);
-            Instance node = builder.createSubPageTransition(eventPage, mainPage, name);
-            subpages.put(each.getId(), new SubpageElement(each.getId(), eventPage, node, Arrays.asList(subpageTransition)));
+            Instance mainPageTransition = builder.createSubPageTransition(eventPage, mainPage, name);
+            SubpageElement subPage = new SubpageElement(each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
+            subpages.put(each.getId(), subPage);
             
             Place caseTokenPlace = builder.addPlace(eventPage, "Case Count", "INT", "1`0");
             builder.addArc(eventPage, caseTokenPlace, subpageTransition, "count");
             builder.addArc(eventPage, subpageTransition, caseTokenPlace, "count + 1");
 
-            //TODO all is using case count?
+            /* 
+             * TODO all data outputs of event are using case count, should dedicated counters be created
+             * Use Case: When the input event creates a data object that can also be created by a task
+             * Then they should both use the same counter, one for the data object, and not the case counter
+             */
             List<String> ids = each.getDataOutputAssociations().stream()
                     .map(assoc -> {
                         String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
@@ -349,62 +370,64 @@ public class CompilerApp {
                 idVariables,
                 idGeneration));
             
-            
-        	idsToNodes.put(each.getId(), node);
-        	translateDataAssociations(node, each.getDataOutputAssociations(), Collections.emptyList());
+            Map<DataOutputAssociation, List<Transition>> outputs = new HashMap<>();
+            each.getDataOutputAssociations().forEach(assoc -> outputs.put(assoc, Arrays.asList(subpageTransition)));
+        	idsToNodes.put(each.getId(), mainPageTransition);
+        	translateDataAssociations(subPage, outputs, Collections.emptyMap());
         });
     }
     
-    private void translateDataAssociations(Node node, Collection<DataOutputAssociation> outputs, Collection<DataInputAssociation> inputs) {
-        Map<Node, Arc> outgoingArcs = new HashMap<>();
-        outputs.forEach(assoc -> {
+    private void translateDataAssociations(SubpageElement subPage, Map<DataOutputAssociation, List<Transition>> outputs, Map<DataInputAssociation, List<Transition>> inputs) {
+    	Instance mainPageTransition = subPage.mainTransition;
+    	Map<Node, Arc> outgoingArcs = new HashMap<>();
+        outputs.forEach((assoc, transitions) -> {
         	String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
         	ItemAwareElement dataObject = bpmn.getModelElementById(target);
-        	String annotation;
-        	if(dataObject instanceof DataObjectReference) {
-                String dataType = ((DataObjectReference) dataObject).getDataObject().getName().replaceAll("\\s", "_");
-            	String dataState = dataObject.getDataState().getName();
-            	annotation = "{id = "+dataType+"Id, caseId = caseId, state = "+dataObjectStateToNetColor(dataState)+"}";
-        	} else if (dataObject instanceof  DataStoreReference){
-                String dataType = ((DataStoreReference) dataObject).getDataStore().getName().replaceAll("\\s", "_");
-        		annotation = dataType + "Id";
-        	} else {
-        	    annotation = "UNKNOWN";
-            }
-        	outgoingArcs.computeIfAbsent(idsToNodes.get(target), targetNode -> {
-    			Arc arc = builder.addArc(mainPage, node, targetNode, "");
-    			arcsToAnnotations.put(arc, annotation);
+        	String annotation = annotationForDataFlow(dataObject);
+        	Node targetNode = idsToNodes.get(target);
+        	outgoingArcs.computeIfAbsent(targetNode, _targetNode -> {
+    			Arc arc = builder.addArc(mainPage, mainPageTransition, _targetNode, "");
     			return arc;
     		});
+        	transitions.forEach(subPageTransition -> {
+        		builder.addArc(subPage.page, subPageTransition, subPage.refPlaceFor((Place) targetNode), annotation);
+        	});
         });
         Map<Node, Arc> ingoingArcs = new HashMap<>();
-        inputs.forEach(assoc -> {
+        inputs.forEach((assoc, transitions) -> {
         	String source = findKnownParent(getReferenceIds(assoc, SourceRef.class).get(0));
             ItemAwareElement dataObject = bpmn.getModelElementById(source);
-            String annotation;
-            if(dataObject instanceof DataObjectReference) {
-                // TODO: Add arc inscription for data objects;
-                String dataType = ((DataObjectReference) dataObject).getDataObject().getName().replaceAll("\\s", "_");
-                String dataState = dataObject.getDataState().getName();
-                annotation = "{id = "+dataType+"Id, caseId = caseId, state = "+dataObjectStateToNetColor(dataState)+"}";
-            } else if (dataObject instanceof  DataStoreReference){
-                String dataType = ((DataStoreReference) dataObject).getDataStore().getName().replaceAll("\\s", "_");
-                annotation = dataType + "Id";
-            } else {
-                annotation = "UNKNOWN";
-            }
-    		ingoingArcs.computeIfAbsent(idsToNodes.get(source), sourceNode -> {
-    			Arc arc = builder.addArc(mainPage, sourceNode, node, "");
-                arcsToAnnotations.put(arc, annotation);
+            String annotation = annotationForDataFlow(dataObject);
+            Node sourceNode = idsToNodes.get(source);
+    		ingoingArcs.computeIfAbsent(sourceNode, _sourceNode -> {
+    			Arc arc = builder.addArc(mainPage, _sourceNode, mainPageTransition, "");
     			return arc;
     		});
+        	transitions.forEach(subPageTransition -> {
+        		builder.addArc(subPage.page, subPage.refPlaceFor((Place) sourceNode), subPageTransition, annotation);
+        	});
     		/**Assert that when reading and not writing, the unchanged token is put back*/
     		outgoingArcs.computeIfAbsent(idsToNodes.get(source), targetNode -> {
-    			Arc arc = builder.addArc(mainPage, node, targetNode, "");
-                arcsToAnnotations.put(arc, annotation);
+    			Arc arc = builder.addArc(mainPage, mainPageTransition, targetNode, "");        	
+            	transitions.forEach(subPageTransition -> {
+            		builder.addArc(subPage.page, subPageTransition, subPage.refPlaceFor((Place) targetNode), annotation);
+            	});
     			return arc;
     		});
         });
+    }
+    
+    private String annotationForDataFlow(ItemAwareElement dataObject) {
+        if(dataObject instanceof DataObjectReference) {
+            String dataType = ((DataObjectReference) dataObject).getDataObject().getName().replaceAll("\\s", "_");
+            String dataState = dataObject.getDataState().getName();
+            return "{id = "+dataType+"Id, caseId = caseId, state = "+dataObjectStateToNetColor(dataState)+"}";
+        } else if (dataObject instanceof  DataStoreReference){
+            String dataType = ((DataStoreReference) dataObject).getDataStore().getName().replaceAll("\\s", "_");
+            return dataType + "Id";
+        } else {
+            return "UNKNOWN";
+        }
     }
     
     private void translateGateways() {
@@ -419,51 +442,42 @@ public class CompilerApp {
     private void translateControlFlow() {
         Collection<SequenceFlow> sequenceFlows = bpmn.getModelElementsByType(SequenceFlow.class);
         sequenceFlows.forEach(each -> {
-        	Node source = idsToNodes.get(each.getSource().getId());
-        	Node target = idsToNodes.get(each.getTarget().getId());
+        	String sourceId = each.getSource().getId();
+        	String targetId = each.getTarget().getId();
+        	Node source = idsToNodes.get(sourceId);
+        	Node target = idsToNodes.get(targetId);
+        	//System.out.println(source.getName().asString()+" -> "+target.getName().asString());
         	if(isPlace(source) || isPlace(target)) {
-            	arcsToAnnotations.put(builder.addArc(mainPage, source, target, ""), "caseId");
+        		builder.addArc(mainPage, source, target, "");
+        		if(!isPlace(target)) {
+        			SubpageElement subPage = subpages.get(targetId);
+        			subPage.subpageTransitions.forEach(transition -> {
+            			builder.addArc(subPage.page, subPage.refPlaceFor((Place) source), transition, "caseId");
+        			});
+        		}
+        		if(!isPlace(source)) {
+        			SubpageElement subPage = subpages.get(sourceId);
+        			subPage.subpageTransitions.forEach(transition -> {
+            			builder.addArc(subPage.page, transition, subPage.refPlaceFor((Place) target), "caseId");
+        			});
+        		}
         	} else {
-            	Node place = builder.addPlace(mainPage, null, "CaseID");
-            	arcsToAnnotations.put(builder.addArc(mainPage, source, place, ""), "caseId");
-            	arcsToAnnotations.put(builder.addArc(mainPage, place, target, ""), "caseId");
+            	Place place = builder.addPlace(mainPage, null, "CaseID");
+            	
+            	builder.addArc(mainPage, source, place, "");
+       			SubpageElement sourceSubPage = subpages.get(sourceId);
+    			sourceSubPage.subpageTransitions.forEach(transition -> {
+        			builder.addArc(sourceSubPage.page, transition, sourceSubPage.refPlaceFor(place), "caseId");
+    			});
+    			
+            	builder.addArc(mainPage, place, target, "");
+    			SubpageElement targetSubPage = subpages.get(targetId);
+    			targetSubPage.subpageTransitions.forEach(transition -> {
+        			builder.addArc(targetSubPage.page, targetSubPage.refPlaceFor(place), transition, "caseId");
+    			});
         	}
         });
     }
-    
-    
-    private void populateSubpages() {
-		subpages.forEach((id, subpage) -> {
-			Map<Place, RefPlace> existingRefs = new HashMap<>();
-			//Incoming
-			subpage.mainTransition.getTargetArc().forEach(sourceArc -> {
-				Place sourcePlace_ = (Place) sourceArc.getSource();
-				RefPlace copyPlace = existingRefs.computeIfAbsent(sourcePlace_, sourcePlace -> builder.addReferencePlace(
-					subpage.page, 
-					sourcePlace.getName().asString(), 
-					sourcePlace.getSort().getText(), 
-					"", 
-					sourcePlace, 
-					subpage.mainTransition));
-				subpage.subpageTransitions.forEach(subpageTransition ->
-				builder.addArc(subpage.page, copyPlace, subpageTransition, arcsToAnnotations.getOrDefault(sourceArc, "TBD")));
-			});
-			
-			//Outgoing
-			subpage.mainTransition.getSourceArc().forEach(sourceArc -> {
-				Place targetPlace_ = (Place) sourceArc.getTarget();
-				RefPlace copyPlace = existingRefs.computeIfAbsent(targetPlace_, targetPlace -> builder.addReferencePlace(
-					subpage.page, 
-					targetPlace.getName().asString(), 
-					targetPlace.getSort().getText(), 
-					"", 
-					targetPlace, 
-					subpage.mainTransition));
-				subpage.subpageTransitions.forEach(subpageTransition ->
-				builder.addArc(subpage.page, subpageTransition, copyPlace, arcsToAnnotations.getOrDefault(sourceArc, "TBD")));
-			});
-		});
-	}
     
     private static <T extends ModelElementInstance> List<String> getReferenceIds(DataAssociation association, Class<T> referenceClass) {
 		return association.getChildElementsByType(referenceClass).stream()
@@ -495,12 +509,26 @@ public class CompilerApp {
     	Page page;
     	Instance mainTransition;
     	List<Transition> subpageTransitions;
+    	Map<Place, RefPlace> placeReferences;
     	public SubpageElement(String id, Page page, Instance mainTransition, List<Transition> subpageTransitions) {
 			this.id = id;
 			this.page = page;
 			this.mainTransition = mainTransition;
 			this.subpageTransitions = subpageTransitions;
+			this.placeReferences = new HashMap<>();
 		}
+    	
+    	RefPlace refPlaceFor(Place place) {
+    		return placeReferences.computeIfAbsent(place, sourcePlace -> {
+    			return builder.addReferencePlace(
+					page, 
+					sourcePlace.getName().asString(), 
+					sourcePlace.getSort().getText(), 
+					"", 
+					sourcePlace, 
+					mainTransition);
+    		});
+    	}
     }
     
 

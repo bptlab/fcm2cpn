@@ -28,7 +28,7 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/org.cpntools.accesscpn.model_2.2.0.jar"/>
+	<classpathentry kind="lib" path="lib/org.cpntools.accesscpn.model_2.2.0.jar" sourcepath="C:/Users/Leon Bein/programming/HIWI/cpnToolSources"/>
 	<classpathentry kind="lib" path="lib/org.cpntools.accesscpn.model.exporter_2.2.0.jar"/>
 	<classpathentry kind="lib" path="lib/org.cpntools.accesscpn.model.importer_2.2.0.jar"/>
 	<classpathentry kind="lib" path="lib/org.cpntools.accesscpn.engine.highlevel_2.2.0.jar"/>
