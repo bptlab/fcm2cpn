@@ -19,16 +19,26 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.impl.instance.SourceRef;
 import org.camunda.bpm.model.bpmn.impl.instance.TargetRef;
 import org.camunda.bpm.model.bpmn.instance.Activity;
-import org.camunda.bpm.model.bpmn.instance.CatchEvent;
+import org.camunda.bpm.model.bpmn.instance.BoundaryEvent;
 import org.camunda.bpm.model.bpmn.instance.DataAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
@@ -41,6 +51,7 @@ import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.Gateway;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
+import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Instance;
@@ -58,9 +69,6 @@ import org.cpntools.accesscpn.model.cpntypes.CpntypesFactory;
 import org.cpntools.accesscpn.model.exporter.DOMGenerator;
 import org.cpntools.accesscpn.model.util.BuildCPNUtil;
 
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
-
 
 public class CompilerApp {
 
@@ -74,6 +82,8 @@ public class CompilerApp {
 	private PetriNet petriNet;
 	private Map<String, SubpageElement> subpages;
 	private Map<String, Node> idsToNodes;
+	
+	private List<Runnable> deferred;
 
     public static void main(final String[] args) throws Exception {
         System.out.println(licenseInfo);
@@ -111,6 +121,7 @@ public class CompilerApp {
         this.builder = new BuildCPNUtil();
         this.subpages = new HashMap<>();
         this.idsToNodes = new HashMap<>();
+        this.deferred = new ArrayList<>();
 	}
     
     private static BpmnModelInstance loadBPMNFile(File bpmnFile) {
@@ -128,6 +139,7 @@ public class CompilerApp {
         translateEvents();
         translateGateways();
         translateControlFlow();
+        runDeferredCalls();
         layout();
         System.out.println("DONE");
         return petriNet;
@@ -318,7 +330,7 @@ public class CompilerApp {
     private void attachObjectCreationCounters(Transition transition, Set<String> createObjects) {
         String countVariables = createObjects.stream().map(CompilerApp::dataObjectCount).collect(Collectors.joining(",\n"));
         String idVariables = createObjects.stream().map(CompilerApp::dataObjectId).collect(Collectors.joining(",\n"));
-        String idGeneration = createObjects.stream().map(object -> "String.concat[\"" + object + "\", Int.toString(" + object + "Count)]").collect(Collectors.joining(",\n"));
+        String idGeneration = createObjects.stream().map(object -> "String.concat[\"" + object + "\", Int.toString(" + dataObjectCount(object) +")]").collect(Collectors.joining(",\n"));
         Page page = transition.getPage();
         transition.getCode().setText(String.format(
                 "input (%s);\n"
@@ -347,12 +359,13 @@ public class CompilerApp {
     }
     
     private void translateEvents() {
-    	translateCatchEvents();
+    	translateStartEvents();
     	translateEndEvents();
+    	translateBoundaryEvents();
     }
-    
-    private void translateCatchEvents() {
-        Collection<CatchEvent> events = bpmn.getModelElementsByType(CatchEvent.class);
+
+	private void translateStartEvents() {
+        Collection<StartEvent> events = bpmn.getModelElementsByType(StartEvent.class);
         events.forEach(each -> {
         	String name = each.getName();
         	Page eventPage = builder.addPage(petriNet, normalizeActivityName(name));
@@ -402,6 +415,34 @@ public class CompilerApp {
         	idsToNodes.put(each.getId(), builder.addPlace(mainPage, each.getName(), "CaseID"));
         });
     }
+
+    
+    private void translateBoundaryEvents() {
+    	//TODO only interrupting is supported
+        Collection<BoundaryEvent> events = bpmn.getModelElementsByType(BoundaryEvent.class);
+        events.forEach(each -> {
+        	String name = each.getName();
+        	Page eventPage = builder.addPage(petriNet, normalizeActivityName(name));
+        	Transition subpageTransition = builder.addTransition(eventPage, name);
+            Instance mainPageTransition = builder.createSubPageTransition(eventPage, mainPage, name);
+            SubpageElement subPage = new SubpageElement(each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
+            subpages.put(each.getId(), subPage);
+        	idsToNodes.put(each.getId(), mainPageTransition);
+            
+        	String attachedId = each.getAttachedTo().getId();
+        	Node attachedNode = idsToNodes.get(attachedId);
+        	assert !isPlace(attachedNode);
+        	defer(() -> {
+            	attachedNode.getTargetArc().stream()
+	    			.map(arc -> arc.getPlaceNode())
+	    			.filter(place -> place.getSort().getText().equals("CaseID"))
+	    			.forEach(place -> {
+	    				builder.addArc(eventPage, subPage.refPlaceFor((Place) place), subpageTransition, "caseId");
+	    				builder.addArc(mainPage, place, mainPageTransition, "");
+	    			});
+        	});
+        });
+	}
     
     private void translateDataAssociations(SubpageElement subPage, Map<DataOutputAssociation, List<Transition>> outputs, Map<DataInputAssociation, List<Transition>> inputs) {
     	Instance mainPageTransition = subPage.mainTransition;
@@ -529,6 +570,14 @@ public class CompilerApp {
     
     private static boolean isPlace(Node node) {
     	return node instanceof Place;
+    }
+    
+    private void defer(Runnable r) {
+    	deferred.add(r);
+    }
+    
+    private void runDeferredCalls() {
+    	deferred.forEach(Runnable::run);
     }
     
     private void layout() {
