@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -48,8 +49,10 @@ import org.camunda.bpm.model.bpmn.instance.DataState;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.EndEvent;
+import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
 import org.camunda.bpm.model.bpmn.instance.Gateway;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
+import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
@@ -498,11 +501,22 @@ public class CompilerApp {
     }
     
     private void translateGateways() {
-    	//TODO only works for Xor Gateways
-        Collection<Gateway> gateways = bpmn.getModelElementsByType(Gateway.class);
-        gateways.forEach(each -> {
+        Collection<ExclusiveGateway> exclusiveGateways = bpmn.getModelElementsByType(ExclusiveGateway.class);
+        exclusiveGateways.forEach(each -> {
         	Node node = builder.addPlace(mainPage, each.getName(), "CaseID");
         	idsToNodes.put(each.getId(), node);
+        });
+
+        Collection<ParallelGateway> parallelGateways = bpmn.getModelElementsByType(ParallelGateway.class);
+        parallelGateways.forEach(each -> {        	
+        	String name = each.getName();
+        	if(name == null || name.equals(""))name = each.getId();
+	    	Page gatewayPage = builder.addPage(petriNet, name);
+	    	Transition subpageTransition = builder.addTransition(gatewayPage, name);
+	        Instance mainPageTransition = builder.createSubPageTransition(gatewayPage, mainPage, name);
+	        SubpageElement subPage = new SubpageElement(each.getId(), gatewayPage, mainPageTransition, Arrays.asList(subpageTransition));
+	        subpages.put(each.getId(), subPage);
+	    	idsToNodes.put(each.getId(), mainPageTransition);
         });
     }
     
@@ -522,30 +536,38 @@ public class CompilerApp {
         		builder.addArc(mainPage, source, target, "");
         		if(!isPlace(target)) {
         			SubpageElement subPage = subpages.get(targetId);
-        			subPage.subpageTransitions.forEach(transition -> {
-            			builder.addArc(subPage.page, subPage.refPlaceFor((Place) source), transition, "caseId");
-        			});
+        			if(Objects.nonNull(subPage)) {
+	        			subPage.subpageTransitions.forEach(transition -> {
+	            			builder.addArc(subPage.page, subPage.refPlaceFor((Place) source), transition, "caseId");
+	        			});
+        			}
         		}
         		if(!isPlace(source)) {
         			SubpageElement subPage = subpages.get(sourceId);
-        			subPage.subpageTransitions.forEach(transition -> {
-            			builder.addArc(subPage.page, transition, subPage.refPlaceFor((Place) target), "caseId");
-        			});
+        			if(Objects.nonNull(subPage)) {
+            			subPage.subpageTransitions.forEach(transition -> {
+                			builder.addArc(subPage.page, transition, subPage.refPlaceFor((Place) target), "caseId");
+            			});
+        			}
         		}
         	} else {
             	Place place = builder.addPlace(mainPage, null, "CaseID");
             	
             	builder.addArc(mainPage, source, place, "");
        			SubpageElement sourceSubPage = subpages.get(sourceId);
-    			sourceSubPage.subpageTransitions.forEach(transition -> {
-        			builder.addArc(sourceSubPage.page, transition, sourceSubPage.refPlaceFor(place), "caseId");
-    			});
-    			
+       			if(Objects.nonNull(sourceSubPage)) {
+        			sourceSubPage.subpageTransitions.forEach(transition -> {
+            			builder.addArc(sourceSubPage.page, transition, sourceSubPage.refPlaceFor(place), "caseId");
+        			});
+       			}
+
             	builder.addArc(mainPage, place, target, "");
     			SubpageElement targetSubPage = subpages.get(targetId);
-    			targetSubPage.subpageTransitions.forEach(transition -> {
-        			builder.addArc(targetSubPage.page, targetSubPage.refPlaceFor(place), transition, "caseId");
-    			});
+    			if(Objects.nonNull(targetSubPage)) {
+        			targetSubPage.subpageTransitions.forEach(transition -> {
+            			builder.addArc(targetSubPage.page, targetSubPage.refPlaceFor(place), transition, "caseId");
+        			});
+    			}
         	}
         });
     }
