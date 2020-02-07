@@ -32,7 +32,6 @@ The CPN has two hirachy levels: on the top-level all fragments and their connect
 * We assume that the input is provided as a single BPMN file (you can, for example use the [Camunda Modeler](https://camunda.com/download/modeler/) or [Signavio](https://signavio.com))
 * We assume that the fragments are object life cycle conform, so no additional input is required
 * We assume that input- and output-sets are not modeled explicitly, but that all possible combinations are desired (e.g., an activity *translate text* may require a job object in state *accepted* or *started* and a translation object in state *required* or *in_progress*. This means the activity has four implicit input sets: job[accepted], translation[required] and job[started], translation[required] and job[accepted], translation[in_progress] and job[started], translation[in_progress] and)
-* Furthermore, we assume that each data object can only be created by a single activity or event.
 
 ### Sources
 
