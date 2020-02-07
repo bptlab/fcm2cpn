@@ -1,0 +1,4410 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<workspaceElements>
+<generator format="6" tool="Access/CPN" version="1.0.0"/>
+<cpnet>
+<globbox>
+<block id="idblock0">
+<id>Types</id>
+<color id="id1">
+<id>UNIT</id>
+<unit/>
+</color>
+<color id="id2">
+<id>INT</id>
+<int/>
+</color>
+<color id="id3">
+<id>BOOL</id>
+<bool/>
+</color>
+<color id="id4">
+<id>STRING</id>
+<string/>
+</color>
+<color id="id5">
+<id>CaseID</id>
+<string/>
+</color>
+<color id="id6">
+<id>DATA_STORE</id>
+<string/>
+</color>
+<color id="id7">
+<id>STATE</id>
+<enum>
+<id>DENIED</id>
+<id>CREATED</id>
+<id>RECEIVED</id>
+<id>APPROVED</id>
+</enum>
+</color>
+<color id="id8">
+<id>DATA_OBJECT</id>
+<record>
+<recordfield>
+<id>id</id>
+<id>STRING</id>
+</recordfield>
+<recordfield>
+<id>caseId</id>
+<id>STRING</id>
+</recordfield>
+<recordfield>
+<id>state</id>
+<id>STATE</id>
+</recordfield>
+</record>
+</color>
+</block>
+<block id="idblock1">
+<id>Variables</id>
+<var id="id9">
+<type>
+<id>INT</id>
+</type>
+<id>count</id>
+</var>
+<var id="id10">
+<type>
+<id>CaseID</id>
+</type>
+<id>caseId</id>
+</var>
+<var id="id12">
+<type>
+<id>STRING</id>
+</type>
+<id>requestId</id>
+</var>
+<var id="id13">
+<type>
+<id>INT</id>
+</type>
+<id>requestCount</id>
+</var>
+<var id="id15">
+<type>
+<id>STRING</id>
+</type>
+<id>travel_documentsId</id>
+</var>
+<var id="id16">
+<type>
+<id>INT</id>
+</type>
+<id>travel_documentsCount</id>
+</var>
+<var id="id18">
+<type>
+<id>STRING</id>
+</type>
+<id>flightId</id>
+</var>
+<var id="id19">
+<type>
+<id>INT</id>
+</type>
+<id>flightCount</id>
+</var>
+<var id="id21">
+<type>
+<id>STRING</id>
+</type>
+<id>accomodationId</id>
+</var>
+<var id="id22">
+<type>
+<id>INT</id>
+</type>
+<id>accomodationCount</id>
+</var>
+<var id="id24">
+<type>
+<id>STRING</id>
+</type>
+<id>budgetId</id>
+</var>
+</block>
+<block id="idblock2">
+<id>Functions</id>
+</block>
+<block id="idblock3">
+<id>Parameters</id>
+</block>
+</globbox>
+<page id="id0">
+<pageattr name="Main Page"/>
+<place id="id11">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>request</text>
+<type id="id11a">
+<posattr x="36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_OBJECT</text>
+</type>
+<initmark id="id11b">
+<posattr x="36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id14">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="117" y="54"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>travel documents</text>
+<type id="id14a">
+<posattr x="153.0" y="30.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_OBJECT</text>
+</type>
+<initmark id="id14b">
+<posattr x="153.0" y="30.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id17">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-500"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>flight</text>
+<type id="id17a">
+<posattr x="36.0" y="-524.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_OBJECT</text>
+</type>
+<initmark id="id17b">
+<posattr x="36.0" y="-524.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id20">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-600"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>accomodation</text>
+<type id="id20a">
+<posattr x="36.0" y="-624.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_OBJECT</text>
+</type>
+<initmark id="id20b">
+<posattr x="36.0" y="-624.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id23">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="604" y="161"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>budget</text>
+<type id="id23a">
+<posattr x="640.0" y="137.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_STORE</text>
+</type>
+<initmark id="id23b">
+<posattr x="640.0" y="137.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>1`"store_budget"</text>
+</initmark>
+</place>
+<trans id="id26">
+<box h="40.0" w="60.0"/>
+<posattr x="100" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Check Budget</text>
+<cond id="id26a">
+<posattr x="64.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id26b">
+<posattr x="136.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id26c">
+<posattr x="136.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id30,id11)(id37,id23)(id150,id145)(id154,id132)" subpage="id25">
+<subpageinfo id="id26e" name="Check Budget">
+<posattr x="64.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>Check Budget</text>
+</subpageinfo>
+</subst>
+</trans>
+<trans id="id44">
+<box h="40.0" w="60.0"/>
+<posattr x="200" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Order goods</text>
+<cond id="id44a">
+<posattr x="164.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id44b">
+<posattr x="236.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id44c">
+<posattr x="236.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id47,id11)(id161,id132)(id165,id163)" subpage="id43">
+<subpageinfo id="id44e" name="Order goods">
+<posattr x="164.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>Order goods</text>
+</subpageinfo>
+</subst>
+</trans>
+<trans id="id52">
+<box h="40.0" w="60.0"/>
+<posattr x="142" y="540"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Pay goods</text>
+<cond id="id52a">
+<posattr x="106.0" y="516.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id52b">
+<posattr x="178.0" y="564.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id52c">
+<posattr x="178.0" y="540.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id55,id23)(id175,id170)(id193,id191)" subpage="id51">
+<subpageinfo id="id52e" name="Pay goods">
+<posattr x="106.0" y="516.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>Pay goods</text>
+</subpageinfo>
+</subst>
+</trans>
+<trans id="id60">
+<box h="40.0" w="60.0"/>
+<posattr x="642" y="512"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Receive goods</text>
+<cond id="id60a">
+<posattr x="606.0" y="488.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id60b">
+<posattr x="678.0" y="536.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id60c">
+<posattr x="678.0" y="512.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id182,id177)(id186,id184)" subpage="id59">
+<subpageinfo id="id60e" name="Receive goods">
+<posattr x="606.0" y="488.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>Receive goods</text>
+</subpageinfo>
+</subst>
+</trans>
+<trans id="id63">
+<box h="40.0" w="60.0"/>
+<posattr x="58" y="433"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Distribute goods</text>
+<cond id="id63a">
+<posattr x="22.0" y="409.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id63b">
+<posattr x="94.0" y="457.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id63c">
+<posattr x="94.0" y="433.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id203,id198)(id206,id126)" subpage="id62">
+<subpageinfo id="id63e" name="Distribute goods">
+<posattr x="22.0" y="409.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>Distribute goods</text>
+</subpageinfo>
+</subst>
+</trans>
+<trans id="id66">
+<box h="40.0" w="60.0"/>
+<posattr x="100" y="-500"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Book travel</text>
+<cond id="id66a">
+<posattr x="64.0" y="-524.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id66b">
+<posattr x="136.0" y="-476.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id66c">
+<posattr x="136.0" y="-500.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id73,id14)(id76,id23)(id79,id17)(id84,id20)(id209,id127)(id219,id214)" subpage="id65">
+<subpageinfo id="id66e" name="Book travel">
+<posattr x="64.0" y="-524.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>Book travel</text>
+</subpageinfo>
+</subst>
+</trans>
+<trans id="id91">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-400"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Choose flight</text>
+<cond id="id91a">
+<posattr x="-36.0" y="-424.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id91b">
+<posattr x="36.0" y="-376.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id91c">
+<posattr x="36.0" y="-400.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id98,id17)(id223,id221)(id240,id235)" subpage="id90">
+<subpageinfo id="id91e" name="Choose flight">
+<posattr x="-36.0" y="-424.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>Choose flight</text>
+</subpageinfo>
+</subst>
+</trans>
+<trans id="id101">
+<box h="40.0" w="60.0"/>
+<posattr x="100" y="-400"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Find accomodation</text>
+<cond id="id101a">
+<posattr x="64.0" y="-424.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id101b">
+<posattr x="136.0" y="-376.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id101c">
+<posattr x="136.0" y="-400.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id108,id20)(id230,id228)(id247,id242)" subpage="id100">
+<subpageinfo id="id101e" name="Find accomodation">
+<posattr x="64.0" y="-424.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>Find accomodation</text>
+</subpageinfo>
+</subst>
+</trans>
+<trans id="id112">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Request received</text>
+<cond id="id112a">
+<posattr x="-36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id112b">
+<posattr x="36.0" y="24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id112c">
+<posattr x="36.0" y="0.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id117,id11)(id147,id145)" subpage="id110">
+<subpageinfo id="id112e" name="Request received">
+<posattr x="-36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>Request received</text>
+</subpageinfo>
+</subst>
+</trans>
+<trans id="id121">
+<box h="40.0" w="60.0"/>
+<posattr x="100" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Travel required</text>
+<cond id="id121a">
+<posattr x="64.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id121b">
+<posattr x="136.0" y="24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id121c">
+<posattr x="136.0" y="0.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id251,id249)" subpage="id119">
+<subpageinfo id="id121e" name="Travel required">
+<posattr x="64.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>Travel required</text>
+</subpageinfo>
+</subst>
+</trans>
+<place id="id125">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="320" y="750"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Request denied</text>
+<type id="id125a">
+<posattr x="356.0" y="726.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id125b">
+<posattr x="356.0" y="726.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id126">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="989" y="759"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Request successful</text>
+<type id="id126a">
+<posattr x="1025.0" y="735.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id126b">
+<posattr x="1025.0" y="735.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id127">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="445" y="184"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Travel booked</text>
+<type id="id127a">
+<posattr x="481.0" y="160.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id127b">
+<posattr x="481.0" y="160.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id128">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-900"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Travel denied</text>
+<type id="id128a">
+<posattr x="36.0" y="-924.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id128b">
+<posattr x="36.0" y="-924.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<trans id="id131">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-800"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Insufficient Budget</text>
+<cond id="id131a">
+<posattr x="-36.0" y="-824.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id131b">
+<posattr x="36.0" y="-776.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id131c">
+<posattr x="36.0" y="-800.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id212,id128)(id256,id214)" subpage="id129">
+<subpageinfo id="id131e" name="Insufficient Budget">
+<posattr x="-36.0" y="-824.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>Insufficient Budget</text>
+</subpageinfo>
+</subst>
+</trans>
+<place id="id132">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="23" y="792"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id132a">
+<posattr x="59.0" y="768.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id132b">
+<posattr x="59.0" y="768.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<trans id="id135">
+<box h="40.0" w="60.0"/>
+<posattr x="543" y="503"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>ExclusiveGateway_0ejbjft</text>
+<cond id="id135a">
+<posattr x="507.0" y="479.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id135b">
+<posattr x="579.0" y="527.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id135c">
+<posattr x="579.0" y="503.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id168,id163)(id172,id170)(id179,id177)" subpage="id133">
+<subpageinfo id="id135e" name="ExclusiveGateway_0ejbjft">
+<posattr x="507.0" y="479.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>ExclusiveGateway_0ejbjft</text>
+</subpageinfo>
+</subst>
+</trans>
+<trans id="id138">
+<box h="40.0" w="60.0"/>
+<posattr x="165" y="618"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>ExclusiveGateway_1npupoo</text>
+<cond id="id138a">
+<posattr x="129.0" y="594.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id138b">
+<posattr x="201.0" y="642.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id138c">
+<posattr x="201.0" y="618.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id189,id184)(id196,id191)(id200,id198)" subpage="id136">
+<subpageinfo id="id138e" name="ExclusiveGateway_1npupoo">
+<posattr x="129.0" y="594.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>ExclusiveGateway_1npupoo</text>
+</subpageinfo>
+</subst>
+</trans>
+<trans id="id141">
+<box h="40.0" w="60.0"/>
+<posattr x="100" y="-600"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>ExclusiveGateway_1cbhr24</text>
+<cond id="id141a">
+<posattr x="64.0" y="-624.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id141b">
+<posattr x="136.0" y="-576.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id141c">
+<posattr x="136.0" y="-600.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id216,id214)(id226,id221)(id233,id228)" subpage="id139">
+<subpageinfo id="id141e" name="ExclusiveGateway_1cbhr24">
+<posattr x="64.0" y="-624.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>ExclusiveGateway_1cbhr24</text>
+</subpageinfo>
+</subst>
+</trans>
+<trans id="id144">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>ExclusiveGateway_06n0a94</text>
+<cond id="id144a">
+<posattr x="-36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id144b">
+<posattr x="36.0" y="-176.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id144c">
+<posattr x="36.0" y="-200.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+<subst portsock="(id237,id235)(id244,id242)(id254,id249)" subpage="id142">
+<subpageinfo id="id144e" name="ExclusiveGateway_06n0a94">
+<posattr x="-36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>ExclusiveGateway_06n0a94</text>
+</subpageinfo>
+</subst>
+</trans>
+<place id="id145">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="300" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id145a">
+<posattr x="336.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id145b">
+<posattr x="336.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<trans id="id157">
+<box h="40.0" w="60.0"/>
+<posattr x="277" y="497"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<cond id="id157a">
+<posattr x="241.0" y="473.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id157b">
+<posattr x="313.0" y="521.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id157c">
+<posattr x="313.0" y="497.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+</trans>
+<place id="id163">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="499" y="606"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id163a">
+<posattr x="535.0" y="582.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id163b">
+<posattr x="535.0" y="582.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id170">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="473" y="604"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id170a">
+<posattr x="509.0" y="580.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id170b">
+<posattr x="509.0" y="580.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id177">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="494" y="539"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id177a">
+<posattr x="530.0" y="515.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id177b">
+<posattr x="530.0" y="515.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id184">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="628" y="744"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id184a">
+<posattr x="664.0" y="720.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id184b">
+<posattr x="664.0" y="720.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id191">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="648" y="755"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id191a">
+<posattr x="684.0" y="731.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id191b">
+<posattr x="684.0" y="731.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id198">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="982" y="584"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id198a">
+<posattr x="1018.0" y="560.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id198b">
+<posattr x="1018.0" y="560.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id214">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-700"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id214a">
+<posattr x="36.0" y="-724.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id214b">
+<posattr x="36.0" y="-724.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id221">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="200" y="-500"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id221a">
+<posattr x="236.0" y="-524.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id221b">
+<posattr x="236.0" y="-524.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id228">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="300" y="-500"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id228a">
+<posattr x="336.0" y="-524.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id228b">
+<posattr x="336.0" y="-524.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id235">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-300"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id235a">
+<posattr x="36.0" y="-324.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id235b">
+<posattr x="36.0" y="-324.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id242">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="-300"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id242a">
+<posattr x="136.0" y="-324.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id242b">
+<posattr x="136.0" y="-324.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<place id="id249">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="400" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id249a">
+<posattr x="436.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id249b">
+<posattr x="436.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+</place>
+<arc id="id29" order="1" orientation="TtoP">
+<transend idref="id26"/>
+<placeend idref="id11"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id29a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id33" order="1" orientation="PtoT">
+<transend idref="id26"/>
+<placeend idref="id11"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id33a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id36" order="1" orientation="PtoT">
+<transend idref="id26"/>
+<placeend idref="id23"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id36a">
+<posattr x="352.0" y="30.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id40" order="1" orientation="TtoP">
+<transend idref="id26"/>
+<placeend idref="id23"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id40a">
+<posattr x="352.0" y="30.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id46" order="1" orientation="PtoT">
+<transend idref="id44"/>
+<placeend idref="id11"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id46a">
+<posattr x="100.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id49" order="1" orientation="TtoP">
+<transend idref="id44"/>
+<placeend idref="id11"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id49a">
+<posattr x="100.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id54" order="1" orientation="TtoP">
+<transend idref="id52"/>
+<placeend idref="id23"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id54a">
+<posattr x="373.0" y="350.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id57" order="1" orientation="PtoT">
+<transend idref="id52"/>
+<placeend idref="id23"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id57a">
+<posattr x="373.0" y="350.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id72" order="1" orientation="TtoP">
+<transend idref="id66"/>
+<placeend idref="id14"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id72a">
+<posattr x="108.5" y="-223.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id75" order="1" orientation="TtoP">
+<transend idref="id66"/>
+<placeend idref="id23"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id75a">
+<posattr x="352.0" y="-169.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id78" order="1" orientation="PtoT">
+<transend idref="id66"/>
+<placeend idref="id17"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id78a">
+<posattr x="50.0" y="-500.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id81" order="1" orientation="TtoP">
+<transend idref="id66"/>
+<placeend idref="id17"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id81a">
+<posattr x="50.0" y="-500.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id83" order="1" orientation="PtoT">
+<transend idref="id66"/>
+<placeend idref="id20"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id83a">
+<posattr x="50.0" y="-550.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id86" order="1" orientation="TtoP">
+<transend idref="id66"/>
+<placeend idref="id20"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id86a">
+<posattr x="50.0" y="-550.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id88" order="1" orientation="PtoT">
+<transend idref="id66"/>
+<placeend idref="id23"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id88a">
+<posattr x="352.0" y="-169.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id97" order="1" orientation="TtoP">
+<transend idref="id91"/>
+<placeend idref="id17"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id97a">
+<posattr x="0.0" y="-450.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id107" order="1" orientation="TtoP">
+<transend idref="id101"/>
+<placeend idref="id20"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id107a">
+<posattr x="50.0" y="-500.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id116" order="1" orientation="TtoP">
+<transend idref="id112"/>
+<placeend idref="id11"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id116a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id146" order="1" orientation="TtoP">
+<transend idref="id112"/>
+<placeend idref="id145"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id146a">
+<posattr x="150.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id149" order="1" orientation="PtoT">
+<transend idref="id26"/>
+<placeend idref="id145"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id149a">
+<posattr x="200.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id153" order="1" orientation="TtoP">
+<transend idref="id26"/>
+<placeend idref="id132"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id153a">
+<posattr x="61.5" y="346.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id158" order="1" orientation="PtoT">
+<transend idref="id157"/>
+<placeend idref="id132"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id158a">
+<posattr x="150.0" y="644.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id159" order="1" orientation="TtoP">
+<transend idref="id157"/>
+<placeend idref="id125"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id159a">
+<posattr x="298.5" y="623.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id160" order="1" orientation="PtoT">
+<transend idref="id44"/>
+<placeend idref="id132"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id160a">
+<posattr x="111.5" y="346.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id164" order="1" orientation="TtoP">
+<transend idref="id44"/>
+<placeend idref="id163"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id164a">
+<posattr x="349.5" y="253.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id167" order="1" orientation="PtoT">
+<transend idref="id135"/>
+<placeend idref="id163"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id167a">
+<posattr x="521.0" y="554.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id171" order="1" orientation="TtoP">
+<transend idref="id135"/>
+<placeend idref="id170"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id171a">
+<posattr x="508.0" y="553.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id174" order="1" orientation="PtoT">
+<transend idref="id52"/>
+<placeend idref="id170"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id174a">
+<posattr x="307.5" y="572.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id178" order="1" orientation="TtoP">
+<transend idref="id135"/>
+<placeend idref="id177"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id178a">
+<posattr x="518.5" y="521.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id181" order="1" orientation="PtoT">
+<transend idref="id60"/>
+<placeend idref="id177"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id181a">
+<posattr x="568.0" y="525.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id185" order="1" orientation="TtoP">
+<transend idref="id60"/>
+<placeend idref="id184"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id185a">
+<posattr x="635.0" y="628.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id188" order="1" orientation="PtoT">
+<transend idref="id138"/>
+<placeend idref="id184"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id188a">
+<posattr x="396.5" y="681.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id192" order="1" orientation="TtoP">
+<transend idref="id52"/>
+<placeend idref="id191"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id192a">
+<posattr x="395.0" y="647.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id195" order="1" orientation="PtoT">
+<transend idref="id138"/>
+<placeend idref="id191"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id195a">
+<posattr x="406.5" y="686.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id199" order="1" orientation="TtoP">
+<transend idref="id138"/>
+<placeend idref="id198"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id199a">
+<posattr x="573.5" y="601.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id202" order="1" orientation="PtoT">
+<transend idref="id63"/>
+<placeend idref="id198"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id202a">
+<posattr x="520.0" y="508.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id205" order="1" orientation="TtoP">
+<transend idref="id63"/>
+<placeend idref="id126"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id205a">
+<posattr x="523.5" y="596.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id208" order="1" orientation="TtoP">
+<transend idref="id66"/>
+<placeend idref="id127"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id208a">
+<posattr x="272.5" y="-158.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id211" order="1" orientation="TtoP">
+<transend idref="id131"/>
+<placeend idref="id128"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id211a">
+<posattr x="0.0" y="-850.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id215" order="1" orientation="TtoP">
+<transend idref="id141"/>
+<placeend idref="id214"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id215a">
+<posattr x="50.0" y="-650.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id218" order="1" orientation="PtoT">
+<transend idref="id66"/>
+<placeend idref="id214"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id218a">
+<posattr x="50.0" y="-600.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id222" order="1" orientation="TtoP">
+<transend idref="id91"/>
+<placeend idref="id221"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id222a">
+<posattr x="100.0" y="-450.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id225" order="1" orientation="PtoT">
+<transend idref="id141"/>
+<placeend idref="id221"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id225a">
+<posattr x="150.0" y="-550.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id229" order="1" orientation="TtoP">
+<transend idref="id101"/>
+<placeend idref="id228"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id229a">
+<posattr x="200.0" y="-450.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id232" order="1" orientation="PtoT">
+<transend idref="id141"/>
+<placeend idref="id228"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id232a">
+<posattr x="200.0" y="-550.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id236" order="1" orientation="TtoP">
+<transend idref="id144"/>
+<placeend idref="id235"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id236a">
+<posattr x="0.0" y="-250.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id239" order="1" orientation="PtoT">
+<transend idref="id91"/>
+<placeend idref="id235"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id239a">
+<posattr x="0.0" y="-350.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id243" order="1" orientation="TtoP">
+<transend idref="id144"/>
+<placeend idref="id242"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id243a">
+<posattr x="50.0" y="-250.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id246" order="1" orientation="PtoT">
+<transend idref="id101"/>
+<placeend idref="id242"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id246a">
+<posattr x="100.0" y="-350.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id250" order="1" orientation="TtoP">
+<transend idref="id121"/>
+<placeend idref="id249"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id250a">
+<posattr x="250.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id253" order="1" orientation="PtoT">
+<transend idref="id144"/>
+<placeend idref="id249"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id253a">
+<posattr x="200.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+<arc id="id258" order="1" orientation="PtoT">
+<transend idref="id131"/>
+<placeend idref="id214"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id258a">
+<posattr x="0.0" y="-750.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</annot>
+</arc>
+</page>
+<page id="id25">
+<pageattr name="Check Budget"/>
+<trans id="id27">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Check Budget0_0</text>
+<cond id="id27a">
+<posattr x="-36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id27b">
+<posattr x="36.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id27c">
+<posattr x="36.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+</trans>
+<trans id="id28">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Check Budget0_1</text>
+<cond id="id28a">
+<posattr x="-36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id28b">
+<posattr x="36.0" y="-176.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id28c">
+<posattr x="36.0" y="-200.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+</trans>
+<place id="id30">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>request</text>
+<type id="id30a">
+<posattr x="136.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_OBJECT</text>
+</type>
+<initmark id="id30b">
+<posattr x="136.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="I/O">
+<posattr x="100.0" y="-124.0"/>
+</port>
+</place>
+<place id="id37">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="200" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>budget</text>
+<type id="id37a">
+<posattr x="236.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_STORE</text>
+</type>
+<initmark id="id37b">
+<posattr x="236.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="I/O">
+<posattr x="200.0" y="-124.0"/>
+</port>
+</place>
+<place id="id150">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id150a">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id150b">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="0.0" y="-24.0"/>
+</port>
+</place>
+<place id="id154">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-300"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id154a">
+<posattr x="36.0" y="-324.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id154b">
+<posattr x="36.0" y="-324.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="0.0" y="-324.0"/>
+</port>
+</place>
+<arc id="id31" order="1" orientation="TtoP">
+<transend idref="id28"/>
+<placeend idref="id30"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id31a">
+<posattr x="50.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = requestId , caseId = caseId, state = APPROVED}</text>
+</annot>
+</arc>
+<arc id="id32" order="1" orientation="TtoP">
+<transend idref="id27"/>
+<placeend idref="id30"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id32a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = requestId , caseId = caseId, state = DENIED}</text>
+</annot>
+</arc>
+<arc id="id34" order="1" orientation="PtoT">
+<transend idref="id27"/>
+<placeend idref="id30"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id34a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = requestId , caseId = caseId, state = RECEIVED}</text>
+</annot>
+</arc>
+<arc id="id35" order="1" orientation="PtoT">
+<transend idref="id28"/>
+<placeend idref="id30"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id35a">
+<posattr x="50.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = requestId , caseId = caseId, state = RECEIVED}</text>
+</annot>
+</arc>
+<arc id="id38" order="1" orientation="PtoT">
+<transend idref="id27"/>
+<placeend idref="id37"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id38a">
+<posattr x="100.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>budgetId</text>
+</annot>
+</arc>
+<arc id="id39" order="1" orientation="PtoT">
+<transend idref="id28"/>
+<placeend idref="id37"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id39a">
+<posattr x="100.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>budgetId</text>
+</annot>
+</arc>
+<arc id="id41" order="1" orientation="TtoP">
+<transend idref="id27"/>
+<placeend idref="id37"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id41a">
+<posattr x="100.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>budgetId</text>
+</annot>
+</arc>
+<arc id="id42" order="1" orientation="TtoP">
+<transend idref="id28"/>
+<placeend idref="id37"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id42a">
+<posattr x="100.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>budgetId</text>
+</annot>
+</arc>
+<arc id="id151" order="1" orientation="PtoT">
+<transend idref="id27"/>
+<placeend idref="id150"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id151a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id152" order="1" orientation="PtoT">
+<transend idref="id28"/>
+<placeend idref="id150"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id152a">
+<posattr x="0.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id155" order="1" orientation="TtoP">
+<transend idref="id27"/>
+<placeend idref="id154"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id155a">
+<posattr x="0.0" y="-200.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id156" order="1" orientation="TtoP">
+<transend idref="id28"/>
+<placeend idref="id154"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id156a">
+<posattr x="0.0" y="-250.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id43">
+<pageattr name="Order goods"/>
+<trans id="id45">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Order goods0_0</text>
+<cond id="id45a">
+<posattr x="-36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id45b">
+<posattr x="36.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id45c">
+<posattr x="36.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+</trans>
+<place id="id47">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>request</text>
+<type id="id47a">
+<posattr x="136.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_OBJECT</text>
+</type>
+<initmark id="id47b">
+<posattr x="136.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="I/O">
+<posattr x="100.0" y="-124.0"/>
+</port>
+</place>
+<place id="id161">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id161a">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id161b">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="0.0" y="-24.0"/>
+</port>
+</place>
+<place id="id165">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id165a">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id165b">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="0.0" y="-224.0"/>
+</port>
+</place>
+<arc id="id48" order="1" orientation="PtoT">
+<transend idref="id45"/>
+<placeend idref="id47"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id48a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = requestId , caseId = caseId, state = APPROVED}</text>
+</annot>
+</arc>
+<arc id="id50" order="1" orientation="TtoP">
+<transend idref="id45"/>
+<placeend idref="id47"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id50a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = requestId , caseId = caseId, state = APPROVED}</text>
+</annot>
+</arc>
+<arc id="id162" order="1" orientation="PtoT">
+<transend idref="id45"/>
+<placeend idref="id161"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id162a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id166" order="1" orientation="TtoP">
+<transend idref="id45"/>
+<placeend idref="id165"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id166a">
+<posattr x="0.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id51">
+<pageattr name="Pay goods"/>
+<trans id="id53">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Pay goods0_0</text>
+<cond id="id53a">
+<posattr x="-36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id53b">
+<posattr x="36.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id53c">
+<posattr x="36.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+</trans>
+<place id="id55">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>budget</text>
+<type id="id55a">
+<posattr x="136.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_STORE</text>
+</type>
+<initmark id="id55b">
+<posattr x="136.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="I/O">
+<posattr x="100.0" y="-124.0"/>
+</port>
+</place>
+<place id="id175">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id175a">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id175b">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="0.0" y="-24.0"/>
+</port>
+</place>
+<place id="id193">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id193a">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id193b">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="0.0" y="-224.0"/>
+</port>
+</place>
+<arc id="id56" order="1" orientation="TtoP">
+<transend idref="id53"/>
+<placeend idref="id55"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id56a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>budgetId</text>
+</annot>
+</arc>
+<arc id="id58" order="1" orientation="PtoT">
+<transend idref="id53"/>
+<placeend idref="id55"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id58a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>budgetId</text>
+</annot>
+</arc>
+<arc id="id176" order="1" orientation="PtoT">
+<transend idref="id53"/>
+<placeend idref="id175"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id176a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id194" order="1" orientation="TtoP">
+<transend idref="id53"/>
+<placeend idref="id193"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id194a">
+<posattr x="0.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id59">
+<pageattr name="Receive goods"/>
+<trans id="id61">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Receive goods0_0</text>
+<cond id="id61a">
+<posattr x="-36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id61b">
+<posattr x="36.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id61c">
+<posattr x="36.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+</trans>
+<place id="id182">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id182a">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id182b">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="0.0" y="-24.0"/>
+</port>
+</place>
+<place id="id186">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id186a">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id186b">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="0.0" y="-224.0"/>
+</port>
+</place>
+<arc id="id183" order="1" orientation="PtoT">
+<transend idref="id61"/>
+<placeend idref="id182"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id183a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id187" order="1" orientation="TtoP">
+<transend idref="id61"/>
+<placeend idref="id186"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id187a">
+<posattr x="0.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id62">
+<pageattr name="Distribute goods"/>
+<trans id="id64">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Distribute goods0_0</text>
+<cond id="id64a">
+<posattr x="-36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id64b">
+<posattr x="36.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id64c">
+<posattr x="36.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+</trans>
+<place id="id203">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id203a">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id203b">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="0.0" y="-24.0"/>
+</port>
+</place>
+<place id="id206">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Request successful</text>
+<type id="id206a">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id206b">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="0.0" y="-224.0"/>
+</port>
+</place>
+<arc id="id204" order="1" orientation="PtoT">
+<transend idref="id64"/>
+<placeend idref="id203"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id204a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id207" order="1" orientation="TtoP">
+<transend idref="id64"/>
+<placeend idref="id206"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id207a">
+<posattr x="0.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id65">
+<pageattr name="Book travel"/>
+<trans id="id67">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Book travel0_0</text>
+<cond id="id67a">
+<posattr x="-36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id67b">
+<posattr x="36.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id67c">
+<posattr x="36.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>input (travel_documentsCount);
+output (travel_documentsId);
+action (String.concat["travel documents", Int.toString(travel_documentsCount)]);</text>
+</code>
+</trans>
+<place id="id68">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>travel documents Count</text>
+<type id="id68a">
+<posattr x="136.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>INT</text>
+</type>
+<initmark id="id68b">
+<posattr x="136.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>1`0</text>
+</initmark>
+<fusioninfo name="travel_documentsCount">
+<posattr x="75.0" y="-116.0"/>
+</fusioninfo>
+</place>
+<place id="id73">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>travel documents</text>
+<type id="id73a">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_OBJECT</text>
+</type>
+<initmark id="id73b">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="0.0" y="-224.0"/>
+</port>
+</place>
+<place id="id76">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="400" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>budget</text>
+<type id="id76a">
+<posattr x="436.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_STORE</text>
+</type>
+<initmark id="id76b">
+<posattr x="436.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="I/O">
+<posattr x="400.0" y="-124.0"/>
+</port>
+</place>
+<place id="id79">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="200" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>flight</text>
+<type id="id79a">
+<posattr x="236.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_OBJECT</text>
+</type>
+<initmark id="id79b">
+<posattr x="236.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="I/O">
+<posattr x="200.0" y="-124.0"/>
+</port>
+</place>
+<place id="id84">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="300" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>accomodation</text>
+<type id="id84a">
+<posattr x="336.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_OBJECT</text>
+</type>
+<initmark id="id84b">
+<posattr x="336.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="I/O">
+<posattr x="300.0" y="-124.0"/>
+</port>
+</place>
+<place id="id209">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Travel booked</text>
+<type id="id209a">
+<posattr x="136.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id209b">
+<posattr x="136.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="100.0" y="-224.0"/>
+</port>
+</place>
+<place id="id219">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id219a">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id219b">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="0.0" y="-24.0"/>
+</port>
+</place>
+<arc id="id70" order="1" orientation="PtoT">
+<transend idref="id67"/>
+<placeend idref="id68"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id70a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>travel_documentsCount</text>
+</annot>
+</arc>
+<arc id="id71" order="1" orientation="TtoP">
+<transend idref="id67"/>
+<placeend idref="id68"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id71a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>travel_documentsCount+ 1</text>
+</annot>
+</arc>
+<arc id="id74" order="1" orientation="TtoP">
+<transend idref="id67"/>
+<placeend idref="id73"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id74a">
+<posattr x="0.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = travel_documentsId , caseId = caseId, state = CREATED}</text>
+</annot>
+</arc>
+<arc id="id77" order="1" orientation="TtoP">
+<transend idref="id67"/>
+<placeend idref="id76"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id77a">
+<posattr x="200.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>budgetId</text>
+</annot>
+</arc>
+<arc id="id80" order="1" orientation="PtoT">
+<transend idref="id67"/>
+<placeend idref="id79"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id80a">
+<posattr x="100.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = flightId , caseId = caseId, state = CREATED}</text>
+</annot>
+</arc>
+<arc id="id82" order="1" orientation="TtoP">
+<transend idref="id67"/>
+<placeend idref="id79"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id82a">
+<posattr x="100.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = flightId , caseId = caseId, state = CREATED}</text>
+</annot>
+</arc>
+<arc id="id85" order="1" orientation="PtoT">
+<transend idref="id67"/>
+<placeend idref="id84"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id85a">
+<posattr x="150.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = accomodationId , caseId = caseId, state = CREATED}</text>
+</annot>
+</arc>
+<arc id="id87" order="1" orientation="TtoP">
+<transend idref="id67"/>
+<placeend idref="id84"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id87a">
+<posattr x="150.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = accomodationId , caseId = caseId, state = CREATED}</text>
+</annot>
+</arc>
+<arc id="id89" order="1" orientation="PtoT">
+<transend idref="id67"/>
+<placeend idref="id76"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id89a">
+<posattr x="200.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>budgetId</text>
+</annot>
+</arc>
+<arc id="id210" order="1" orientation="TtoP">
+<transend idref="id67"/>
+<placeend idref="id209"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id210a">
+<posattr x="50.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id220" order="1" orientation="PtoT">
+<transend idref="id67"/>
+<placeend idref="id219"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id220a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id90">
+<pageattr name="Choose flight"/>
+<trans id="id92">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Choose flight0_0</text>
+<cond id="id92a">
+<posattr x="-36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id92b">
+<posattr x="36.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id92c">
+<posattr x="36.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>input (flightCount);
+output (flightId);
+action (String.concat["flight", Int.toString(flightCount)]);</text>
+</code>
+</trans>
+<place id="id93">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>flight Count</text>
+<type id="id93a">
+<posattr x="136.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>INT</text>
+</type>
+<initmark id="id93b">
+<posattr x="136.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>1`0</text>
+</initmark>
+<fusioninfo name="flightCount">
+<posattr x="75.0" y="-116.0"/>
+</fusioninfo>
+</place>
+<place id="id98">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>flight</text>
+<type id="id98a">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_OBJECT</text>
+</type>
+<initmark id="id98b">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="0.0" y="-224.0"/>
+</port>
+</place>
+<place id="id223">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id223a">
+<posattr x="136.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id223b">
+<posattr x="136.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="100.0" y="-224.0"/>
+</port>
+</place>
+<place id="id240">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id240a">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id240b">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="0.0" y="-24.0"/>
+</port>
+</place>
+<arc id="id95" order="1" orientation="PtoT">
+<transend idref="id92"/>
+<placeend idref="id93"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id95a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>flightCount</text>
+</annot>
+</arc>
+<arc id="id96" order="1" orientation="TtoP">
+<transend idref="id92"/>
+<placeend idref="id93"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id96a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>flightCount+ 1</text>
+</annot>
+</arc>
+<arc id="id99" order="1" orientation="TtoP">
+<transend idref="id92"/>
+<placeend idref="id98"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id99a">
+<posattr x="0.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = flightId , caseId = caseId, state = CREATED}</text>
+</annot>
+</arc>
+<arc id="id224" order="1" orientation="TtoP">
+<transend idref="id92"/>
+<placeend idref="id223"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id224a">
+<posattr x="50.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id241" order="1" orientation="PtoT">
+<transend idref="id92"/>
+<placeend idref="id240"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id241a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id100">
+<pageattr name="Find accomodation"/>
+<trans id="id102">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Find accomodation0_0</text>
+<cond id="id102a">
+<posattr x="-36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id102b">
+<posattr x="36.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id102c">
+<posattr x="36.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>input (accomodationCount);
+output (accomodationId);
+action (String.concat["accomodation", Int.toString(accomodationCount)]);</text>
+</code>
+</trans>
+<place id="id103">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>accomodation Count</text>
+<type id="id103a">
+<posattr x="136.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>INT</text>
+</type>
+<initmark id="id103b">
+<posattr x="136.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>1`0</text>
+</initmark>
+<fusioninfo name="accomodationCount">
+<posattr x="75.0" y="-116.0"/>
+</fusioninfo>
+</place>
+<place id="id108">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>accomodation</text>
+<type id="id108a">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_OBJECT</text>
+</type>
+<initmark id="id108b">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="0.0" y="-224.0"/>
+</port>
+</place>
+<place id="id230">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id230a">
+<posattr x="136.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id230b">
+<posattr x="136.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="100.0" y="-224.0"/>
+</port>
+</place>
+<place id="id247">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id247a">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id247b">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="0.0" y="-24.0"/>
+</port>
+</place>
+<arc id="id105" order="1" orientation="PtoT">
+<transend idref="id102"/>
+<placeend idref="id103"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id105a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>accomodationCount</text>
+</annot>
+</arc>
+<arc id="id106" order="1" orientation="TtoP">
+<transend idref="id102"/>
+<placeend idref="id103"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id106a">
+<posattr x="50.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>accomodationCount+ 1</text>
+</annot>
+</arc>
+<arc id="id109" order="1" orientation="TtoP">
+<transend idref="id102"/>
+<placeend idref="id108"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id109a">
+<posattr x="0.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = accomodationId , caseId = caseId, state = CREATED}</text>
+</annot>
+</arc>
+<arc id="id231" order="1" orientation="TtoP">
+<transend idref="id102"/>
+<placeend idref="id230"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id231a">
+<posattr x="50.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id248" order="1" orientation="PtoT">
+<transend idref="id102"/>
+<placeend idref="id247"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id248a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id110">
+<pageattr name="Request received"/>
+<trans id="id111">
+<box h="40.0" w="60.0"/>
+<posattr x="220" y="471"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Request received</text>
+<cond id="id111a">
+<posattr x="184.0" y="447.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id111b">
+<posattr x="256.0" y="495.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id111c">
+<posattr x="256.0" y="471.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>input (count);
+output (caseId, requestId);
+action (String.concat["case", Int.toString(count)],
+String.concat["request", Int.toString(count)]);</text>
+</code>
+</trans>
+<place id="id113">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="381" y="329"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Case Count</text>
+<type id="id113a">
+<posattr x="417.0" y="305.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>INT</text>
+</type>
+<initmark id="id113b">
+<posattr x="417.0" y="305.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>1`0</text>
+</initmark>
+</place>
+<place id="id117">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="604" y="106"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>request</text>
+<type id="id117a">
+<posattr x="640.0" y="82.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>DATA_OBJECT</text>
+</type>
+<initmark id="id117b">
+<posattr x="640.0" y="82.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="604.0" y="82.0"/>
+</port>
+</place>
+<place id="id147">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="924" y="282"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id147a">
+<posattr x="960.0" y="258.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id147b">
+<posattr x="960.0" y="258.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="924.0" y="258.0"/>
+</port>
+</place>
+<arc id="id114" order="1" orientation="PtoT">
+<transend idref="id111"/>
+<placeend idref="id113"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id114a">
+<posattr x="300.5" y="400.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>count</text>
+</annot>
+</arc>
+<arc id="id115" order="1" orientation="TtoP">
+<transend idref="id111"/>
+<placeend idref="id113"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id115a">
+<posattr x="300.5" y="400.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>count + 1</text>
+</annot>
+</arc>
+<arc id="id118" order="1" orientation="TtoP">
+<transend idref="id111"/>
+<placeend idref="id117"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id118a">
+<posattr x="412.0" y="288.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>{id = requestId , caseId = caseId, state = RECEIVED}</text>
+</annot>
+</arc>
+<arc id="id148" order="1" orientation="TtoP">
+<transend idref="id111"/>
+<placeend idref="id147"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id148a">
+<posattr x="572.0" y="376.5"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id119">
+<pageattr name="Travel required"/>
+<trans id="id120">
+<box h="40.0" w="60.0"/>
+<posattr x="51" y="80"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Travel required</text>
+<cond id="id120a">
+<posattr x="15.0" y="56.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id120b">
+<posattr x="87.0" y="104.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id120c">
+<posattr x="87.0" y="80.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>input (count);
+output (caseId);
+action (String.concat["case", Int.toString(count)]);</text>
+</code>
+</trans>
+<place id="id122">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="71" y="18"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Case Count</text>
+<type id="id122a">
+<posattr x="107.0" y="-6.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>INT</text>
+</type>
+<initmark id="id122b">
+<posattr x="107.0" y="-6.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>1`0</text>
+</initmark>
+</place>
+<place id="id251">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="790" y="276"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id251a">
+<posattr x="826.0" y="252.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id251b">
+<posattr x="826.0" y="252.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="790.0" y="252.0"/>
+</port>
+</place>
+<arc id="id123" order="1" orientation="PtoT">
+<transend idref="id120"/>
+<placeend idref="id122"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id123a">
+<posattr x="61.0" y="49.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>count</text>
+</annot>
+</arc>
+<arc id="id124" order="1" orientation="TtoP">
+<transend idref="id120"/>
+<placeend idref="id122"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id124a">
+<posattr x="61.0" y="49.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>count + 1</text>
+</annot>
+</arc>
+<arc id="id252" order="1" orientation="TtoP">
+<transend idref="id120"/>
+<placeend idref="id251"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id252a">
+<posattr x="420.5" y="178.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id129">
+<pageattr name="Insufficient Budget"/>
+<trans id="id130">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Insufficient Budget</text>
+<cond id="id130a">
+<posattr x="-36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id130b">
+<posattr x="36.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id130c">
+<posattr x="36.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+</trans>
+<place id="id212">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>Travel denied</text>
+<type id="id212a">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id212b">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="0.0" y="-224.0"/>
+</port>
+</place>
+<place id="id256">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id256a">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id256b">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="0.0" y="-24.0"/>
+</port>
+</place>
+<arc id="id213" order="1" orientation="TtoP">
+<transend idref="id130"/>
+<placeend idref="id212"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id213a">
+<posattr x="0.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id257" order="1" orientation="PtoT">
+<transend idref="id130"/>
+<placeend idref="id256"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id257a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id133">
+<pageattr name="ExclusiveGateway_0ejbjft"/>
+<trans id="id134">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>ExclusiveGateway_0ejbjft</text>
+<cond id="id134a">
+<posattr x="-36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id134b">
+<posattr x="36.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id134c">
+<posattr x="36.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+</trans>
+<place id="id168">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id168a">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id168b">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="0.0" y="-24.0"/>
+</port>
+</place>
+<place id="id172">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id172a">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id172b">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="0.0" y="-224.0"/>
+</port>
+</place>
+<place id="id179">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id179a">
+<posattr x="136.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id179b">
+<posattr x="136.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="100.0" y="-224.0"/>
+</port>
+</place>
+<arc id="id169" order="1" orientation="PtoT">
+<transend idref="id134"/>
+<placeend idref="id168"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id169a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id173" order="1" orientation="TtoP">
+<transend idref="id134"/>
+<placeend idref="id172"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id173a">
+<posattr x="0.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id180" order="1" orientation="TtoP">
+<transend idref="id134"/>
+<placeend idref="id179"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id180a">
+<posattr x="50.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id136">
+<pageattr name="ExclusiveGateway_1npupoo"/>
+<trans id="id137">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>ExclusiveGateway_1npupoo</text>
+<cond id="id137a">
+<posattr x="-36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id137b">
+<posattr x="36.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id137c">
+<posattr x="36.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+</trans>
+<place id="id189">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id189a">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id189b">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="0.0" y="-24.0"/>
+</port>
+</place>
+<place id="id196">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id196a">
+<posattr x="136.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id196b">
+<posattr x="136.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="100.0" y="-24.0"/>
+</port>
+</place>
+<place id="id200">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id200a">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id200b">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="0.0" y="-224.0"/>
+</port>
+</place>
+<arc id="id190" order="1" orientation="PtoT">
+<transend idref="id137"/>
+<placeend idref="id189"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id190a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id197" order="1" orientation="PtoT">
+<transend idref="id137"/>
+<placeend idref="id196"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id197a">
+<posattr x="50.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id201" order="1" orientation="TtoP">
+<transend idref="id137"/>
+<placeend idref="id200"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id201a">
+<posattr x="0.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id139">
+<pageattr name="ExclusiveGateway_1cbhr24"/>
+<trans id="id140">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>ExclusiveGateway_1cbhr24</text>
+<cond id="id140a">
+<posattr x="-36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id140b">
+<posattr x="36.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id140c">
+<posattr x="36.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+</trans>
+<place id="id216">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id216a">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id216b">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="0.0" y="-224.0"/>
+</port>
+</place>
+<place id="id226">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id226a">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id226b">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="0.0" y="-24.0"/>
+</port>
+</place>
+<place id="id233">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id233a">
+<posattr x="136.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id233b">
+<posattr x="136.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="100.0" y="-24.0"/>
+</port>
+</place>
+<arc id="id217" order="1" orientation="TtoP">
+<transend idref="id140"/>
+<placeend idref="id216"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id217a">
+<posattr x="0.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id227" order="1" orientation="PtoT">
+<transend idref="id140"/>
+<placeend idref="id226"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id227a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id234" order="1" orientation="PtoT">
+<transend idref="id140"/>
+<placeend idref="id233"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id234a">
+<posattr x="50.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<page id="id142">
+<pageattr name="ExclusiveGateway_06n0a94"/>
+<trans id="id143">
+<box h="40.0" w="60.0"/>
+<posattr x="0" y="-100"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text>ExclusiveGateway_06n0a94</text>
+<cond id="id143a">
+<posattr x="-36.0" y="-124.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</cond>
+<time id="id143b">
+<posattr x="36.0" y="-76.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</time>
+<code id="id143c">
+<posattr x="36.0" y="-100.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</code>
+</trans>
+<place id="id237">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id237a">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id237b">
+<posattr x="36.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="0.0" y="-224.0"/>
+</port>
+</place>
+<place id="id244">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="100" y="-200"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id244a">
+<posattr x="136.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id244b">
+<posattr x="136.0" y="-224.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="Out">
+<posattr x="100.0" y="-224.0"/>
+</port>
+</place>
+<place id="id254">
+<ellipse h="40.0" w="60.0"/>
+<posattr x="0" y="0"/>
+<fillattr colour="White" filled="false" pattern="filled"/>
+<lineattr colour="Black" pattern="Solid" thick="1"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+<type id="id254a">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>CaseID</text>
+</type>
+<initmark id="id254b">
+<posattr x="36.0" y="-24.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text/>
+</initmark>
+<port type="In">
+<posattr x="0.0" y="-24.0"/>
+</port>
+</place>
+<arc id="id238" order="1" orientation="TtoP">
+<transend idref="id143"/>
+<placeend idref="id237"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id238a">
+<posattr x="0.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id245" order="1" orientation="TtoP">
+<transend idref="id143"/>
+<placeend idref="id244"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id245a">
+<posattr x="50.0" y="-150.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+<arc id="id255" order="1" orientation="PtoT">
+<transend idref="id143"/>
+<placeend idref="id254"/>
+<lineattr colour="Black" thick="1" type="Solid"/>
+<annot id="id255a">
+<posattr x="0.0" y="-50.0"/>
+<fillattr colour="White" filled="false" pattern="Solid"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr bold="false" colour="Black"/>
+<text>caseId</text>
+</annot>
+</arc>
+</page>
+<fusion id="id69" name="travel_documentsCount">
+<fusion_elm idref="id68"/>
+</fusion>
+<fusion id="id94" name="flightCount">
+<fusion_elm idref="id93"/>
+</fusion>
+<fusion id="id104" name="accomodationCount">
+<fusion_elm idref="id103"/>
+</fusion>
+<instances>
+<instance id="id0itop" page="id0">
+<instance id="id26ia" trans="id26"/>
+<instance id="id44ia" trans="id44"/>
+<instance id="id52ia" trans="id52"/>
+<instance id="id60ia" trans="id60"/>
+<instance id="id63ia" trans="id63"/>
+<instance id="id66ia" trans="id66"/>
+<instance id="id91ia" trans="id91"/>
+<instance id="id101ia" trans="id101"/>
+<instance id="id112ia" trans="id112"/>
+<instance id="id121ia" trans="id121"/>
+<instance id="id131ia" trans="id131"/>
+<instance id="id135ia" trans="id135"/>
+<instance id="id138ia" trans="id138"/>
+<instance id="id141ia" trans="id141"/>
+<instance id="id144ia" trans="id144"/>
+</instance>
+</instances>
+<monitorblock name="Monitors"/>
+<options>
+<option name="realtimestamp">
+<value>
+<boolean>false</boolean>
+</value>
+</option>
+</options>
+</cpnet>
+</workspaceElements>
