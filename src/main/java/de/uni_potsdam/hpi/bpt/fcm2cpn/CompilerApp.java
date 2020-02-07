@@ -37,6 +37,7 @@ import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataState;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
+import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.Gateway;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
@@ -333,6 +334,11 @@ public class CompilerApp {
     }
     
     private void translateEvents() {
+    	translateCatchEvents();
+    	translateEndEvents();
+    }
+    
+    private void translateCatchEvents() {
         Collection<CatchEvent> events = bpmn.getModelElementsByType(CatchEvent.class);
         events.forEach(each -> {
         	String name = each.getName();
@@ -374,6 +380,13 @@ public class CompilerApp {
             each.getDataOutputAssociations().forEach(assoc -> outputs.put(assoc, Arrays.asList(subpageTransition)));
         	idsToNodes.put(each.getId(), mainPageTransition);
         	translateDataAssociations(subPage, outputs, Collections.emptyMap());
+        });
+    }
+    
+    private void translateEndEvents() {
+        Collection<EndEvent> events = bpmn.getModelElementsByType(EndEvent.class);
+        events.forEach(each -> {
+        	idsToNodes.put(each.getId(), builder.addPlace(mainPage, each.getName(), "CaseID"));
         });
     }
     
