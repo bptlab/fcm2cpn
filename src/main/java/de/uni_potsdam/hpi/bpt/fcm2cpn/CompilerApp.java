@@ -460,7 +460,11 @@ public class CompilerApp {
         	Node source = idsToNodes.get(sourceId);
         	Node target = idsToNodes.get(targetId);
         	//System.out.println(source.getName().asString()+" -> "+target.getName().asString());
-        	if(isPlace(source) || isPlace(target)) {
+        	if(isPlace(source) && isPlace(target)) {
+        		Transition transition = builder.addTransition(mainPage, null);
+        		builder.addArc(mainPage, source, transition, "caseId");
+        		builder.addArc(mainPage, transition, target, "caseId");
+        	} else if(isPlace(source) || isPlace(target)) {
         		builder.addArc(mainPage, source, target, "");
         		if(!isPlace(target)) {
         			SubpageElement subPage = subpages.get(targetId);
