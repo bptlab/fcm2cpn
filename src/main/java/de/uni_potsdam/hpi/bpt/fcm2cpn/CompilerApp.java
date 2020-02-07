@@ -170,6 +170,19 @@ public class CompilerApp {
     	return state.replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\\s","_").toUpperCase();
     }
     
+    private static String trimDataObjectName(String name) {
+    	return name.trim().toLowerCase();
+    }
+    
+    private static String dataObjectId(String trimmedName) {
+    	return trimmedName.replaceAll("\\s", "_") + "Id";
+    }
+    
+    
+    private static String dataObjectCount(String trimmedName) {
+    	return trimmedName.replaceAll("\\s", "_") + "Count";
+    }
+    
     private void translateData() {
         translateDataObjects();        
         translateDataStores();
@@ -180,10 +193,10 @@ public class CompilerApp {
     	Collection<DataObject> dataObjects = bpmn.getModelElementsByType(DataObject.class);
         Map<DataObject, Node> dataObjectsToPlaces = new HashMap<>();
         dataObjects.forEach(each -> {
-            String name = each.getName().trim().toLowerCase();
+            String name = trimDataObjectName(each.getName());
         	Node node = builder.addPlace(mainPage, name, "DATA_OBJECT");
-            builder.declareVariable(petriNet, name.replaceAll("\\s", "_") + "Id", "STRING");
-            builder.declareVariable(petriNet, name.replaceAll("\\s", "_") + "Count", "INT");
+            builder.declareVariable(petriNet, dataObjectId(name), "STRING");
+            builder.declareVariable(petriNet, dataObjectCount(name), "INT");
         	dataObjectsToPlaces.put(each, node);
         });
         
@@ -197,9 +210,9 @@ public class CompilerApp {
         Collection<DataStore> dataStores = bpmn.getModelElementsByType(DataStore.class);
         Map<DataStore, Node> dataStoresToPlaces = new HashMap<>();
         dataStores.forEach(each -> {
-            String name = each.getName().trim().toLowerCase();
+            String name = trimDataObjectName(each.getName());
         	Node node = builder.addPlace(mainPage, name, "DATA_STORE", "1`\"store_"+name.replaceAll("\\s", "_")+"\"");
-            builder.declareVariable(petriNet, name.replaceAll("\\s", "_") + "Id", "STRING");
+            builder.declareVariable(petriNet, dataObjectId(name), "STRING");
         	dataStoresToPlaces.put(each, node);
         });
         Collection<DataStoreReference> dataStoreRefs = bpmn.getModelElementsByType(DataStoreReference.class);
@@ -276,13 +289,13 @@ public class CompilerApp {
                             .map(assoc -> findKnownParent(getReferenceIds(assoc, SourceRef.class).get(0)))
                             .map(source -> bpmn.getModelElementById(source))
                             .filter(object -> object instanceof DataObjectReference)
-                            .map(object -> ((DataObjectReference)object).getDataObject().getName().replaceAll("\\s", "_"))
+                            .map(object -> trimDataObjectName(((DataObjectReference)object).getDataObject().getName()))
                             .collect(Collectors.toSet());
                     Set<String> createObjects = outputSet.stream()
                             .map(assoc -> findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0)))
                             .map(target -> bpmn.getModelElementById(target))
                             .filter(object -> object instanceof DataObjectReference)
-                            .map(object -> ((DataObjectReference)object).getDataObject().getName().replaceAll("\\s", "_"))
+                            .map(object -> trimDataObjectName(((DataObjectReference)object).getDataObject().getName()))
                             .filter(output -> !dataInputs.contains(output))
                             .collect(Collectors.toSet());
                     if (createObjects.size() > 0) {
@@ -303,8 +316,8 @@ public class CompilerApp {
     }
     
     private void attachObjectCreationCounters(Transition transition, Set<String> createObjects) {
-        String countVariables = createObjects.stream().map(object -> object + "Count").collect(Collectors.joining(",\n"));
-        String idVariables = createObjects.stream().map(object -> object + "Id").collect(Collectors.joining(",\n"));
+        String countVariables = createObjects.stream().map(CompilerApp::dataObjectCount).collect(Collectors.joining(",\n"));
+        String idVariables = createObjects.stream().map(CompilerApp::dataObjectId).collect(Collectors.joining(",\n"));
         String idGeneration = createObjects.stream().map(object -> "String.concat[\"" + object + "\", Int.toString(" + object + "Count)]").collect(Collectors.joining(",\n"));
         Page page = transition.getPage();
         transition.getCode().setText(String.format(
@@ -315,9 +328,9 @@ public class CompilerApp {
                 idVariables,
                 idGeneration));
         createObjects.forEach(object -> {
-            PlaceNode caseTokenPlace = builder.addFusionPlace(page, object + " Count", "INT", "1`0", object + "Count");
-            builder.addArc(page, caseTokenPlace, transition, object + "Count");
-            builder.addArc(page, transition, caseTokenPlace, object + "Count + 1");
+            PlaceNode caseTokenPlace = builder.addFusionPlace(page, object + " Count", "INT", "1`0", dataObjectCount(object));
+            builder.addArc(page, caseTokenPlace, transition, dataObjectCount(object));
+            builder.addArc(page, transition, caseTokenPlace, dataObjectCount(object) + "+ 1");
         });
     }
     
@@ -361,13 +374,13 @@ public class CompilerApp {
                     .map(assoc -> {
                         String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
                         ItemAwareElement dataObject = bpmn.getModelElementById(target);
-                        return ((DataObjectReference) dataObject).getDataObject().getName().replaceAll("\\s", "_");
+                        return trimDataObjectName(((DataObjectReference) dataObject).getDataObject().getName());
                     })
                     .distinct()
                     .collect(Collectors.toList());
             ids.add(0, "case");
             
-            String idVariables = ids.stream().map(n -> n + "Id").collect(Collectors.joining(", "));
+            String idVariables = ids.stream().map(CompilerApp::dataObjectId).collect(Collectors.joining(", "));
             String idGeneration = ids.stream().map(n -> "String.concat[\"" + n + "\", Int.toString(count)]").collect(Collectors.joining(",\n"));
             subpageTransition.getCode().setText(String.format(
             	"input (count);\n"
@@ -432,12 +445,12 @@ public class CompilerApp {
     
     private String annotationForDataFlow(ItemAwareElement dataObject) {
         if(dataObject instanceof DataObjectReference) {
-            String dataType = ((DataObjectReference) dataObject).getDataObject().getName().replaceAll("\\s", "_");
+            String dataType = trimDataObjectName(((DataObjectReference) dataObject).getDataObject().getName());
             String dataState = dataObject.getDataState().getName();
-            return "{id = "+dataType+"Id, caseId = caseId, state = "+dataObjectStateToNetColor(dataState)+"}";
+            return "{id = "+dataObjectId(dataType)+" , caseId = caseId, state = "+dataObjectStateToNetColor(dataState)+"}";
         } else if (dataObject instanceof  DataStoreReference){
-            String dataType = ((DataStoreReference) dataObject).getDataStore().getName().replaceAll("\\s", "_");
-            return dataType + "Id";
+            String dataType = trimDataObjectName(((DataStoreReference) dataObject).getDataStore().getName());
+            return dataObjectId(dataType);
         } else {
             return "UNKNOWN";
         }
