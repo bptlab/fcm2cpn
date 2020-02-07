@@ -59,6 +59,20 @@
             </recordfield>
           </record>
         </color>
+        <color id="ID13946">
+          <id>CASE_APPROVAL</id>
+          <record>
+            <recordfield>
+              <id>caseId</id>
+              <id>STRING</id>
+            </recordfield>
+            <recordfield>
+              <id>approval</id>
+              <id>BOOL</id>
+            </recordfield>
+          </record>
+          <layout>colset CASE_APPROVAL = record caseId:STRING * approval:BOOL;</layout>
+        </color>
       </block>
       <block id="idblock1">
         <id>Variables</id>
@@ -129,11 +143,19 @@
           </type>
           <id>accomodationCount</id>
         </var>
+        <var id="ID10880">
+          <type>
+            <id>BOOL</id>
+          </type>
+          <id>approved</id>
+          <layout>var approved: BOOL;</layout>
+        </var>
         <var id="id24">
           <type>
-            <id>STRING</id>
+            <id>INT</id>
           </type>
           <id>budgetId</id>
+          <layout>var budgetId: INT;</layout>
         </var>
       </block>
       <block id="idblock2">
@@ -377,8 +399,8 @@
                 anchor.vertical="0"/>
         </marking>
         <type id="id23a">
-          <posattr x="180.500000"
-                   y="69.000000"/>
+          <posattr x="122.000000"
+                   y="67.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -388,11 +410,11 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">DATA_STORE</text>
+                version="4.0.1">INT</text>
         </type>
         <initmark id="id23b">
-          <posattr x="140.000000"
-                   y="69.000000"/>
+          <posattr x="46.000000"
+                   y="101.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -402,7 +424,7 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">1`&quot;store_budget&quot;</text>
+                version="4.0.1">1`10000</text>
         </initmark>
       </place>
       <place id="id125">
@@ -637,8 +659,8 @@
                 anchor.vertical="0"/>
         </marking>
         <type id="id132a">
-          <posattr x="-98.000000"
-                   y="312.000000"/>
+          <posattr x="-82.000000"
+                   y="279.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -648,7 +670,7 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">CaseID</text>
+                version="4.0.1">CASE_APPROVAL</text>
         </type>
         <initmark id="id132b">
           <posattr x="-75.000000"
@@ -1360,8 +1382,8 @@
                portsock="(id30,id11)(id37,id23)(id150,id145)(id154,id132)">
           <subpageinfo id="id26e"
                        name="Check Budget">
-            <posattr x="-296.000000"
-                     y="312.000000"/>
+            <posattr x="-271.000000"
+                     y="280.000000"/>
             <fillattr colour="White"
                       pattern="Solid"
                       filled="false"/>
@@ -1450,8 +1472,8 @@
                portsock="(id47,id11)(id161,id132)(id165,id163)">
           <subpageinfo id="id44e"
                        name="Order goods">
-            <posattr x="-76.000000"
-                     y="312.000000"/>
+            <posattr x="-58.000000"
+                     y="298.000000"/>
             <fillattr colour="White"
                       pattern="Solid"
                       filled="false"/>
@@ -2708,8 +2730,8 @@
              h="40.000000"/>
         <binding x="7.200000"
                  y="-3.000000"/>
-        <cond id="id157a">
-          <posattr x="-165.000000"
+        <cond id="ID4510">
+          <posattr x="-214.500000"
                    y="209.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
@@ -2720,7 +2742,7 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1"/>
+                version="4.0.1">[approved=false]</text>
         </cond>
         <time id="id157b">
           <posattr x="-81.500000"
@@ -3455,8 +3477,8 @@
         <transend idref="id157"/>
         <placeend idref="id132"/>
         <annot id="id158a">
-          <posattr x="-126.000000"
-                   y="257.000000"/>
+          <posattr x="-148.000000"
+                   y="248.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -3466,7 +3488,7 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">caseId</text>
+                version="4.0.1">{caseId=caseId, approval=approved}</text>
         </annot>
       </arc>
       <arc id="id159"
@@ -4434,8 +4456,8 @@
     <page id="id25">
       <pageattr name="Check Budget"/>
       <place id="id30">
-        <posattr x="100.000000"
-                 y="-100.000000"/>
+        <posattr x="-294.000000"
+                 y="-42.000000"/>
         <fillattr colour="White"
                   pattern="filled"
                   filled="false"/>
@@ -4457,8 +4479,8 @@
                 anchor.vertical="0"/>
         </marking>
         <type id="id30a">
-          <posattr x="136.000000"
-                   y="-124.000000"/>
+          <posattr x="-258.000000"
+                   y="-66.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4471,8 +4493,8 @@
                 version="4.0.1">DATA_OBJECT</text>
         </type>
         <initmark id="id30b">
-          <posattr x="156.000000"
-                   y="-76.000000"/>
+          <posattr x="-237.000000"
+                   y="-18.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4486,8 +4508,8 @@
         </initmark>
         <port id="ID2703"
               type="I/O">
-          <posattr x="100.000000"
-                   y="-100.000000"/>
+          <posattr x="-294.000000"
+                   y="-42.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4499,8 +4521,8 @@
         </port>
       </place>
       <place id="id37">
-        <posattr x="200.000000"
-                 y="-100.000000"/>
+        <posattr x="-294.000000"
+                 y="-349.000000"/>
         <fillattr colour="White"
                   pattern="filled"
                   filled="false"/>
@@ -4511,7 +4533,7 @@
                   bold="false"/>
         <text>budget</text>
         <ellipse w="60.000000"
-                 h="40.000000"/>
+                 h="60.000000"/>
         <token x="0.000000"
                y="0.000000"/>
         <marking x="0.000000"
@@ -4522,8 +4544,8 @@
                 anchor.vertical="0"/>
         </marking>
         <type id="id37a">
-          <posattr x="240.500000"
-                   y="-131.000000"/>
+          <posattr x="-283.500000"
+                   y="-390.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4533,11 +4555,11 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">DATA_STORE</text>
+                version="4.0.1">INT</text>
         </type>
         <initmark id="id37b">
-          <posattr x="256.000000"
-                   y="-76.000000"/>
+          <posattr x="-237.000000"
+                   y="-317.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4551,8 +4573,8 @@
         </initmark>
         <port id="ID2704"
               type="I/O">
-          <posattr x="200.000000"
-                   y="-100.000000"/>
+          <posattr x="-294.000000"
+                   y="-349.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4564,8 +4586,8 @@
         </port>
       </place>
       <place id="id150">
-        <posattr x="0.000000"
-                 y="0.000000"/>
+        <posattr x="-307.000000"
+                 y="-192.000000"/>
         <fillattr colour="White"
                   pattern="filled"
                   filled="false"/>
@@ -4587,8 +4609,8 @@
                 anchor.vertical="0"/>
         </marking>
         <type id="id150a">
-          <posattr x="36.000000"
-                   y="-24.000000"/>
+          <posattr x="-271.000000"
+                   y="-216.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4601,8 +4623,8 @@
                 version="4.0.1">CaseID</text>
         </type>
         <initmark id="id150b">
-          <posattr x="56.000000"
-                   y="23.000000"/>
+          <posattr x="-250.000000"
+                   y="-168.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4616,8 +4638,8 @@
         </initmark>
         <port id="ID2705"
               type="In">
-          <posattr x="0.000000"
-                   y="-24.000000"/>
+          <posattr x="-307.000000"
+                   y="-216.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4629,8 +4651,8 @@
         </port>
       </place>
       <place id="id154">
-        <posattr x="0.000000"
-                 y="-300.000000"/>
+        <posattr x="179.000000"
+                 y="-168.000000"/>
         <fillattr colour="White"
                   pattern="filled"
                   filled="false"/>
@@ -4652,8 +4674,8 @@
                 anchor.vertical="0"/>
         </marking>
         <type id="id154a">
-          <posattr x="36.000000"
-                   y="-324.000000"/>
+          <posattr x="245.000000"
+                   y="-192.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4663,11 +4685,11 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">CaseID</text>
+                version="4.0.1">CASE_APPROVAL</text>
         </type>
         <initmark id="id154b">
-          <posattr x="56.000000"
-                   y="-276.000000"/>
+          <posattr x="235.000000"
+                   y="-144.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4681,8 +4703,8 @@
         </initmark>
         <port id="ID2706"
               type="Out">
-          <posattr x="0.000000"
-                   y="-324.000000"/>
+          <posattr x="179.000000"
+                   y="-192.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4695,8 +4717,8 @@
       </place>
       <trans id="id27"
              explicit="false">
-        <posattr x="0.000000"
-                 y="-100.000000"/>
+        <posattr x="-15.000000"
+                 y="-71.000000"/>
         <fillattr colour="White"
                   pattern="filled"
                   filled="false"/>
@@ -4707,12 +4729,12 @@
                   bold="false"/>
         <text>Check Budget0_0</text>
         <box w="60.000000"
-             h="40.000000"/>
+             h="52.000000"/>
         <binding x="7.200000"
                  y="-3.000000"/>
         <cond id="id27a">
-          <posattr x="-39.000000"
-                   y="-69.000000"/>
+          <posattr x="-95.500000"
+                   y="-34.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4722,11 +4744,11 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1"/>
+                version="4.0.1">[budgetId&lt;50]</text>
         </cond>
         <time id="id27b">
-          <posattr x="44.500000"
-                   y="-69.000000"/>
+          <posattr x="29.500000"
+                   y="-34.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4739,8 +4761,8 @@
                 version="4.0.1"/>
         </time>
         <code id="id27c">
-          <posattr x="64.500000"
-                   y="-152.000000"/>
+          <posattr x="49.500000"
+                   y="-129.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4753,8 +4775,8 @@
                 version="4.0.1"/>
         </code>
         <priority id="ID2700">
-          <posattr x="-68.000000"
-                   y="-131.000000"/>
+          <posattr x="-83.000000"
+                   y="-108.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4769,8 +4791,8 @@
       </trans>
       <trans id="id28"
              explicit="false">
-        <posattr x="0.000000"
-                 y="-200.000000"/>
+        <posattr x="-19.000000"
+                 y="-192.000000"/>
         <fillattr colour="White"
                   pattern="filled"
                   filled="false"/>
@@ -4785,8 +4807,8 @@
         <binding x="7.200000"
                  y="-3.000000"/>
         <cond id="id28a">
-          <posattr x="-39.000000"
-                   y="-169.000000"/>
+          <posattr x="-11.000000"
+                   y="-232.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4796,11 +4818,11 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1"/>
+                version="4.0.1">[budgetId&gt;=50]</text>
         </cond>
         <time id="id28b">
-          <posattr x="44.500000"
-                   y="-169.000000"/>
+          <posattr x="25.500000"
+                   y="-161.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4813,8 +4835,8 @@
                 version="4.0.1"/>
         </time>
         <code id="id28c">
-          <posattr x="64.500000"
-                   y="-252.000000"/>
+          <posattr x="45.500000"
+                   y="-244.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4827,8 +4849,8 @@
                 version="4.0.1"/>
         </code>
         <priority id="ID2702">
-          <posattr x="-68.000000"
-                   y="-231.000000"/>
+          <posattr x="-87.000000"
+                   y="-223.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4859,8 +4881,8 @@
         <transend idref="id28"/>
         <placeend idref="id30"/>
         <annot id="id31a">
-          <posattr x="50.000000"
-                   y="-150.000000"/>
+          <posattr x="-364.000000"
+                   y="-91.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4875,7 +4897,7 @@
       </arc>
       <arc id="id32"
            orientation="TtoP"
-           order="1">
+           order="2">
         <posattr x="0.000000"
                  y="0.000000"/>
         <fillattr colour="White"
@@ -4891,8 +4913,8 @@
         <transend idref="id27"/>
         <placeend idref="id30"/>
         <annot id="id32a">
-          <posattr x="50.000000"
-                   y="-100.000000"/>
+          <posattr x="-78.500000"
+                   y="33.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4923,8 +4945,8 @@
         <transend idref="id27"/>
         <placeend idref="id30"/>
         <annot id="id34a">
-          <posattr x="50.000000"
-                   y="-100.000000"/>
+          <posattr x="-70.000000"
+                   y="64.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4955,8 +4977,8 @@
         <transend idref="id28"/>
         <placeend idref="id30"/>
         <annot id="id35a">
-          <posattr x="50.000000"
-                   y="-150.000000"/>
+          <posattr x="-364.000000"
+                   y="-118.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -4987,8 +5009,8 @@
         <transend idref="id27"/>
         <placeend idref="id37"/>
         <annot id="id38a">
-          <posattr x="100.000000"
-                   y="-100.000000"/>
+          <posattr x="-147.000000"
+                   y="-233.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5019,8 +5041,8 @@
         <transend idref="id28"/>
         <placeend idref="id37"/>
         <annot id="id39a">
-          <posattr x="100.000000"
-                   y="-150.000000"/>
+          <posattr x="-95.000000"
+                   y="-265.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5051,8 +5073,8 @@
         <transend idref="id27"/>
         <placeend idref="id37"/>
         <annot id="id41a">
-          <posattr x="100.000000"
-                   y="-100.000000"/>
+          <posattr x="-185.000000"
+                   y="-219.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5083,8 +5105,8 @@
         <transend idref="id28"/>
         <placeend idref="id37"/>
         <annot id="id42a">
-          <posattr x="100.000000"
-                   y="-150.000000"/>
+          <posattr x="-108.000000"
+                   y="-282.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5115,8 +5137,8 @@
         <transend idref="id27"/>
         <placeend idref="id150"/>
         <annot id="id151a">
-          <posattr x="0.000000"
-                   y="-50.000000"/>
+          <posattr x="-163.000000"
+                   y="-132.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5147,8 +5169,8 @@
         <transend idref="id28"/>
         <placeend idref="id150"/>
         <annot id="id152a">
-          <posattr x="0.000000"
-                   y="-100.000000"/>
+          <posattr x="-177.000000"
+                   y="-181.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5179,8 +5201,8 @@
         <transend idref="id27"/>
         <placeend idref="id154"/>
         <annot id="id155a">
-          <posattr x="0.000000"
-                   y="-200.000000"/>
+          <posattr x="189.500000"
+                   y="-109.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5190,7 +5212,7 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">caseId</text>
+                version="4.0.1">{caseId=caseId, approval=false}</text>
         </annot>
       </arc>
       <arc id="id156"
@@ -5211,8 +5233,8 @@
         <transend idref="id28"/>
         <placeend idref="id154"/>
         <annot id="id156a">
-          <posattr x="0.000000"
-                   y="-250.000000"/>
+          <posattr x="142.500000"
+                   y="-227.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5222,7 +5244,7 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">caseId</text>
+                version="4.0.1">{caseId=caseId, approval = true}</text>
         </annot>
       </arc>
       <constraints/>
@@ -5230,7 +5252,7 @@
     <page id="id43">
       <pageattr name="Order goods"/>
       <place id="id47">
-        <posattr x="100.000000"
+        <posattr x="322.000000"
                  y="-100.000000"/>
         <fillattr colour="White"
                   pattern="filled"
@@ -5253,7 +5275,7 @@
                 anchor.vertical="0"/>
         </marking>
         <type id="id47a">
-          <posattr x="136.000000"
+          <posattr x="358.000000"
                    y="-124.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
@@ -5267,7 +5289,7 @@
                 version="4.0.1">DATA_OBJECT</text>
         </type>
         <initmark id="id47b">
-          <posattr x="156.000000"
+          <posattr x="378.000000"
                    y="-76.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
@@ -5282,7 +5304,7 @@
         </initmark>
         <port id="ID2710"
               type="I/O">
-          <posattr x="100.000000"
+          <posattr x="322.000000"
                    y="-100.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
@@ -5318,7 +5340,7 @@
                 anchor.vertical="0"/>
         </marking>
         <type id="id161a">
-          <posattr x="36.000000"
+          <posattr x="66.000000"
                    y="-24.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
@@ -5329,7 +5351,7 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">CaseID</text>
+                version="4.0.1">CASE_APPROVAL</text>
         </type>
         <initmark id="id161b">
           <posattr x="56.000000"
@@ -5442,8 +5464,8 @@
         <binding x="7.200000"
                  y="-3.000000"/>
         <cond id="id45a">
-          <posattr x="-39.000000"
-                   y="-69.000000"/>
+          <posattr x="-86.500000"
+                   y="-81.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5453,7 +5475,7 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1"/>
+                version="4.0.1">[approved=true]</text>
         </cond>
         <time id="id45b">
           <posattr x="44.500000"
@@ -5516,8 +5538,8 @@
         <transend idref="id45"/>
         <placeend idref="id47"/>
         <annot id="id48a">
-          <posattr x="50.000000"
-                   y="-100.000000"/>
+          <posattr x="233.000000"
+                   y="-82.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5548,8 +5570,8 @@
         <transend idref="id45"/>
         <placeend idref="id47"/>
         <annot id="id50a">
-          <posattr x="50.000000"
-                   y="-100.000000"/>
+          <posattr x="228.000000"
+                   y="-140.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5591,7 +5613,7 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">caseId</text>
+                version="4.0.1">{caseId=caseId, approval=approved}</text>
         </annot>
       </arc>
       <arc id="id166"
@@ -5631,7 +5653,7 @@
     <page id="id51">
       <pageattr name="Pay goods"/>
       <place id="id55">
-        <posattr x="100.000000"
+        <posattr x="445.000000"
                  y="-100.000000"/>
         <fillattr colour="White"
                   pattern="filled"
@@ -5654,7 +5676,7 @@
                 anchor.vertical="0"/>
         </marking>
         <type id="id55a">
-          <posattr x="140.500000"
+          <posattr x="455.500000"
                    y="-131.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
@@ -5665,10 +5687,10 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">DATA_STORE</text>
+                version="4.0.1">INT</text>
         </type>
         <initmark id="id55b">
-          <posattr x="156.000000"
+          <posattr x="501.000000"
                    y="-76.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
@@ -5683,7 +5705,7 @@
         </initmark>
         <port id="ID2716"
               type="I/O">
-          <posattr x="100.000000"
+          <posattr x="445.000000"
                    y="-100.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
@@ -5761,8 +5783,8 @@
         </port>
       </place>
       <place id="id193">
-        <posattr x="0.000000"
-                 y="-200.000000"/>
+        <posattr x="-42.000000"
+                 y="-281.000000"/>
         <fillattr colour="White"
                   pattern="filled"
                   filled="false"/>
@@ -5784,8 +5806,8 @@
                 anchor.vertical="0"/>
         </marking>
         <type id="id193a">
-          <posattr x="36.000000"
-                   y="-224.000000"/>
+          <posattr x="-6.000000"
+                   y="-305.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5798,8 +5820,8 @@
                 version="4.0.1">CaseID</text>
         </type>
         <initmark id="id193b">
-          <posattr x="56.000000"
-                   y="-176.000000"/>
+          <posattr x="15.000000"
+                   y="-257.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5813,8 +5835,8 @@
         </initmark>
         <port id="ID2718"
               type="Out">
-          <posattr x="0.000000"
-                   y="-224.000000"/>
+          <posattr x="-42.000000"
+                   y="-305.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5917,8 +5939,8 @@
         <transend idref="id53"/>
         <placeend idref="id55"/>
         <annot id="id56a">
-          <posattr x="50.000000"
-                   y="-100.000000"/>
+          <posattr x="182.000000"
+                   y="-82.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -5928,7 +5950,7 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">budgetId</text>
+                version="4.0.1">budgetId-50</text>
         </annot>
       </arc>
       <arc id="id58"
@@ -5949,8 +5971,8 @@
         <transend idref="id53"/>
         <placeend idref="id55"/>
         <annot id="id58a">
-          <posattr x="50.000000"
-                   y="-100.000000"/>
+          <posattr x="184.000000"
+                   y="-118.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -6013,8 +6035,8 @@
         <transend idref="id53"/>
         <placeend idref="id193"/>
         <annot id="id194a">
-          <posattr x="0.000000"
-                   y="-150.000000"/>
+          <posattr x="-21.000000"
+                   y="-191.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -6706,8 +6728,8 @@
         </port>
       </place>
       <place id="id76">
-        <posattr x="400.000000"
-                 y="-100.000000"/>
+        <posattr x="441.000000"
+                 y="84.000000"/>
         <fillattr colour="White"
                   pattern="filled"
                   filled="false"/>
@@ -6729,8 +6751,8 @@
                 anchor.vertical="0"/>
         </marking>
         <type id="id76a">
-          <posattr x="440.500000"
-                   y="-131.000000"/>
+          <posattr x="451.500000"
+                   y="53.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -6740,11 +6762,11 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">DATA_STORE</text>
+                version="4.0.1">INT</text>
         </type>
         <initmark id="id76b">
-          <posattr x="456.000000"
-                   y="-76.000000"/>
+          <posattr x="497.000000"
+                   y="107.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -6758,8 +6780,8 @@
         </initmark>
         <port id="ID2734"
               type="I/O">
-          <posattr x="400.000000"
-                   y="-100.000000"/>
+          <posattr x="441.000000"
+                   y="84.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7032,8 +7054,8 @@
       </place>
       <trans id="id67"
              explicit="false">
-        <posattr x="0.000000"
-                 y="-100.000000"/>
+        <posattr x="-126.000000"
+                 y="-65.000000"/>
         <fillattr colour="White"
                   pattern="filled"
                   filled="false"/>
@@ -7048,8 +7070,8 @@
         <binding x="7.200000"
                  y="-3.000000"/>
         <cond id="id67a">
-          <posattr x="-39.000000"
-                   y="-69.000000"/>
+          <posattr x="-219.000000"
+                   y="-34.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7059,11 +7081,11 @@
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1"/>
+                version="4.0.1">[budgetId&gt;=1000]</text>
         </cond>
         <time id="id67b">
-          <posattr x="44.500000"
-                   y="-69.000000"/>
+          <posattr x="-81.500000"
+                   y="-34.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7076,8 +7098,8 @@
                 version="4.0.1"/>
         </time>
         <code id="id67c">
-          <posattr x="34.000000"
-                   y="-100.000000"/>
+          <posattr x="342.500000"
+                   y="-262.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7092,8 +7114,8 @@ output (travel_documentsId);
 action (String.concat[&quot;travel documents&quot;, Int.toString(travel_documentsCount)]);</text>
         </code>
         <priority id="ID2731">
-          <posattr x="-68.000000"
-                   y="-131.000000"/>
+          <posattr x="-194.000000"
+                   y="-96.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7124,8 +7146,8 @@ action (String.concat[&quot;travel documents&quot;, Int.toString(travel_document
         <transend idref="id67"/>
         <placeend idref="id68"/>
         <annot id="id70a">
-          <posattr x="50.000000"
-                   y="-100.000000"/>
+          <posattr x="-14.000000"
+                   y="-75.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7156,8 +7178,8 @@ action (String.concat[&quot;travel documents&quot;, Int.toString(travel_document
         <transend idref="id67"/>
         <placeend idref="id68"/>
         <annot id="id71a">
-          <posattr x="50.000000"
-                   y="-100.000000"/>
+          <posattr x="188.000000"
+                   y="-170.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7188,8 +7210,8 @@ action (String.concat[&quot;travel documents&quot;, Int.toString(travel_document
         <transend idref="id67"/>
         <placeend idref="id73"/>
         <annot id="id74a">
-          <posattr x="0.000000"
-                   y="-150.000000"/>
+          <posattr x="-62.000000"
+                   y="-134.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7220,8 +7242,8 @@ action (String.concat[&quot;travel documents&quot;, Int.toString(travel_document
         <transend idref="id67"/>
         <placeend idref="id76"/>
         <annot id="id77a">
-          <posattr x="200.000000"
-                   y="-100.000000"/>
+          <posattr x="105.500000"
+                   y="27.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7231,7 +7253,7 @@ action (String.concat[&quot;travel documents&quot;, Int.toString(travel_document
           <textattr colour="Black"
                     bold="false"/>
           <text tool="CPN Tools"
-                version="4.0.1">budgetId</text>
+                version="4.0.1">budgetId-1000</text>
         </annot>
       </arc>
       <arc id="id80"
@@ -7252,8 +7274,8 @@ action (String.concat[&quot;travel documents&quot;, Int.toString(travel_document
         <transend idref="id67"/>
         <placeend idref="id79"/>
         <annot id="id80a">
-          <posattr x="100.000000"
-                   y="-100.000000"/>
+          <posattr x="231.000000"
+                   y="-182.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7284,8 +7306,8 @@ action (String.concat[&quot;travel documents&quot;, Int.toString(travel_document
         <transend idref="id67"/>
         <placeend idref="id79"/>
         <annot id="id82a">
-          <posattr x="100.000000"
-                   y="-100.000000"/>
+          <posattr x="213.000000"
+                   y="-169.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7316,8 +7338,8 @@ action (String.concat[&quot;travel documents&quot;, Int.toString(travel_document
         <transend idref="id67"/>
         <placeend idref="id84"/>
         <annot id="id85a">
-          <posattr x="150.000000"
-                   y="-100.000000"/>
+          <posattr x="351.000000"
+                   y="-219.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7348,8 +7370,8 @@ action (String.concat[&quot;travel documents&quot;, Int.toString(travel_document
         <transend idref="id67"/>
         <placeend idref="id84"/>
         <annot id="id87a">
-          <posattr x="150.000000"
-                   y="-100.000000"/>
+          <posattr x="252.000000"
+                   y="-193.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7380,8 +7402,8 @@ action (String.concat[&quot;travel documents&quot;, Int.toString(travel_document
         <transend idref="id67"/>
         <placeend idref="id76"/>
         <annot id="id89a">
-          <posattr x="200.000000"
-                   y="-100.000000"/>
+          <posattr x="168.000000"
+                   y="-13.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7412,8 +7434,8 @@ action (String.concat[&quot;travel documents&quot;, Int.toString(travel_document
         <transend idref="id67"/>
         <placeend idref="id209"/>
         <annot id="id210a">
-          <posattr x="50.000000"
-                   y="-150.000000"/>
+          <posattr x="-14.000000"
+                   y="-132.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -7444,8 +7466,8 @@ action (String.concat[&quot;travel documents&quot;, Int.toString(travel_document
         <transend idref="id67"/>
         <placeend idref="id219"/>
         <annot id="id220a">
-          <posattr x="0.000000"
-                   y="-50.000000"/>
+          <posattr x="-60.000000"
+                   y="-31.000000"/>
           <fillattr colour="White"
                     pattern="Solid"
                     filled="false"/>
@@ -11183,22 +11205,72 @@ action (String.concat[&quot;case&quot;, Int.toString(count)]);</text>
     </options>
     <binders>
       <cpnbinder id="ID3594"
-                 x="407"
-                 y="109"
+                 x="674"
+                 y="146"
                  width="1155"
                  height="633">
         <sheets>
           <cpnsheet id="ID3530"
-                    panx="4.000000"
-                    pany="36.000000"
+                    panx="-496.000000"
+                    pany="-33.000000"
                     zoom="1.000000"
                     instance="id0itop">
             <zorder>
               <position value="0"/>
             </zorder>
           </cpnsheet>
+          <cpnsheet id="ID4806"
+                    panx="-109.000000"
+                    pany="-162.000000"
+                    zoom="1.000000"
+                    instance="id26ia">
+            <zorder>
+              <position value="0"/>
+            </zorder>
+          </cpnsheet>
+          <cpnsheet id="ID21451"
+                    panx="-387.000000"
+                    pany="-129.000000"
+                    zoom="1.000000"
+                    instance="id44ia">
+            <zorder>
+              <position value="0"/>
+            </zorder>
+          </cpnsheet>
+          <cpnsheet id="ID31140"
+                    panx="-418.000000"
+                    pany="-165.000000"
+                    zoom="1.000000"
+                    instance="id52ia">
+            <zorder>
+              <position value="0"/>
+            </zorder>
+          </cpnsheet>
+          <cpnsheet id="ID35723"
+                    panx="-214.000000"
+                    pany="-72.000000"
+                    zoom="1.000000"
+                    instance="id66ia">
+            <zorder>
+              <position value="0"/>
+            </zorder>
+          </cpnsheet>
+          <cpnsheet id="ID44485"
+                    panx="-203.000000"
+                    pany="-158.000000"
+                    zoom="1.000000"
+                    instance="id131ia">
+            <zorder>
+              <position value="0"/>
+            </zorder>
+          </cpnsheet>
         </sheets>
         <zorder>
+          <position value="2"/>
+          <position value="1"/>
+          <position value="3"/>
+          <position value="4"/>
+          <position value="5"/>
           <position value="0"/>
         </zorder>
       </cpnbinder>
@@ -11273,7 +11345,7 @@ action (String.concat[&quot;case&quot;, Int.toString(count)]);</text>
         <IndexNode expanded="false"/>
       </IndexNode>
       <IndexNode expanded="true">
-        <IndexNode expanded="false">
+        <IndexNode expanded="true">
           <IndexNode expanded="false"/>
           <IndexNode expanded="false"/>
           <IndexNode expanded="false"/>
@@ -11281,7 +11353,8 @@ action (String.concat[&quot;case&quot;, Int.toString(count)]);</text>
           <IndexNode expanded="false"/>
           <IndexNode expanded="false"/>
           <IndexNode expanded="false"/>
-          <IndexNode expanded="false"/>
+          <IndexNode expanded="true"/>
+          <IndexNode expanded="true"/>
         </IndexNode>
         <IndexNode expanded="true">
           <IndexNode expanded="false"/>
@@ -11295,7 +11368,8 @@ action (String.concat[&quot;case&quot;, Int.toString(count)]);</text>
           <IndexNode expanded="false"/>
           <IndexNode expanded="true"/>
           <IndexNode expanded="false"/>
-          <IndexNode expanded="false"/>
+          <IndexNode expanded="true"/>
+          <IndexNode expanded="true"/>
         </IndexNode>
         <IndexNode expanded="false"/>
         <IndexNode expanded="false"/>
