@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -164,7 +165,7 @@ public class CompilerApp {
         CPNEnum cpnEnum = CpntypesFactory.INSTANCE.createCPNEnum();
         Collection<DataState> dataStates = bpmn.getModelElementsByType(DataState.class);
         dataStates.stream()
-        	.map(state -> dataObjectStateToNetColor(state.getAttributeValue("name")))
+        	.flatMap(state -> dataObjectStateToNetColor(state.getAttributeValue("name")))
             .forEach(cpnEnum::addValue);
         builder.declareColorSet(petriNet, "STATE", cpnEnum);
         
@@ -180,8 +181,11 @@ public class CompilerApp {
     	builder.declareVariable(petriNet, "caseId", "CaseID");
     }
     
-    private static String dataObjectStateToNetColor(String state) {
-    	return state.replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\\s","_").toUpperCase();
+    private static Stream<String> dataObjectStateToNetColor(String state) {
+    	return Arrays.stream(state.replaceAll("\\[", "").replaceAll("\\]", "").split("\\|"))
+    			.map(String::trim)
+    			.map(each -> each.replaceAll("\\s","_"))
+    			.map(String::toUpperCase);
     }
     
     private static String trimDataObjectName(String name) {
