@@ -85,6 +85,7 @@ public class CompilerApp {
 	private PetriNet petriNet;
 	private Map<String, SubpageElement> subpages;
 	private Map<String, Node> idsToNodes;
+	private Map<String, Map<Page, PlaceNode>> creationCounterPlaces;
 	
 	private List<Runnable> deferred;
 
@@ -124,6 +125,7 @@ public class CompilerApp {
         this.builder = new BuildCPNUtil();
         this.subpages = new HashMap<>();
         this.idsToNodes = new HashMap<>();
+        this.creationCounterPlaces = new HashMap<>();
         this.deferred = new ArrayList<>();
 	}
     
@@ -349,10 +351,16 @@ public class CompilerApp {
                 idVariables,
                 idGeneration));
         createObjects.forEach(object -> {
-            PlaceNode caseTokenPlace = builder.addFusionPlace(page, object + " Count", "INT", "1`0", dataObjectCount(object));
+            PlaceNode caseTokenPlace = counterFor(page, object);
             builder.addArc(page, caseTokenPlace, transition, dataObjectCount(object));
             builder.addArc(page, transition, caseTokenPlace, dataObjectCount(object) + "+ 1");
         });
+    }
+    
+    private PlaceNode counterFor(Page page, String dataObjectName) {
+    	return creationCounterPlaces
+    		.computeIfAbsent(dataObjectName, _dataObjectName -> new HashMap<Page, PlaceNode>())
+    		.computeIfAbsent(page, _page -> builder.addFusionPlace(page, dataObjectName + " Count", "INT", "1`0", dataObjectCount(dataObjectName)));
     }
     
     private void translateEvents() {
@@ -580,9 +588,7 @@ public class CompilerApp {
     public String findKnownParent(String sourceId) {
     	ModelElementInstance element = bpmn.getModelElementById(sourceId);
     	String id = sourceId;
-    	System.out.println("\n Searching parent:");
     	while(element != null && !idsToNodes.containsKey(id)) {
-    		System.out.println(element.getClass().getSimpleName()+" "+id);
     		element = element.getParentElement();
     		id = element.getAttributeValue("id");
     	}
