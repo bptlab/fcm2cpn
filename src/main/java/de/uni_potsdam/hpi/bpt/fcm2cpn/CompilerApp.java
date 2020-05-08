@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -64,7 +65,6 @@ import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.PlaceNode;
-import org.cpntools.accesscpn.model.RefPlace;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.accesscpn.model.cpntypes.CPNEnum;
 import org.cpntools.accesscpn.model.cpntypes.CPNRecord;
@@ -165,14 +165,14 @@ public class CompilerApp {
         CPNEnum cpnEnum = CpntypesFactory.INSTANCE.createCPNEnum();
         Collection<DataState> dataStates = bpmn.getModelElementsByType(DataState.class);
         dataStates.stream()
-        	.flatMap(state -> dataObjectStateToNetColor(state.getAttributeValue("name")))
+        	.flatMap(state -> dataObjectStateToNetColors(state.getAttributeValue("name")))
             .forEach(cpnEnum::addValue);
-        builder.declareColorSet(petriNet, "STATE", cpnEnum);
+        if(!dataStates.isEmpty())builder.declareColorSet(petriNet, "STATE", cpnEnum);
         
         CPNRecord dataObject = CpntypesFactory.INSTANCE.createCPNRecord();
         dataObject.addValue("id", "STRING");
         dataObject.addValue("caseId", "STRING");
-        dataObject.addValue("state", "STATE");
+        if(!dataStates.isEmpty())dataObject.addValue("state", "STATE");
         builder.declareColorSet(petriNet, "DATA_OBJECT", dataObject);
     }
     
@@ -181,7 +181,7 @@ public class CompilerApp {
     	builder.declareVariable(petriNet, "caseId", "CaseID");
     }
     
-    private static Stream<String> dataObjectStateToNetColor(String state) {
+    private static Stream<String> dataObjectStateToNetColors(String state) {
     	return Arrays.stream(state.replaceAll("\\[", "").replaceAll("\\]", "").split("\\|"))
     			.map(String::trim)
     			.map(each -> each.replaceAll("\\s","_"))
@@ -209,18 +209,20 @@ public class CompilerApp {
     
     private void translateDataObjects() {
     	Collection<DataObject> dataObjects = bpmn.getModelElementsByType(DataObject.class);
-        Map<DataObject, Node> dataObjectsToPlaces = new HashMap<>();
+        Map<String, Node> dataObjectsNamesToPlaces = new HashMap<>();
         dataObjects.forEach(each -> {
             String name = trimDataObjectName(each.getName());
-        	Node node = builder.addPlace(mainPage, name, "DATA_OBJECT");
-            builder.declareVariable(petriNet, dataObjectId(name), "STRING");
-            builder.declareVariable(petriNet, dataObjectCount(name), "INT");
-        	dataObjectsToPlaces.put(each, node);
+            if(!dataObjectsNamesToPlaces.containsKey(name)) {
+            	Node node = builder.addPlace(mainPage, name, "DATA_OBJECT");
+                builder.declareVariable(petriNet, dataObjectId(name), "STRING");
+                builder.declareVariable(petriNet, dataObjectCount(name), "INT");
+                dataObjectsNamesToPlaces.put(name, node);
+            }
         });
         
         Collection<DataObjectReference> dataObjectRefs = bpmn.getModelElementsByType(DataObjectReference.class);
         dataObjectRefs.forEach(each -> {
-        	idsToNodes.put(each.getId(), dataObjectsToPlaces.get(each.getDataObject()));
+        	idsToNodes.put(each.getId(), dataObjectsNamesToPlaces.get(trimDataObjectName(each.getDataObject().getName())));
         });
     }
     
@@ -326,7 +328,7 @@ public class CompilerApp {
                 }
                 inputSetIndex++;
             }
-            SubpageElement subPage = new SubpageElement(each.getId(), activityPage, mainPageTransition, subpageTransitions);
+            SubpageElement subPage = new SubpageElement(this, each.getId(), activityPage, mainPageTransition, subpageTransitions);
             subpages.putIfAbsent(each.getId(), subPage);
             idsToNodes.put(each.getId(), mainPageTransition);
             translateDataAssociations(subPage, outputs, inputs);
@@ -352,18 +354,6 @@ public class CompilerApp {
         });
     }
     
-    private static String normalizeActivityName(String name) {
-    	return name.replace('\n', ' ');
-    }
-    
-    private static String dataElementId(ModelElementInstance element) {
-        if (element instanceof DataObjectReference) {
-            return ((DataObjectReference)element).getDataObject().getName().trim().replaceAll("\\s", "");
-        } else {
-            return ((DataStoreReference)element).getDataStore().getName().trim().replaceAll("\\s", "");
-        }
-    }
-    
     private void translateEvents() {
     	translateStartEvents();
     	translateEndEvents();
@@ -377,7 +367,7 @@ public class CompilerApp {
         	Page eventPage = builder.addPage(petriNet, normalizeActivityName(name));
         	Transition subpageTransition = builder.addTransition(eventPage, name);
             Instance mainPageTransition = builder.createSubPageTransition(eventPage, mainPage, name);
-            SubpageElement subPage = new SubpageElement(each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
+            SubpageElement subPage = new SubpageElement(this, each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
             subpages.put(each.getId(), subPage);
             
             Place caseTokenPlace = builder.addPlace(eventPage, "Case Count", "INT", "1`0");
@@ -431,7 +421,7 @@ public class CompilerApp {
         	Page eventPage = builder.addPage(petriNet, normalizeActivityName(name));
         	Transition subpageTransition = builder.addTransition(eventPage, name);
             Instance mainPageTransition = builder.createSubPageTransition(eventPage, mainPage, name);
-            SubpageElement subPage = new SubpageElement(each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
+            SubpageElement subPage = new SubpageElement(this, each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
             subpages.put(each.getId(), subPage);
         	idsToNodes.put(each.getId(), mainPageTransition);
             
@@ -451,7 +441,7 @@ public class CompilerApp {
 	}
     
     private void translateDataAssociations(SubpageElement subPage, Map<DataOutputAssociation, List<Transition>> outputs, Map<DataInputAssociation, List<Transition>> inputs) {
-    	Instance mainPageTransition = subPage.mainTransition;
+    	Instance mainPageTransition = subPage.getMainTransition();
     	Map<Node, Arc> outgoingArcs = new HashMap<>();
         outputs.forEach((assoc, transitions) -> {
         	String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
@@ -463,7 +453,7 @@ public class CompilerApp {
     			return arc;
     		});
         	transitions.forEach(subPageTransition -> {
-        		builder.addArc(subPage.page, subPageTransition, subPage.refPlaceFor((Place) targetNode), annotation);
+        		builder.addArc(subPage.getPage(), subPageTransition, subPage.refPlaceFor((Place) targetNode), annotation);
         	});
         });
         Map<Node, Arc> ingoingArcs = new HashMap<>();
@@ -477,13 +467,13 @@ public class CompilerApp {
     			return arc;
     		});
         	transitions.forEach(subPageTransition -> {
-        		builder.addArc(subPage.page, subPage.refPlaceFor((Place) sourceNode), subPageTransition, annotation);
+        		builder.addArc(subPage.getPage(), subPage.refPlaceFor((Place) sourceNode), subPageTransition, annotation);
         	});
     		/**Assert that when reading and not writing, the unchanged token is put back*/
     		outgoingArcs.computeIfAbsent(idsToNodes.get(source), targetNode -> {
     			Arc arc = builder.addArc(mainPage, mainPageTransition, targetNode, "");        	
             	transitions.forEach(subPageTransition -> {
-            		builder.addArc(subPage.page, subPageTransition, subPage.refPlaceFor((Place) targetNode), annotation);
+            		builder.addArc(subPage.getPage(), subPageTransition, subPage.refPlaceFor((Place) targetNode), annotation);
             	});
     			return arc;
     		});
@@ -491,10 +481,16 @@ public class CompilerApp {
     }
     
     private String annotationForDataFlow(ItemAwareElement dataObject) {
+    	Optional<DataState> dataState = Optional.ofNullable(dataObject.getDataState());
         if(dataObject instanceof DataObjectReference) {
             String dataType = trimDataObjectName(((DataObjectReference) dataObject).getDataObject().getName());
-            String dataState = dataObject.getDataState().getName();
-            return "{id = "+dataObjectId(dataType)+" , caseId = caseId, state = "+dataObjectStateToNetColor(dataState)+"}";
+            String stateString = dataState
+            		.map(DataState::getName)
+            		.map(stateName -> dataObjectStateToNetColors(stateName).findAny().get())
+            		.map(stateName -> ", state = "+stateName)
+            		.orElse("");
+            assert !dataState.isPresent() || dataObjectStateToNetColors(dataState.get().getName()).count() == 1;
+            return "{id = "+dataObjectId(dataType)+" , caseId = caseId"+stateString+"}";
         } else if (dataObject instanceof  DataStoreReference){
             String dataType = trimDataObjectName(((DataStoreReference) dataObject).getDataStore().getName());
             return dataObjectId(dataType);
@@ -517,7 +513,7 @@ public class CompilerApp {
 	    	Page gatewayPage = builder.addPage(petriNet, name);
 	    	Transition subpageTransition = builder.addTransition(gatewayPage, name);
 	        Instance mainPageTransition = builder.createSubPageTransition(gatewayPage, mainPage, name);
-	        SubpageElement subPage = new SubpageElement(each.getId(), gatewayPage, mainPageTransition, Arrays.asList(subpageTransition));
+	        SubpageElement subPage = new SubpageElement(this, each.getId(), gatewayPage, mainPageTransition, Arrays.asList(subpageTransition));
 	        subpages.put(each.getId(), subPage);
 	    	idsToNodes.put(each.getId(), mainPageTransition);
         });
@@ -540,16 +536,16 @@ public class CompilerApp {
         		if(!isPlace(target)) {
         			SubpageElement subPage = subpages.get(targetId);
         			if(Objects.nonNull(subPage)) {
-	        			subPage.subpageTransitions.forEach(transition -> {
-	            			builder.addArc(subPage.page, subPage.refPlaceFor((Place) source), transition, "caseId");
+	        			subPage.getSubpageTransitions().forEach(transition -> {
+	            			builder.addArc(subPage.getPage(), subPage.refPlaceFor((Place) source), transition, "caseId");
 	        			});
         			}
         		}
         		if(!isPlace(source)) {
         			SubpageElement subPage = subpages.get(sourceId);
         			if(Objects.nonNull(subPage)) {
-            			subPage.subpageTransitions.forEach(transition -> {
-                			builder.addArc(subPage.page, transition, subPage.refPlaceFor((Place) target), "caseId");
+            			subPage.getSubpageTransitions().forEach(transition -> {
+                			builder.addArc(subPage.getPage(), transition, subPage.refPlaceFor((Place) target), "caseId");
             			});
         			}
         		}
@@ -559,29 +555,23 @@ public class CompilerApp {
             	builder.addArc(mainPage, source, place, "");
        			SubpageElement sourceSubPage = subpages.get(sourceId);
        			if(Objects.nonNull(sourceSubPage)) {
-        			sourceSubPage.subpageTransitions.forEach(transition -> {
-            			builder.addArc(sourceSubPage.page, transition, sourceSubPage.refPlaceFor(place), "caseId");
+        			sourceSubPage.getSubpageTransitions().forEach(transition -> {
+            			builder.addArc(sourceSubPage.getPage(), transition, sourceSubPage.refPlaceFor(place), "caseId");
         			});
        			}
 
             	builder.addArc(mainPage, place, target, "");
     			SubpageElement targetSubPage = subpages.get(targetId);
     			if(Objects.nonNull(targetSubPage)) {
-        			targetSubPage.subpageTransitions.forEach(transition -> {
-            			builder.addArc(targetSubPage.page, targetSubPage.refPlaceFor(place), transition, "caseId");
+        			targetSubPage.getSubpageTransitions().forEach(transition -> {
+            			builder.addArc(targetSubPage.getPage(), targetSubPage.refPlaceFor(place), transition, "caseId");
         			});
     			}
         	}
         });
     }
     
-    private static <T extends ModelElementInstance> List<String> getReferenceIds(DataAssociation association, Class<T> referenceClass) {
-		return association.getChildElementsByType(referenceClass).stream()
-				.map(each -> each.getTextContent())
-				.collect(Collectors.toList());
-    }
-    
-    private String findKnownParent(String sourceId) {
+    public String findKnownParent(String sourceId) {
     	ModelElementInstance element = bpmn.getModelElementById(sourceId);
     	String id = sourceId;
     	while(element != null && !idsToNodes.containsKey(id)) {
@@ -608,31 +598,42 @@ public class CompilerApp {
     private void layout() {
     }
     
-    private class SubpageElement {
-    	String id;
-    	Page page;
-    	Instance mainTransition;
-    	List<Transition> subpageTransitions;
-    	Map<Place, RefPlace> placeReferences;
-    	public SubpageElement(String id, Page page, Instance mainTransition, List<Transition> subpageTransitions) {
-			this.id = id;
-			this.page = page;
-			this.mainTransition = mainTransition;
-			this.subpageTransitions = subpageTransitions;
-			this.placeReferences = new HashMap<>();
-		}
-    	
-    	RefPlace refPlaceFor(Place place) {
-    		return placeReferences.computeIfAbsent(place, sourcePlace -> {
-    			return builder.addReferencePlace(
-					page, 
-					sourcePlace.getName().asString(), 
-					sourcePlace.getSort().getText(), 
-					"", 
-					sourcePlace, 
-					mainTransition);
-    		});
-    	}
+    //=======Generation Methods======
+    public Page createPage(String name) {
+    	return builder.addPage(petriNet, name);
+    }
+    
+    public Instance createSubpageTransition(String name, Page page) {
+    	return builder.createSubPageTransition(page, mainPage, name);
+    }
+    
+    
+    //========Accessors======
+	public BuildCPNUtil getBuilder() {
+		return builder;
+	}
+	
+	public BpmnModelInstance getBpmn() {
+		return bpmn;
+	}
+	
+    //========Static========
+    public static String normalizeActivityName(String name) {
+    	return name.replace('\n', ' ');
+    }
+    
+    public static String dataElementId(ModelElementInstance element) {
+        if (element instanceof DataObjectReference) {
+            return ((DataObjectReference)element).getDataObject().getName().trim().replaceAll("\\s", "");
+        } else {
+            return ((DataStoreReference)element).getDataStore().getName().trim().replaceAll("\\s", "");
+        }
+    }
+    
+    public static <T extends ModelElementInstance> List<String> getReferenceIds(DataAssociation association, Class<T> referenceClass) {
+		return association.getChildElementsByType(referenceClass).stream()
+				.map(each -> each.getTextContent())
+				.collect(Collectors.toList());
     }
     
 
