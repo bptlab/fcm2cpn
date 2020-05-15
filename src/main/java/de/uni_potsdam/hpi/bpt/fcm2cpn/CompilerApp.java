@@ -66,6 +66,7 @@ import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.PlaceNode;
+import org.cpntools.accesscpn.model.RefPlace;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.accesscpn.model.cpntypes.CPNEnum;
 import org.cpntools.accesscpn.model.cpntypes.CPNList;
@@ -84,14 +85,27 @@ public class CompilerApp {
 	private Page mainPage;
 	private BpmnModelInstance bpmn;
 	private DataModel dataModel = new DataModel();
-	private BuildCPNUtil builder;
+	public final BuildCPNUtil builder;
 	private PetriNet petriNet;
 	private Map<String, SubpageElement> subpages;
 	private Map<String, Node> idsToNodes;
-	private Map<String, Map<Page, PlaceNode>> creationCounterPlaces;
 	private Place associations;
 	
 	private List<Runnable> deferred;
+	
+	private DataElementWrapper<ItemAwareElement, Object> caseWrapper = new DataElementWrapper<ItemAwareElement, Object>(this, "case") {
+		@Override
+		protected Place createPlace() {
+			return null;
+		}
+
+		@Override
+		public String annotationForDataFlow(Optional<String> stateName) {
+			return null;
+		}
+	};
+	private Collection<DataObjectWrapper> dataObjectWrappers;
+	private Collection<DataStoreWrapper> dataStoreWrappers;
 
     public static void main(final String[] args) throws Exception {
         System.out.println(licenseInfo);
@@ -129,7 +143,6 @@ public class CompilerApp {
         this.builder = new BuildCPNUtil();
         this.subpages = new HashMap<>();
         this.idsToNodes = new HashMap<>();
-        this.creationCounterPlaces = new HashMap<>();
         this.deferred = new ArrayList<>();
 	}
     
@@ -206,25 +219,6 @@ public class CompilerApp {
     	return name.trim().toLowerCase();
     }
     
-    private static String dataType(ItemAwareElement dataObject) {
-        if(dataObject instanceof DataObjectReference) {
-            return trimDataObjectName(((DataObjectReference) dataObject).getDataObject().getName());
-        } else if (dataObject instanceof  DataStoreReference){
-            return trimDataObjectName(((DataStoreReference) dataObject).getDataStore().getName());
-        } else {
-            throw new RuntimeException("Unsupported type of ItemAwareElement with id"+dataObject.getId()+": "+dataObject.getClass());
-        }
-    }
-    
-    private static String dataObjectId(String trimmedName) {
-    	return trimmedName.replaceAll("\\s", "_") + "Id";
-    }
-    
-    
-    private static String dataObjectCount(String trimmedName) {
-    	return trimmedName.replaceAll("\\s", "_") + "Count";
-    }
-    
     private void translateData() {
         translateDataObjects();        
         translateDataStores();
@@ -233,37 +227,34 @@ public class CompilerApp {
     
     
     private void translateDataObjects() {
+        Map<String, DataObjectWrapper> dataObjectsNamesToWrappers = new HashMap<>();
+
     	Collection<DataObject> dataObjects = bpmn.getModelElementsByType(DataObject.class);
-        Map<String, Node> dataObjectsNamesToPlaces = new HashMap<>();
-        dataObjects.forEach(each -> {
-            String name = trimDataObjectName(each.getName());
-            if(!dataObjectsNamesToPlaces.containsKey(name)) {
-            	Node node = builder.addPlace(mainPage, name, "DATA_OBJECT");
-                builder.declareVariable(petriNet, dataObjectId(name), "STRING");
-                builder.declareVariable(petriNet, dataObjectCount(name), "INT");
-                dataObjectsNamesToPlaces.put(name, node);
-            }
-        });
+        dataObjects.forEach(each -> dataObjectsNamesToWrappers
+        		.computeIfAbsent(trimDataObjectName(each.getName()), trimmedName -> new DataObjectWrapper(this, trimmedName))
+        		.addMappedElement(each));
         
         Collection<DataObjectReference> dataObjectRefs = bpmn.getModelElementsByType(DataObjectReference.class);
-        dataObjectRefs.forEach(each -> {
-        	idsToNodes.put(each.getId(), dataObjectsNamesToPlaces.get(trimDataObjectName(each.getDataObject().getName())));
-        });
+        dataObjectRefs.forEach(each -> dataObjectsNamesToWrappers
+        		.get(trimDataObjectName(each.getDataObject().getName()))
+        		.addMappedReference(each));
+        
+        dataObjectWrappers = dataObjectsNamesToWrappers.values();
     }
     
     private void translateDataStores() {
+        Map<String, DataStoreWrapper> dataStoreNamesToWrappers = new HashMap<>();
+        
         Collection<DataStore> dataStores = bpmn.getModelElementsByType(DataStore.class);
-        Map<DataStore, Node> dataStoresToPlaces = new HashMap<>();
-        dataStores.forEach(each -> {
-            String name = trimDataObjectName(each.getName());
-        	Node node = builder.addPlace(mainPage, name, "DATA_STORE", "1`\"store_"+name.replaceAll("\\s", "_")+"\"");
-            builder.declareVariable(petriNet, dataObjectId(name), "STRING");
-        	dataStoresToPlaces.put(each, node);
-        });
+        dataStores.forEach(each -> dataStoreNamesToWrappers
+        		.computeIfAbsent(trimDataObjectName(each.getName()), trimmedName -> new DataStoreWrapper(this, trimmedName))
+        		.addMappedElement(each));
         Collection<DataStoreReference> dataStoreRefs = bpmn.getModelElementsByType(DataStoreReference.class);
-        dataStoreRefs.forEach(each -> {
-        	idsToNodes.put(each.getId(), dataStoresToPlaces.get(each.getDataStore()));
-        });
+        dataStoreRefs.forEach(each -> dataStoreNamesToWrappers
+        		.get(trimDataObjectName(each.getDataStore().getName()))
+        		.addMappedReference(each));
+        
+        dataStoreWrappers = dataStoreNamesToWrappers.values();
     }
     
     private void createAssociationPlace() {
@@ -280,10 +271,10 @@ public class CompilerApp {
             List<Transition> subpageTransitions = subPage.getSubpageTransitions();
             subpages.putIfAbsent(each.getId(), subPage);
             idsToNodes.put(each.getId(), mainPageTransition);
-            Map<String, List<StatefulDataAssociation<DataInputAssociation>>> inputsPerObject = each.getDataInputAssociations().stream()
+            Map<DataElementWrapper, List<StatefulDataAssociation<DataInputAssociation>>> inputsPerObject = each.getDataInputAssociations().stream()
             		.flatMap(this::splitDataAssociationByState)
                     .collect(Collectors.toConcurrentMap(
-                    		assoc ->  dataElementId(assoc.dataElement),
+                    		assoc ->  wrapperFor(assoc.dataElement),
                     		Arrays::asList,
 		                    (a,b) -> {
 		                        a = new ArrayList<>(a);
@@ -291,10 +282,10 @@ public class CompilerApp {
 		                        return a;
 		                    }
                     ));
-            Map<String, List<StatefulDataAssociation<DataOutputAssociation>>> outputsPerObject = each.getDataOutputAssociations().stream()
+            Map<DataElementWrapper, List<StatefulDataAssociation<DataOutputAssociation>>> outputsPerObject = each.getDataOutputAssociations().stream()
             		.flatMap(this::splitDataAssociationByState)
                     .collect(Collectors.toConcurrentMap(
-                    		assoc ->  dataElementId(assoc.dataElement),
+                    		assoc ->  wrapperFor(assoc.dataElement),
                     		Arrays::asList,
 		                    (a,b) -> {
 		                        a = new ArrayList<>(a);
@@ -340,15 +331,17 @@ public class CompilerApp {
             	int outputSetIndex = 0;
             	for (List<StatefulDataAssociation<DataOutputAssociation>> outputSet : outputSets) {
                     Transition subpageTransition = builder.addTransition(activityPage, name + inputSetIndex + "_" + outputSetIndex);
-                    Set<String> dataInputs = inputSet.stream()
+                    Set<DataObjectWrapper> dataInputs = inputSet.stream()
                             .map(assoc -> assoc.dataElement)
                             .filter(object -> object instanceof DataObjectReference)
-                            .map(object -> trimDataObjectName(((DataObjectReference)object).getDataObject().getName()))
+                            .map(object -> (DataObjectReference) object)
+                            .map(this::wrapperFor)
                             .collect(Collectors.toSet());
-                    Set<String> createObjects = outputSet.stream()
+                    Set<DataObjectWrapper> createObjects = outputSet.stream()
                             .map(assoc -> assoc.dataElement)
                             .filter(object -> object instanceof DataObjectReference)
-                            .map(object -> trimDataObjectName(((DataObjectReference)object).getDataObject().getName()))
+                            .map(object -> (DataObjectReference) object)
+                            .map(this::wrapperFor)
                             .filter(output -> !dataInputs.contains(output))
                             .collect(Collectors.toSet());
                     if (createObjects.size() > 0) {
@@ -365,10 +358,10 @@ public class CompilerApp {
         });
     }
     
-    private void attachObjectCreationCounters(Transition transition, Set<String> createObjects) {
-        String countVariables = createObjects.stream().map(CompilerApp::dataObjectCount).collect(Collectors.joining(",\n"));
-        String idVariables = createObjects.stream().map(CompilerApp::dataObjectId).collect(Collectors.joining(",\n"));
-        String idGeneration = createObjects.stream().map(object -> "String.concat[\"" + object + "\", Int.toString(" + dataObjectCount(object) +")]").collect(Collectors.joining(",\n"));
+    private void attachObjectCreationCounters(Transition transition, Set<DataObjectWrapper> createObjects) {
+        String countVariables = createObjects.stream().map(DataObjectWrapper::dataObjectCount).collect(Collectors.joining(",\n"));
+        String idVariables = createObjects.stream().map(DataObjectWrapper::dataObjectId).collect(Collectors.joining(",\n"));
+        String idGeneration = createObjects.stream().map(object -> "String.concat[\"" + object.namePrefix() + "\", Int.toString(" + object.dataObjectCount() +")]").collect(Collectors.joining(",\n"));
         Page page = transition.getPage();
         transition.getCode().setText(String.format(
                 "input (%s);\n"
@@ -378,16 +371,10 @@ public class CompilerApp {
                 idVariables,
                 idGeneration));
         createObjects.forEach(object -> {
-            PlaceNode caseTokenPlace = counterFor(page, object);
-            builder.addArc(page, caseTokenPlace, transition, dataObjectCount(object));
-            builder.addArc(page, transition, caseTokenPlace, dataObjectCount(object) + "+ 1");
+            PlaceNode caseTokenPlace = object.creationCounterForPage(page);
+            builder.addArc(page, caseTokenPlace, transition, object.dataObjectCount());
+            builder.addArc(page, transition, caseTokenPlace, object.dataObjectCount() + "+ 1");
         });
-    }
-    
-    private PlaceNode counterFor(Page page, String dataObjectName) {
-    	return creationCounterPlaces
-    		.computeIfAbsent(dataObjectName, _dataObjectName -> new HashMap<Page, PlaceNode>())
-    		.computeIfAbsent(page, _page -> builder.addFusionPlace(page, dataObjectName + " Count", "INT", "1`0", dataObjectCount(dataObjectName)));
     }
     
     private void translateEvents() {
@@ -416,18 +403,17 @@ public class CompilerApp {
              * Use Case: When the input event creates a data object that can also be created by a task
              * Then they should both use the same counter, one for the data object, and not the case counter
              */
-            List<String> ids = each.getDataOutputAssociations().stream()
+            List<DataElementWrapper> ids = each.getDataOutputAssociations().stream()
                     .map(assoc -> {
-                        String target = findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0));
-                        ItemAwareElement dataObject = bpmn.getModelElementById(target);
-                        return trimDataObjectName(((DataObjectReference) dataObject).getDataObject().getName());
+                        ItemAwareElement dataObject = findParentDataElement(getReferenceIds(assoc, TargetRef.class).get(0));
+                        return wrapperFor(dataObject);
                     })
                     .distinct()
                     .collect(Collectors.toList());
-            ids.add(0, "case");
+            ids.add(0, caseWrapper);
             
-            String idVariables = ids.stream().map(CompilerApp::dataObjectId).collect(Collectors.joining(", "));
-            String idGeneration = ids.stream().map(n -> "String.concat[\"" + n + "\", Int.toString(count)]").collect(Collectors.joining(",\n"));
+            String idVariables = ids.stream().map(DataElementWrapper::dataObjectId).collect(Collectors.joining(", "));
+            String idGeneration = ids.stream().map(n -> "String.concat[\"" + n.namePrefix() + "\", Int.toString(count)]").collect(Collectors.joining(",\n"));
             subpageTransition.getCode().setText(String.format(
             	"input (count);\n"
 	            +"output (%s);\n"
@@ -479,9 +465,10 @@ public class CompilerApp {
 	}
     
     private <T extends DataAssociation> Stream<StatefulDataAssociation<T>> splitDataAssociationByState(T assoc) {
-    	ModelElementInstance source = bpmn.getModelElementById(findKnownParent(getReferenceIds(assoc, SourceRef.class).get(0)));
-    	ModelElementInstance target = bpmn.getModelElementById(findKnownParent(getReferenceIds(assoc, TargetRef.class).get(0)));
-        ItemAwareElement dataElement = (ItemAwareElement) (source instanceof DataObjectReference || source instanceof DataStoreReference ? source : target);
+    	ItemAwareElement source = findParentDataElement(getReferenceIds(assoc, SourceRef.class).get(0));
+    	ItemAwareElement target = findParentDataElement(getReferenceIds(assoc, TargetRef.class).get(0));
+        ItemAwareElement dataElement = source instanceof DataObjectReference || source instanceof DataStoreReference ? source : target;
+        assert dataElement != null;
     	Stream<String> possibleStates = Optional.ofNullable(dataElement.getDataState())
         		.map(DataState::getName)
         		.map(stateName -> dataObjectStateToNetColors(stateName))
@@ -490,94 +477,79 @@ public class CompilerApp {
     }
     
     private void translateDataAssociations(SubpageElement subPage, Map<StatefulDataAssociation<DataOutputAssociation>, List<Transition>> outputs, Map<StatefulDataAssociation<DataInputAssociation>, List<Transition>> inputs) {
-    	System.out.println("\n"+subPage.id);
-    	
-    	List<String> outputObjects = outputs.keySet().stream()
-    		.peek(each -> System.out.println("\t"+each.dataElement.getClass().getSimpleName()))
-    		.map(each -> each.dataElement.getId())
-    		.distinct()
-    		.collect(Collectors.toList());
-    	
-    	List<String> inputObjects = outputs.keySet().stream()
-    		.peek(each -> System.out.println("\t"+each.dataElement.getClass().getSimpleName()))
-    		.map(each -> each.dataElement.getId())
-    		.distinct()
-    		.collect(Collectors.toList());
-    	
-    	List<List<String>> createdAssocs = new ArrayList<>();
-    	for(int i = 0; i < outputObjects.size(); i++) {
-    		String output = outputObjects.get(i);
-    		for(int j = i+1; j < outputObjects.size(); j++) {
-    			String otherOutput = outputObjects.get(j);
-    			if(dataModel.isAssociated(output, otherOutput)) createdAssocs.add(Arrays.asList(output, otherOutput));
-    		}
-    		
-    		for(int j = 0; j < inputObjects.size(); j++) {
-    			String input = inputObjects.get(j);
-    			if(dataModel.isAssociated(output, input)) createdAssocs.add(Arrays.asList(output, input));
-    		}
-    	}
-    	
-    	List<List<String>> requiredAssocs = new ArrayList<>();
-    	for(int i = 0; i < inputObjects.size(); i++) {
-    		String input = inputObjects.get(i);
-    		for(int j = i+1; j < inputObjects.size(); j++) {
-    			String otherInput = inputObjects.get(j);
-    			if(dataModel.isAssociated(input, otherInput)) requiredAssocs.add(Arrays.asList(input, otherInput));
-    		}
-    	}
-    	
-    	System.out.println("\t Created:"+createdAssocs);
-    	System.out.println("\t Required:"+requiredAssocs);
+//    	System.out.println("\n"+subPage.id);
+//    	
+//    	List<String> outputObjects = outputs.keySet().stream()
+//    		.peek(each -> System.out.println("\t"+each.dataElement.getClass().getSimpleName()))
+//    		.map(each -> each.dataElement.getId())
+//    		.distinct()
+//    		.collect(Collectors.toList());
+//    	
+//    	List<String> inputObjects = outputs.keySet().stream()
+//    		.peek(each -> System.out.println("\t"+each.dataElement.getClass().getSimpleName()))
+//    		.map(each -> each.dataElement.getId())
+//    		.distinct()
+//    		.collect(Collectors.toList());
+//    	
+//    	List<List<String>> createdAssocs = new ArrayList<>();
+//    	for(int i = 0; i < outputObjects.size(); i++) {
+//    		String output = outputObjects.get(i);
+//    		for(int j = i+1; j < outputObjects.size(); j++) {
+//    			String otherOutput = outputObjects.get(j);
+//    			if(dataModel.isAssociated(output, otherOutput)) createdAssocs.add(Arrays.asList(output, otherOutput));
+//    		}
+//    		
+//    		for(int j = 0; j < inputObjects.size(); j++) {
+//    			String input = inputObjects.get(j);
+//    			if(dataModel.isAssociated(output, input)) createdAssocs.add(Arrays.asList(output, input));
+//    		}
+//    	}
+//    	
+//    	List<List<String>> requiredAssocs = new ArrayList<>();
+//    	for(int i = 0; i < inputObjects.size(); i++) {
+//    		String input = inputObjects.get(i);
+//    		for(int j = i+1; j < inputObjects.size(); j++) {
+//    			String otherInput = inputObjects.get(j);
+//    			if(dataModel.isAssociated(input, otherInput)) requiredAssocs.add(Arrays.asList(input, otherInput));
+//    		}
+//    	}
+//    	
+//    	System.out.println("\t Created:"+createdAssocs);
+//    	System.out.println("\t Required:"+requiredAssocs);
     	
     	Instance mainPageTransition = subPage.getMainTransition();
-    	Map<Node, Arc> outgoingArcs = new HashMap<>();
+    	Map<DataElementWrapper, Arc> outgoingArcs = new HashMap<>();
         outputs.forEach((assoc, transitions) -> {
-        	ItemAwareElement dataElement = assoc.dataElement;
-        	String annotation = annotationForDataFlow(dataElement, assoc.stateName);
-        	Node targetNode = idsToNodes.get(dataElement.getId());
-        	outgoingArcs.computeIfAbsent(targetNode, _targetNode -> {
-    			Arc arc = builder.addArc(mainPage, mainPageTransition, _targetNode, "");
+        	DataElementWrapper dataElement = wrapperFor(assoc.dataElement);
+        	String annotation = dataElement.annotationForDataFlow(assoc.stateName);
+        	outgoingArcs.computeIfAbsent(dataElement, _dataElement -> {
+    			Arc arc = builder.addArc(mainPage, mainPageTransition, _dataElement.place, "");
     			return arc;
     		});
         	transitions.forEach(subPageTransition -> {
-        		builder.addArc(subPage.getPage(), subPageTransition, subPage.refPlaceFor((Place) targetNode), annotation);
+        		builder.addArc(subPage.getPage(), subPageTransition, subPage.refPlaceFor(dataElement.place), annotation);
         	});
         });
-        Map<Node, Arc> ingoingArcs = new HashMap<>();
+        Map<DataElementWrapper, Arc> ingoingArcs = new HashMap<>();
         inputs.forEach((assoc, transitions) -> {
-            ItemAwareElement dataObject = assoc.dataElement;
-            String annotation = annotationForDataFlow(dataObject, assoc.stateName);
-            Node sourceNode = idsToNodes.get(dataObject.getId());
-    		ingoingArcs.computeIfAbsent(sourceNode, _sourceNode -> {
-    			Arc arc = builder.addArc(mainPage, _sourceNode, mainPageTransition, "");
+        	DataElementWrapper dataObject = wrapperFor(assoc.dataElement);
+            String annotation = dataObject.annotationForDataFlow(assoc.stateName);
+    		ingoingArcs.computeIfAbsent(dataObject, _dataObject -> {
+    			Arc arc = builder.addArc(mainPage, _dataObject.place, mainPageTransition, "");
     			return arc;
     		});
         	transitions.forEach(subPageTransition -> {
-        		builder.addArc(subPage.getPage(), subPage.refPlaceFor((Place) sourceNode), subPageTransition, annotation);
+        		builder.addArc(subPage.getPage(), subPage.refPlaceFor(dataObject.place), subPageTransition, annotation);
         	});
     		/**Assert that when reading and not writing, the unchanged token is put back*/
-    		outgoingArcs.computeIfAbsent(idsToNodes.get(dataObject.getId()), targetNode -> {
-    			Arc arc = builder.addArc(mainPage, mainPageTransition, targetNode, "");        	
+    		outgoingArcs.computeIfAbsent(dataObject, _dataObject -> {
+    			Arc arc = builder.addArc(mainPage, mainPageTransition, _dataObject.place, "");        	
             	transitions.forEach(subPageTransition -> {
-            		builder.addArc(subPage.getPage(), subPageTransition, subPage.refPlaceFor((Place) targetNode), annotation);
+            		builder.addArc(subPage.getPage(), subPageTransition, subPage.refPlaceFor(dataObject.place), annotation);
             	});
     			return arc;
     		});
         });
-    }
-    
-    private String annotationForDataFlow(ItemAwareElement dataObject, Optional<String> stateName) {
-        if(dataObject instanceof DataObjectReference) {
-            String dataType = trimDataObjectName(((DataObjectReference) dataObject).getDataObject().getName());
-            String stateString = stateName.map(x -> ", state = "+x).orElse("");
-            return "{id = "+dataObjectId(dataType)+" , caseId = caseId"+stateString+"}";
-        } else if (dataObject instanceof  DataStoreReference){
-            String dataType = trimDataObjectName(((DataStoreReference) dataObject).getDataStore().getName());
-            return dataObjectId(dataType);
-        } else {
-            return "UNKNOWN";
-        }
     }
     
     private void translateGateways() {
@@ -652,15 +624,13 @@ public class CompilerApp {
         });
     }
     
-    public String findKnownParent(String sourceId) {
+    public ItemAwareElement findParentDataElement(String sourceId) {
     	ModelElementInstance element = bpmn.getModelElementById(sourceId);
-    	String id = sourceId;
-    	while(element != null && !idsToNodes.containsKey(id)) {
+    	while(element != null && !(element instanceof ItemAwareElement)) {
     		element = element.getParentElement();
-    		id = element.getAttributeValue("id");
     	}
-    	if(element != null)return id;
-    	else throw new Error("Could not find known parent element for element with id "+sourceId);
+    	if(element != null)return (ItemAwareElement) element;
+    	return null;
 		
     }
     
@@ -679,13 +649,62 @@ public class CompilerApp {
     private void layout() {
     }
     
+    private <T extends ItemAwareElement> DataElementWrapper wrapperFor(T element) {
+    	if(element instanceof DataObject) {
+    		return wrapperFor((DataObject)element);
+    	} else if(element instanceof DataStore) {
+    		return wrapperFor((DataStore) element);
+    	} else if(element instanceof DataObjectReference) {
+    		return wrapperFor((DataObjectReference)element);
+    	} else if(element instanceof DataStoreReference) {
+    		return wrapperFor((DataStoreReference)element);
+    	} else {
+    		throw new RuntimeException(element.getClass().getSimpleName());
+    	}
+    }
+    
+    private DataObjectWrapper wrapperFor(DataObject object) {
+    	return dataObjectWrappers.stream().filter(any -> any.isForElement(object)).findAny().get();
+    }
+    
+    private DataObjectWrapper wrapperFor(DataObjectReference reference) {
+    	return dataObjectWrappers.stream().filter(any -> any.isForReference(reference)).findAny().get();
+    }
+    
+    
+    private DataStoreWrapper wrapperFor(DataStore object) {
+    	return dataStoreWrappers.stream().filter(any -> any.isForElement(object)).findAny().get();
+    }
+    
+    private DataStoreWrapper wrapperFor(DataStoreReference reference) {
+    	return dataStoreWrappers.stream().filter(any -> any.isForReference(reference)).findAny().get();
+    }
+    
+    
+    
     //=======Generation Methods======
     public Page createPage(String name) {
     	return builder.addPage(petriNet, name);
     }
     
+    public Place createPlace(String name, String type) {
+    	return builder.addPlace(mainPage, name, type);
+    }
+    
+    public Place createPlace(String name, String type, String initialMarking) {
+    	return builder.addPlace(mainPage, name, type, initialMarking);
+    }
+    
+    public RefPlace createFusionPlace(Page page, String name, String type, String initialMarking, String fusionGroupName) {
+    	return builder.addFusionPlace(page, name, type, initialMarking, fusionGroupName);
+    }
+    
     public Instance createSubpageTransition(String name, Page page) {
     	return builder.createSubPageTransition(page, mainPage, name);
+    }
+    
+    public void createVariable(String name, String type) {
+        builder.declareVariable(petriNet, name, type);
     }
     
     
@@ -701,14 +720,6 @@ public class CompilerApp {
     //========Static========
     public static String normalizeActivityName(String name) {
     	return name.replace('\n', ' ');
-    }
-    
-    public static String dataElementId(ModelElementInstance element) {
-        if (element instanceof DataObjectReference) {
-            return ((DataObjectReference)element).getDataObject().getName().trim().replaceAll("\\s", "");
-        } else {
-            return ((DataStoreReference)element).getDataStore().getName().trim().replaceAll("\\s", "");
-        }
     }
     
     public static <T extends ModelElementInstance> List<String> getReferenceIds(DataAssociation association, Class<T> referenceClass) {

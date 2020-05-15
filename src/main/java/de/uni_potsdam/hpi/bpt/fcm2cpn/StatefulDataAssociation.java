@@ -8,7 +8,7 @@ import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 
 public class StatefulDataAssociation<T extends DataAssociation> {
 	final Optional<String> stateName;
-	final ItemAwareElement dataElement;
+	final ItemAwareElement dataElement;//DataObjectReference or DataStoreReference
 	final T bpmnAssociation;
 	public StatefulDataAssociation(T bpmnAssociation, String stateName, ItemAwareElement dataElement) {
 		this.bpmnAssociation = bpmnAssociation;
