@@ -13,7 +13,7 @@ import org.cpntools.accesscpn.model.Transition;
 public class SubpageElement {
 
 	private final CompilerApp compilerApp;
-	private String id;
+	public final String id;
 	private Page page;
 	private Instance mainTransition;
 	private List<Transition> subpageTransitions;

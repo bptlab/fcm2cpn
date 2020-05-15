@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -67,6 +68,7 @@ import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.PlaceNode;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.accesscpn.model.cpntypes.CPNEnum;
+import org.cpntools.accesscpn.model.cpntypes.CPNList;
 import org.cpntools.accesscpn.model.cpntypes.CPNRecord;
 import org.cpntools.accesscpn.model.cpntypes.CpntypesFactory;
 import org.cpntools.accesscpn.model.exporter.DOMGenerator;
@@ -81,11 +83,13 @@ public class CompilerApp {
 
 	private Page mainPage;
 	private BpmnModelInstance bpmn;
+	private DataModel dataModel = new DataModel();
 	private BuildCPNUtil builder;
 	private PetriNet petriNet;
 	private Map<String, SubpageElement> subpages;
 	private Map<String, Node> idsToNodes;
 	private Map<String, Map<Page, PlaceNode>> creationCounterPlaces;
+	private Place associations;
 	
 	private List<Runnable> deferred;
 
@@ -176,11 +180,16 @@ public class CompilerApp {
         dataObject.addValue("caseId", "STRING");
         if(!dataStates.isEmpty())dataObject.addValue("state", "STATE");
         builder.declareColorSet(petriNet, "DATA_OBJECT", dataObject);
+        
+        CPNList asssociation = CpntypesFactory.INSTANCE.createCPNList();
+        asssociation.setSort("STRING");
+        builder.declareColorSet(petriNet, "ASSOCIATION", asssociation);
     }
     
     private void initializeDefaultVariables() {
     	builder.declareVariable(petriNet, "count", "INT");
     	builder.declareVariable(petriNet, "caseId", "CaseID");
+    	builder.declareVariable(petriNet, "assoc", "ASSOCIATION");
     }
     
     private static Stream<String> dataObjectStateToNetColors(String state) {
@@ -190,8 +199,21 @@ public class CompilerApp {
     			.map(String::toUpperCase);
     }
     
+    /**
+     * Maps from top level data object names to names of
+     */
     private static String trimDataObjectName(String name) {
     	return name.trim().toLowerCase();
+    }
+    
+    private static String dataType(ItemAwareElement dataObject) {
+        if(dataObject instanceof DataObjectReference) {
+            return trimDataObjectName(((DataObjectReference) dataObject).getDataObject().getName());
+        } else if (dataObject instanceof  DataStoreReference){
+            return trimDataObjectName(((DataStoreReference) dataObject).getDataStore().getName());
+        } else {
+            throw new RuntimeException("Unsupported type of ItemAwareElement with id"+dataObject.getId()+": "+dataObject.getClass());
+        }
     }
     
     private static String dataObjectId(String trimmedName) {
@@ -206,6 +228,7 @@ public class CompilerApp {
     private void translateData() {
         translateDataObjects();        
         translateDataStores();
+        createAssociationPlace();
     }
     
     
@@ -241,6 +264,10 @@ public class CompilerApp {
         dataStoreRefs.forEach(each -> {
         	idsToNodes.put(each.getId(), dataStoresToPlaces.get(each.getDataStore()));
         });
+    }
+    
+    private void createAssociationPlace() {
+    	associations = builder.addPlace(mainPage, "associations", "ASSOCIATION");
     }
     
     private void translateActivities() {
@@ -463,6 +490,46 @@ public class CompilerApp {
     }
     
     private void translateDataAssociations(SubpageElement subPage, Map<StatefulDataAssociation<DataOutputAssociation>, List<Transition>> outputs, Map<StatefulDataAssociation<DataInputAssociation>, List<Transition>> inputs) {
+    	System.out.println("\n"+subPage.id);
+    	
+    	List<String> outputObjects = outputs.keySet().stream()
+    		.peek(each -> System.out.println("\t"+each.dataElement.getClass().getSimpleName()))
+    		.map(each -> each.dataElement.getId())
+    		.distinct()
+    		.collect(Collectors.toList());
+    	
+    	List<String> inputObjects = outputs.keySet().stream()
+    		.peek(each -> System.out.println("\t"+each.dataElement.getClass().getSimpleName()))
+    		.map(each -> each.dataElement.getId())
+    		.distinct()
+    		.collect(Collectors.toList());
+    	
+    	List<List<String>> createdAssocs = new ArrayList<>();
+    	for(int i = 0; i < outputObjects.size(); i++) {
+    		String output = outputObjects.get(i);
+    		for(int j = i+1; j < outputObjects.size(); j++) {
+    			String otherOutput = outputObjects.get(j);
+    			if(dataModel.isAssociated(output, otherOutput)) createdAssocs.add(Arrays.asList(output, otherOutput));
+    		}
+    		
+    		for(int j = 0; j < inputObjects.size(); j++) {
+    			String input = inputObjects.get(j);
+    			if(dataModel.isAssociated(output, input)) createdAssocs.add(Arrays.asList(output, input));
+    		}
+    	}
+    	
+    	List<List<String>> requiredAssocs = new ArrayList<>();
+    	for(int i = 0; i < inputObjects.size(); i++) {
+    		String input = inputObjects.get(i);
+    		for(int j = i+1; j < inputObjects.size(); j++) {
+    			String otherInput = inputObjects.get(j);
+    			if(dataModel.isAssociated(input, otherInput)) requiredAssocs.add(Arrays.asList(input, otherInput));
+    		}
+    	}
+    	
+    	System.out.println("\t Created:"+createdAssocs);
+    	System.out.println("\t Required:"+requiredAssocs);
+    	
     	Instance mainPageTransition = subPage.getMainTransition();
     	Map<Node, Arc> outgoingArcs = new HashMap<>();
         outputs.forEach((assoc, transitions) -> {
@@ -648,32 +715,6 @@ public class CompilerApp {
 		return association.getChildElementsByType(referenceClass).stream()
 				.map(each -> each.getTextContent())
 				.collect(Collectors.toList());
-    }
-    
-    public class StatefulDataAssociation<T extends DataAssociation> {
-    	final Optional<String> stateName;
-    	final ItemAwareElement dataElement;
-    	final T bpmnAssociation;
-    	public StatefulDataAssociation(T bpmnAssociation, String stateName, ItemAwareElement dataElement) {
-    		this.bpmnAssociation = bpmnAssociation;
-    		this.stateName = Optional.ofNullable(stateName);
-    		this.dataElement = dataElement;
-    	}
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + Objects.hash(bpmnAssociation, stateName);
-			return result;
-		}
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj) return true;
-			if (obj == null) return false;
-			if (getClass() != obj.getClass()) return false;
-			StatefulDataAssociation<?> other = (StatefulDataAssociation<?>) obj;
-			return Objects.equals(bpmnAssociation, other.bpmnAssociation) && Objects.equals(stateName, other.stateName);
-		}
     }
     
 
