@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -101,7 +100,7 @@ public class CompilerApp {
 
 		@Override
 		public String annotationForDataFlow(Optional<String> stateName) {
-			return null;
+			throw new UnsupportedOperationException();
 		}
 	};
 	private Collection<DataObjectWrapper> dataObjectWrappers;
@@ -119,11 +118,15 @@ public class CompilerApp {
             System.exit(0);
         }
         BpmnModelInstance bpmn = loadBPMNFile(bpmnFile);
-        PetriNet petriNet = new CompilerApp(bpmn).translateBPMN2CPN();
-        ModelPrinter.printModel(petriNet);
+        PetriNet petriNet = translateBPMN2CPN(bpmn);
+		ModelPrinter.printModel(petriNet);
         System.out.print("Writing CPN file... ");
         DOMGenerator.export(petriNet, "./"+bpmnFile.getName().replaceAll("\\.bpmn", "")+".cpn");
         System.out.println("DONE");
+    }
+    
+    public static PetriNet translateBPMN2CPN(BpmnModelInstance bpmn) {
+    	return new CompilerApp(bpmn).translateBPMN2CPN();
     }
 
     private static File getFile() {
@@ -153,7 +156,7 @@ public class CompilerApp {
         return bpmn;
     }
 
-    private PetriNet translateBPMN2CPN() throws Exception {
+    private PetriNet translateBPMN2CPN() {
     	initializeCPNModel();
     	System.out.print("Translating BPMN... ");
         translateData();
@@ -170,7 +173,7 @@ public class CompilerApp {
 	private void initializeCPNModel() {
         System.out.print("Initalizing CPN model... ");
         petriNet = builder.createPetriNet();
-        mainPage = builder.addPage(petriNet, "Main Page");
+        mainPage = createPage("Main Page");
         initializeDefaultColorSets();
         initializeDefaultVariables();
         System.out.println("DONE");
@@ -200,9 +203,9 @@ public class CompilerApp {
     }
     
     private void initializeDefaultVariables() {
-    	builder.declareVariable(petriNet, "count", "INT");
-    	builder.declareVariable(petriNet, "caseId", "CaseID");
-    	builder.declareVariable(petriNet, "assoc", "ASSOCIATION");
+    	createVariable("count", "INT");
+    	createVariable("caseId", "CaseID");
+    	createVariable("assoc", "ASSOCIATION");
     }
     
     private static Stream<String> dataObjectStateToNetColors(String state) {
@@ -210,13 +213,6 @@ public class CompilerApp {
     			.map(String::trim)
     			.map(each -> each.replaceAll("\\s","_"))
     			.map(String::toUpperCase);
-    }
-    
-    /**
-     * Maps from top level data object names to names of
-     */
-    private static String trimDataObjectName(String name) {
-    	return name.trim().toLowerCase();
     }
     
     private void translateData() {
@@ -231,12 +227,12 @@ public class CompilerApp {
 
     	Collection<DataObject> dataObjects = bpmn.getModelElementsByType(DataObject.class);
         dataObjects.forEach(each -> dataObjectsNamesToWrappers
-        		.computeIfAbsent(trimDataObjectName(each.getName()), trimmedName -> new DataObjectWrapper(this, trimmedName))
+        		.computeIfAbsent(normalizeElementName(each.getName()), trimmedName -> new DataObjectWrapper(this, trimmedName))
         		.addMappedElement(each));
         
         Collection<DataObjectReference> dataObjectRefs = bpmn.getModelElementsByType(DataObjectReference.class);
         dataObjectRefs.forEach(each -> dataObjectsNamesToWrappers
-        		.get(trimDataObjectName(each.getDataObject().getName()))
+        		.get(normalizeElementName(each.getDataObject().getName()))
         		.addMappedReference(each));
         
         dataObjectWrappers = dataObjectsNamesToWrappers.values();
@@ -247,26 +243,26 @@ public class CompilerApp {
         
         Collection<DataStore> dataStores = bpmn.getModelElementsByType(DataStore.class);
         dataStores.forEach(each -> dataStoreNamesToWrappers
-        		.computeIfAbsent(trimDataObjectName(each.getName()), trimmedName -> new DataStoreWrapper(this, trimmedName))
+        		.computeIfAbsent(normalizeElementName(each.getName()), trimmedName -> new DataStoreWrapper(this, trimmedName))
         		.addMappedElement(each));
         Collection<DataStoreReference> dataStoreRefs = bpmn.getModelElementsByType(DataStoreReference.class);
         dataStoreRefs.forEach(each -> dataStoreNamesToWrappers
-        		.get(trimDataObjectName(each.getDataStore().getName()))
+        		.get(normalizeElementName(each.getDataStore().getName()))
         		.addMappedReference(each));
         
         dataStoreWrappers = dataStoreNamesToWrappers.values();
     }
     
     private void createAssociationPlace() {
-    	associations = builder.addPlace(mainPage, "associations", "ASSOCIATION");
+    	associations = createPlace("associations", "ASSOCIATION");
     }
     
     private void translateActivities() {
         Collection<Activity> activities = bpmn.getModelElementsByType(Activity.class);
         activities.forEach(each -> {
         	String name = each.getName();
-        	Page activityPage = builder.addPage(petriNet, normalizeActivityName(name));
-            Instance mainPageTransition = builder.createSubPageTransition(activityPage, mainPage, name);
+        	Page activityPage = createPage(normalizeElementName(name));
+            Instance mainPageTransition = createSubpageTransition(name, activityPage);
             SubpageElement subPage = new SubpageElement(this, each.getId(), activityPage, mainPageTransition, new ArrayList<>());
             List<Transition> subpageTransitions = subPage.getSubpageTransitions();
             subpages.putIfAbsent(each.getId(), subPage);
@@ -387,14 +383,14 @@ public class CompilerApp {
         Collection<StartEvent> events = bpmn.getModelElementsByType(StartEvent.class);
         events.forEach(each -> {
         	String name = each.getName();
-        	Page eventPage = builder.addPage(petriNet, normalizeActivityName(name));
+        	Page eventPage = createPage(normalizeElementName(name));
         	Transition subpageTransition = builder.addTransition(eventPage, name);
-            Instance mainPageTransition = builder.createSubPageTransition(eventPage, mainPage, name);
+            Instance mainPageTransition = createSubpageTransition(name, eventPage);
         	idsToNodes.put(each.getId(), mainPageTransition);
             SubpageElement subPage = new SubpageElement(this, each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
             subpages.put(each.getId(), subPage);
             
-            Place caseTokenPlace = builder.addPlace(eventPage, "Case Count", "INT", "1`0");
+            Place caseTokenPlace = createPlace(eventPage, "Case Count", "INT", "1`0");
             builder.addArc(eventPage, caseTokenPlace, subpageTransition, "count");
             builder.addArc(eventPage, subpageTransition, caseTokenPlace, "count + 1");
 
@@ -432,7 +428,7 @@ public class CompilerApp {
     private void translateEndEvents() {
         Collection<EndEvent> events = bpmn.getModelElementsByType(EndEvent.class);
         events.forEach(each -> {
-        	idsToNodes.put(each.getId(), builder.addPlace(mainPage, each.getName(), "CaseID"));
+        	idsToNodes.put(each.getId(), createPlace(each.getName(), "CaseID"));
         });
     }
 
@@ -442,9 +438,9 @@ public class CompilerApp {
         Collection<BoundaryEvent> events = bpmn.getModelElementsByType(BoundaryEvent.class);
         events.forEach(each -> {
         	String name = each.getName();
-        	Page eventPage = builder.addPage(petriNet, normalizeActivityName(name));
+        	Page eventPage = createPage(normalizeElementName(name));
         	Transition subpageTransition = builder.addTransition(eventPage, name);
-            Instance mainPageTransition = builder.createSubPageTransition(eventPage, mainPage, name);
+            Instance mainPageTransition = createSubpageTransition(name, eventPage);
             SubpageElement subPage = new SubpageElement(this, each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
             subpages.put(each.getId(), subPage);
         	idsToNodes.put(each.getId(), mainPageTransition);
@@ -477,46 +473,6 @@ public class CompilerApp {
     }
     
     private void translateDataAssociations(SubpageElement subPage, Map<StatefulDataAssociation<DataOutputAssociation>, List<Transition>> outputs, Map<StatefulDataAssociation<DataInputAssociation>, List<Transition>> inputs) {
-//    	System.out.println("\n"+subPage.id);
-//    	
-//    	List<String> outputObjects = outputs.keySet().stream()
-//    		.peek(each -> System.out.println("\t"+each.dataElement.getClass().getSimpleName()))
-//    		.map(each -> each.dataElement.getId())
-//    		.distinct()
-//    		.collect(Collectors.toList());
-//    	
-//    	List<String> inputObjects = outputs.keySet().stream()
-//    		.peek(each -> System.out.println("\t"+each.dataElement.getClass().getSimpleName()))
-//    		.map(each -> each.dataElement.getId())
-//    		.distinct()
-//    		.collect(Collectors.toList());
-//    	
-//    	List<List<String>> createdAssocs = new ArrayList<>();
-//    	for(int i = 0; i < outputObjects.size(); i++) {
-//    		String output = outputObjects.get(i);
-//    		for(int j = i+1; j < outputObjects.size(); j++) {
-//    			String otherOutput = outputObjects.get(j);
-//    			if(dataModel.isAssociated(output, otherOutput)) createdAssocs.add(Arrays.asList(output, otherOutput));
-//    		}
-//    		
-//    		for(int j = 0; j < inputObjects.size(); j++) {
-//    			String input = inputObjects.get(j);
-//    			if(dataModel.isAssociated(output, input)) createdAssocs.add(Arrays.asList(output, input));
-//    		}
-//    	}
-//    	
-//    	List<List<String>> requiredAssocs = new ArrayList<>();
-//    	for(int i = 0; i < inputObjects.size(); i++) {
-//    		String input = inputObjects.get(i);
-//    		for(int j = i+1; j < inputObjects.size(); j++) {
-//    			String otherInput = inputObjects.get(j);
-//    			if(dataModel.isAssociated(input, otherInput)) requiredAssocs.add(Arrays.asList(input, otherInput));
-//    		}
-//    	}
-//    	
-//    	System.out.println("\t Created:"+createdAssocs);
-//    	System.out.println("\t Required:"+requiredAssocs);
-    	
     	Instance mainPageTransition = subPage.getMainTransition();
     	Map<DataElementWrapper, Arc> outgoingArcs = new HashMap<>();
         outputs.forEach((assoc, transitions) -> {
@@ -555,7 +511,7 @@ public class CompilerApp {
     private void translateGateways() {
         Collection<ExclusiveGateway> exclusiveGateways = bpmn.getModelElementsByType(ExclusiveGateway.class);
         exclusiveGateways.forEach(each -> {
-        	Node node = builder.addPlace(mainPage, each.getName(), "CaseID");
+        	Node node = createPlace(each.getName(), "CaseID");
         	idsToNodes.put(each.getId(), node);
         });
 
@@ -563,9 +519,9 @@ public class CompilerApp {
         parallelGateways.forEach(each -> {        	
         	String name = each.getName();
         	if(name == null || name.equals(""))name = each.getId();
-	    	Page gatewayPage = builder.addPage(petriNet, name);
+	    	Page gatewayPage = createPage(name);
 	    	Transition subpageTransition = builder.addTransition(gatewayPage, name);
-	        Instance mainPageTransition = builder.createSubPageTransition(gatewayPage, mainPage, name);
+	        Instance mainPageTransition = createSubpageTransition(name, gatewayPage);
 	        SubpageElement subPage = new SubpageElement(this, each.getId(), gatewayPage, mainPageTransition, Arrays.asList(subpageTransition));
 	        subpages.put(each.getId(), subPage);
 	    	idsToNodes.put(each.getId(), mainPageTransition);
@@ -603,7 +559,7 @@ public class CompilerApp {
         			}
         		}
         	} else {
-            	Place place = builder.addPlace(mainPage, null, "CaseID");
+            	Place place = createPlace(null, "CaseID");
             	
             	builder.addArc(mainPage, source, place, "");
        			SubpageElement sourceSubPage = subpages.get(sourceId);
@@ -695,6 +651,10 @@ public class CompilerApp {
     	return builder.addPlace(mainPage, name, type, initialMarking);
     }
     
+    public Place createPlace(Page page, String name, String type, String initialMarking) {
+    	return builder.addPlace(page, name, type, initialMarking);
+    }
+    
     public RefPlace createFusionPlace(Page page, String name, String type, String initialMarking, String fusionGroupName) {
     	return builder.addFusionPlace(page, name, type, initialMarking, fusionGroupName);
     }
@@ -718,8 +678,8 @@ public class CompilerApp {
 	}
 	
     //========Static========
-    public static String normalizeActivityName(String name) {
-    	return name.replace('\n', ' ');
+    public static String normalizeElementName(String name) {
+    	return name.replace('\n', ' ').trim();
     }
     
     public static <T extends ModelElementInstance> List<String> getReferenceIds(DataAssociation association, Class<T> referenceClass) {

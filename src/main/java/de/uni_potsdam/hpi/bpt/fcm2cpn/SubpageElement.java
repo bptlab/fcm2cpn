@@ -14,10 +14,10 @@ public class SubpageElement {
 
 	private final CompilerApp compilerApp;
 	public final String id;
-	private Page page;
-	private Instance mainTransition;
-	private List<Transition> subpageTransitions;
-	private Map<Place, RefPlace> placeReferences;
+	private final Page page;
+	private final Instance mainTransition;
+	private final List<Transition> subpageTransitions;
+	private final Map<Place, RefPlace> placeReferences;
 	public SubpageElement(CompilerApp compilerApp, String id, Page page, Instance mainTransition, List<Transition> subpageTransitions) {
 		this.compilerApp = compilerApp;
 		this.id = id;
@@ -49,9 +49,5 @@ public class SubpageElement {
 
 	public List<Transition> getSubpageTransitions() {
 		return subpageTransitions;
-	}
-
-	public void setSubpageTransitions(List<Transition> subpageTransitions) {
-		this.subpageTransitions = subpageTransitions;
 	}
 }
