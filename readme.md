@@ -1,6 +1,7 @@
-# CPN-Based Semantics for Cross-Case Data in Case Management
+# Cross-Case Data Objects in Business Processes: Semantics and Analysis
 
-This folder contains complementary files for the paper "CPN-Based Semantics for Cross-Case Data in Case management" accepted for publication at [BPM Forum](https://congreso.us.es/bpm2020/).
+This page lists complementary files for the paper "CPN-Based Semantics for Cross-Case Data in Case management" accepted for publication at [BPM Forum](https://congreso.us.es/bpm2020/).
+All files except the binary are available in the [Github repository](https://github.com/bptlab/fcm2cpn).
 The binary of the prototype can be downloaded [here](https://owncloud.hpi.de/s/EII5PnKSQEpu0PI).
 
 ## List of Files
