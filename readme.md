@@ -1,17 +1,17 @@
 # CPN-Based Semantics for Cross-Case Data in Case Management
 
-This folder contains complementary files for the paper "CPN-Based Semantics for Cross-Case Data in Case management" submitted to [ICATPN](http://conf-2020.petrinet.net/).
+This folder contains complementary files for the paper "CPN-Based Semantics for Cross-Case Data in Case management" accepted for publication at [BPM Forum](https://congreso.us.es/bpm2020/).
+The binary of the prototype can be downloaded [here](https://owncloud.hpi.de/s/EII5PnKSQEpu0PI).
 
 ## List of Files
 * **Examples:**
-  * `models/cat_fragments.bpmn` contains a BPMN file comprising all the fragments of the computer-aided translation example mentioned in the paper.
-  * `models/classicalPN.cpn` contains a formalization of the computer-aided translation example using classical Petri Nets ([CPNtools file](https://cpntools.org)).
-  * `models/coloredPN.cpn` contains a complete CPN formalization of the computer-aided translation example ([CPNtools file](https://cpntools.org))
-  * `models/olc.pdf` depicts the object life cycles of the example case model
-  * `models/domain_model.pdf` depicts the domain model of the example case model
+  * `models/budget_processes.bpmn` contains a BPMN file comprising both the *office supply purchasing*. and *business trip booking* process used in the paper (modeled using Signavio).
+  * `models/budget_processes_corrected.bpmn` contains a BPM file comprising the two example processes with boundary events (modeled using Signavio)
+  * `models/coloredPN.cpn` contains a complete CPN formalization of the `budget_processes.bpmn` ([CPNtools file](https://cpntools.org))
+  * `models/k-soundness.cpn` contains a formalization `budget_processes.bpmn` including extensions for checking *k-soundness* ([CPNtools file](https://cpntools.org)).
+  * `models/k-soundnessCorrected.cpn` contains a corrected version of the process including extensions for checking *k-soundness*
   * `models/correlation/*.cpn` contains examples for different correlation mechanisms
 * **Translator:**
-  * `fcm2cpn.jar` is the binary of the translator
   * `src/*` contains the source files for the translator that translates a set of fragments to a CPN
   * `lib/*.jar` the [Access/CPN](http://cpntools.org/access-cpn/) libraries required for the prototype
   
@@ -19,19 +19,19 @@ This folder contains complementary files for the paper "CPN-Based Semantics for 
 
 ### Usage
 
-If you use the binary, you can run the program using the following command.
+If you use the [binary](https://owncloud.hpi.de/s/EII5PnKSQEpu0PI), you can run the program using the following command.
 ````bash
-java -jar fcm2cpn.jar 
+java -jar bpmn2cpn.jar 
 ````
-You are prompted to choose  a single BPMN file containing a set of fragments.
+You are prompted to choose  a single BPMN file containing one or multiple processes.
 The program will save a CPN file in the current working directory.
-The CPN has two hirachy levels: on the top-level all fragments and their connections are described, on the low-level a subnet for each activity is detailed.
+The CPN has two hierarchy levels: on the top-level all processes and their connections are described, on the low-level a subnet for each activity is detailed.
 
 ### Assumptions
 
-* We assume that the input is provided as a single BPMN file (you can, for example use the [Camunda Modeler](https://camunda.com/download/modeler/) or [Signavio](https://signavio.com))
-* We assume that the fragments are object life cycle conform, so no additional input is required
-* We assume that input- and output-sets are not modeled explicitly, but that all possible combinations are desired (e.g., an activity *translate text* may require a job object in state *accepted* or *started* and a translation object in state *required* or *in_progress*. This means the activity has four implicit input sets: job[accepted], translation[required] and job[started], translation[required] and job[accepted], translation[in_progress] and job[started], translation[in_progress] and)
+* We assume that the input is provided as a single BPMN file (you can, for example use the [Signavio](https://academic.signavio.com))
+* We assume that input- and output-sets are not modeled explicitly, but that all possible combinations are desired
+* We assume that data stores have a label `objectName[state]` or they are assumed to be in state `BLANK`.
 
 ### Sources
 
@@ -39,16 +39,21 @@ All the sources are available in `src/main/*`, note that you have to add the Acc
 
 ### Binary
 
-The binary `fcm2cpn.jar` containing all dependencies is available in the project's root folder.
+The binary `bpmn2cpn.jar` containing all dependencies is available [here](https://owncloud.hpi.de/s/EII5PnKSQEpu0PI).
 
 ### Dependencies
 
 Please note, that the tool has dependencies, and that these dependencies may have different licenses. In the following we list the dependencies
 * Camunda bpmn-model for parsing BPMN files. The dependency is linked via maven.
-* Access/CPN to create CPNtools compatible CPNs. The dependency is linked as a set of external libraries (see `lib/`    )
+* Access/CPN to create CPNtools compatible CPNs. The dependency is linked as a set of external libraries (see `lib/`)
 * Eclipse EMF dependency for using Access/CPN
 
-### Licence
+### Checking k-soundness
+
+The example CPNs `k-soundness.cpn` and `k-soundnessCorrected.cpn` can be used to verify the k-soundness property.
+To do so, the user must first load CPN-Tools state space tool, see (http://cpntools.org/2018/01/15/temporal-logic-for-state-spaces/)[http://cpntools.org/2018/01/15/temporal-logic-for-state-spaces/] for more information, and then reevaluate the `FindNodesViolatingKSoundness` function.
+
+### License
 
 *fcm2cpn* is a compiler, translating process fragments to CPNtools compatible Petri nets.
 Copyright (C) 2020  Hasso Plattner Institute gGmbH, University of Potsdam
