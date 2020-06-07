@@ -83,7 +83,7 @@ public class CompilerApp {
 
 	private Page mainPage;
 	private BpmnModelInstance bpmn;
-	private DataModel dataModel = new DataModel();
+//	private DataModel dataModel = new DataModel();
 	public final BuildCPNUtil builder;
 	private PetriNet petriNet;
 	private Map<String, SubpageElement> subpages;
