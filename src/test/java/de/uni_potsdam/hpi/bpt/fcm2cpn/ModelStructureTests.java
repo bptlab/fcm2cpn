@@ -1,19 +1,12 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static org.junit.platform.commons.util.AnnotationUtils.findRepeatableAnnotations;
-
 import java.io.File;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,20 +30,13 @@ import org.cpntools.accesscpn.model.Transition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicContainer;
 import org.junit.jupiter.api.DynamicNode;
-import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.TestInfo;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.TestInstances;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.ArgumentsProvider;
-import org.junit.jupiter.params.provider.ArgumentsSource;
-import org.junit.jupiter.params.support.AnnotationConsumerInitializer;
 import org.junit.platform.commons.annotation.Testable;
 import org.junit.platform.commons.util.ReflectionUtils;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ArgumentTreeTests;
 
 public abstract class ModelStructureTests {
 
@@ -118,6 +104,17 @@ public abstract class ModelStructureTests {
 		});
 	}
 	
+	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, List<String> inputStates, List<String> outputStates) {
+		return activityTransitionsNamed(page, activityName).filter(transition -> {
+			return inputStates.stream().allMatch(inputState -> 
+					transition.getTargetArc().stream()
+						.anyMatch(arc -> arc.getHlinscription().asString().contains("state = "+inputState)))
+				&& outputStates.stream().allMatch(outputState -> 
+					transition.getSourceArc().stream()
+						.anyMatch(arc -> arc.getHlinscription().asString().contains("state = "+outputState)));
+		});
+	}
+	
 	
 //======= Infrastructure ========
 	@BeforeEach
@@ -161,120 +158,9 @@ public abstract class ModelStructureTests {
 		return modelsToTest.map(model -> {
 			ModelStructureTests instance = ReflectionUtils.newInstance(getClass());
 			instance.compileModel(model);
-			Stream<DynamicNode> tests = methodsToTest.stream().map(method -> {
-				List<ArgumentsSource> argumentsSources = findRepeatableAnnotations(method, ArgumentsSource.class);
-				return instance.resolveArguments(method, argumentsSources, Collections.emptyList(), "Method: "+method.getName());
-			});
+			Stream<DynamicNode> tests = methodsToTest.stream().map(method -> ArgumentTreeTests.runMethodWithAllParameterCombinations(instance, method));
 			return DynamicContainer.dynamicContainer("Model: "+model, tests);
 		});
-	}
-	
-	public DynamicNode resolveArguments(Method method, List<ArgumentsSource> remainingSources, List<Object> currentParameters, String lastParameter) {
-		if(remainingSources.isEmpty()) {
-			return DynamicTest.dynamicTest(lastParameter, () -> method.invoke(this, currentParameters.toArray()));
-		} else {
-			ArgumentsSource nextSource = remainingSources.get(0);
-			List<Object[]> arguments;
-			try {
-				ExtensionContext context = createContext(method, currentParameters);
-				ArgumentsProvider provider = ReflectionUtils.newInstance(nextSource.value());
-				AnnotationConsumerInitializer.initialize(method, provider);
-				arguments = provider.provideArguments(context).map(Arguments::get).collect(Collectors.toList());
-			} catch (Exception e) {
-				throw new RuntimeException("Could not resolve parameters", e);
-			}
-			return DynamicContainer.dynamicContainer(lastParameter, arguments.stream().map(args -> {
-				List<Object> newArguments = new ArrayList<>();
-				newArguments.addAll(currentParameters);
-				newArguments.addAll(Arrays.asList(args));
-				List<ArgumentsSource> newSources = new ArrayList<>();
-				newSources.addAll(remainingSources);
-				assert newSources.remove(nextSource);
-				return resolveArguments(method, newSources, newArguments, Arrays.toString(args));
-			}));
-		}
-	}
-
-
-	
-	public ExtensionContext createContext(Method method, List<Object> additionalIdentifiers) {
-		return new ExtensionContext() {
-			
-			@Override
-			public void publishReportEntry(Map<String, String> map) {
-				throw new UnsupportedOperationException();
-			}
-			
-			@Override
-			public String getUniqueId() {
-				return getClass().getSimpleName()+method.getName()+additionalIdentifiers.toString();
-			}
-			
-			@Override
-			public Optional<Method> getTestMethod() {
-				return Optional.of(method);
-			}
-			
-			@Override
-			public Optional<TestInstances> getTestInstances() {
-				return null;
-			}
-			
-			@Override
-			public Optional<Lifecycle> getTestInstanceLifecycle() {
-				return null;
-			}
-			
-			@Override
-			public Optional<Object> getTestInstance() {
-				return Optional.of(this);
-			}
-			
-			@Override
-			public Optional<Class<?>> getTestClass() {
-				return Optional.of(getClass());
-			}
-			
-			@Override
-			public Set<String> getTags() {
-				return null;
-			}
-			
-			@Override
-			public Store getStore(Namespace namespace) {
-				return null;
-			}
-			
-			@Override
-			public ExtensionContext getRoot() {
-				return null;
-			}
-			
-			@Override
-			public Optional<ExtensionContext> getParent() {
-				return null;
-			}
-			
-			@Override
-			public Optional<Throwable> getExecutionException() {
-				return null;
-			}
-			
-			@Override
-			public Optional<AnnotatedElement> getElement() {
-				return null;
-			}
-			
-			@Override
-			public String getDisplayName() {
-				return getUniqueId();
-			}
-			
-			@Override
-			public Optional<String> getConfigurationParameter(String key) {
-				return null;
-			}
-		};
 	}
 
 }
