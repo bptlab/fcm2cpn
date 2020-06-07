@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.camunda.bpm.model.bpmn.instance.BpmnModelElementInstance;
+import org.camunda.bpm.model.bpmn.instance.InteractionNode;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 @Target({ ElementType.ANNOTATION_TYPE, ElementType.METHOD })
@@ -14,5 +14,5 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 @ArgumentsSource(BpmnElementProvider.class)
 @Repeatable(ForEachBpmns.class)
 public @interface ForEachBpmn {
-	Class<? extends BpmnModelElementInstance> value();
+	Class<? extends InteractionNode> value();
 }

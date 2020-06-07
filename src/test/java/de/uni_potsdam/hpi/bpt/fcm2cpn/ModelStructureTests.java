@@ -1,17 +1,18 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static org.junit.platform.commons.util.AnnotationUtils.findRepeatableAnnotations;
-
 import java.io.File;
+import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -46,10 +47,12 @@ import org.junit.jupiter.api.extension.TestInstances;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
-import org.junit.jupiter.params.support.AnnotationConsumerInitializer;
+import org.junit.jupiter.params.support.AnnotationConsumer;
 import org.junit.platform.commons.annotation.Testable;
+import org.junit.platform.commons.util.AnnotationUtils;
 import org.junit.platform.commons.util.ReflectionUtils;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ArgumentContextNameResolver;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 
 public abstract class ModelStructureTests {
@@ -162,40 +165,76 @@ public abstract class ModelStructureTests {
 			ModelStructureTests instance = ReflectionUtils.newInstance(getClass());
 			instance.compileModel(model);
 			Stream<DynamicNode> tests = methodsToTest.stream().map(method -> {
-				List<ArgumentsSource> argumentsSources = findRepeatableAnnotations(method, ArgumentsSource.class);
+				List<Annotation> argumentsSources = argumentSources(method);
 				return instance.resolveArguments(method, argumentsSources, Collections.emptyList(), "Method: "+method.getName());
 			});
 			return DynamicContainer.dynamicContainer("Model: "+model, tests);
 		});
 	}
 	
-	public DynamicNode resolveArguments(Method method, List<ArgumentsSource> remainingSources, List<Object> currentParameters, String lastParameter) {
+	@SuppressWarnings("unchecked")
+	public DynamicNode resolveArguments(Method method, List<Annotation> remainingSources, List<Object> currentArguments, String contextName) {
 		if(remainingSources.isEmpty()) {
-			return DynamicTest.dynamicTest(lastParameter, () -> method.invoke(this, currentParameters.toArray()));
+			return DynamicTest.dynamicTest(contextName, () -> method.invoke(this, currentArguments.toArray()));
 		} else {
-			ArgumentsSource nextSource = remainingSources.get(0);
-			List<Object[]> arguments;
+			Annotation nextSource = remainingSources.get(0);
+			Stream<Object[]> arguments;
 			try {
-				ExtensionContext context = createContext(method, currentParameters);
-				ArgumentsProvider provider = ReflectionUtils.newInstance(nextSource.value());
-				AnnotationConsumerInitializer.initialize(method, provider);
-				arguments = provider.provideArguments(context).map(Arguments::get).collect(Collectors.toList());
+				ExtensionContext context = createContext(method, currentArguments);
+				ArgumentsProvider provider = providerFor(nextSource);
+				if(provider instanceof AnnotationConsumer<?>)((AnnotationConsumer<Annotation>) provider).accept(nextSource);
+				arguments = provider.provideArguments(context).map(Arguments::get);
+				
+				return DynamicContainer.dynamicContainer(contextName, arguments.map(args -> {
+					List<Object> newArguments = new ArrayList<>();
+					newArguments.addAll(currentArguments);
+					newArguments.addAll(Arrays.asList(args));
+					List<Annotation> newSources = new ArrayList<>();
+					newSources.addAll(remainingSources);
+					assert newSources.remove(nextSource);
+					String newContextName = provider instanceof ArgumentContextNameResolver ? ((ArgumentContextNameResolver) provider).resolve(context, args) : Arrays.toString(args);
+					return resolveArguments(method, newSources, newArguments, newContextName);
+				}));
 			} catch (Exception e) {
 				throw new RuntimeException("Could not resolve parameters", e);
 			}
-			return DynamicContainer.dynamicContainer(lastParameter, arguments.stream().map(args -> {
-				List<Object> newArguments = new ArrayList<>();
-				newArguments.addAll(currentParameters);
-				newArguments.addAll(Arrays.asList(args));
-				List<ArgumentsSource> newSources = new ArrayList<>();
-				newSources.addAll(remainingSources);
-				assert newSources.remove(nextSource);
-				return resolveArguments(method, newSources, newArguments, Arrays.toString(args));
-			}));
 		}
 	}
-
-
+	
+	public static List<Annotation> argumentSources(Method annotatedMethod) {
+		Annotation[] annotations = annotatedMethod.getAnnotations();
+		Stream<Annotation> directSources =  Arrays.stream(annotations)
+				.filter(annotation -> isArgumentsSourceType(annotation.getClass()));
+		Stream<Annotation> repeatedSources =  Arrays.stream(annotations)
+				.map(annotation -> 
+					Arrays.stream(annotation.getClass().getDeclaredMethods())
+						.filter(method -> method.getName().equals("value"))
+						.filter(method -> Optional.ofNullable(method.getReturnType().getComponentType()).map(composedType -> isArgumentsSourceType(composedType)).orElse(false))
+						.map(method -> {
+							try {
+								return (Annotation[]) method.invoke(annotation);
+							} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+								e.printStackTrace();
+								return null;
+							}
+						})
+						.filter(Objects::nonNull)
+						.findAny()
+				).flatMap(Optional::stream)
+				.flatMap(Arrays::stream);
+		return Stream.concat(directSources, repeatedSources).collect(Collectors.toList());
+	}
+	
+	public static boolean isArgumentsSourceType(Class<?> annotationType) {
+		return annotationType.equals(ArgumentsSource.class) || AnnotationUtils.isAnnotated(annotationType, ArgumentsSource.class);
+	}
+	
+	public static ArgumentsProvider providerFor(Annotation sourceAnnotation) {
+		ArgumentsSource source = sourceAnnotation instanceof ArgumentsSource ? 
+				(ArgumentsSource)sourceAnnotation 
+				: AnnotationUtils.findAnnotation(sourceAnnotation.getClass(), ArgumentsSource.class).get();
+		return ReflectionUtils.newInstance(source.value());
+	}
 	
 	public ExtensionContext createContext(Method method, List<Object> additionalIdentifiers) {
 		return new ExtensionContext() {
@@ -227,7 +266,7 @@ public abstract class ModelStructureTests {
 			
 			@Override
 			public Optional<Object> getTestInstance() {
-				return Optional.of(this);
+				return Optional.of(ModelStructureTests.this);
 			}
 			
 			@Override
