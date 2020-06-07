@@ -7,6 +7,7 @@ import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.cpntools.accesscpn.model.Page;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 
 @ModelsToTest({"Simple", "SimpleWithStates", "TranslationJob"})
@@ -24,35 +25,31 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	}
 	
 	@TestWithAllModels
-	public void testStartEventTransitionIsCreated() {
-		forEach(StartEvent.class, startEvent -> 
-			assertEquals(1, instancesNamed(startEvent.getName()).count(), 
-					"There is not exactly one sub page transition for start event "+startEvent.getName())
-		);
+	@ForEachBpmn(StartEvent.class)
+	public void testStartEventTransitionIsCreated(StartEvent startEvent) {
+		assertEquals(1, instancesNamed(startEvent.getName()).count(), 
+				"There is not exactly one sub page transition for start event "+startEvent.getName());
 	}
 	
 	@TestWithAllModels
-	public void testActivityTransitionIsCreated() {
-		forEach(Activity.class, activity -> 
+	@ForEachBpmn(Activity.class)
+	public void testActivityTransitionIsCreated(Activity activity) {
 		assertEquals(1, instancesNamed(activity.getName()).count(), 
-				"There is not exactly one sub page transition for activity "+activity.getName())
-		);
+				"There is not exactly one sub page transition for activity "+activity.getName());
 	}
 		
 	@TestWithAllModels
-	public void testStartEventSubPageIsCreated() {
-		forEach(StartEvent.class, startEvent -> 
-			assertEquals(1, pagesNamed(CompilerApp.normalizeElementName(startEvent.getName())).count(), 
-					"There is not exactly one sub page for start event "+startEvent.getName())
-		);
+	@ForEachBpmn(StartEvent.class)
+	public void testStartEventSubPageIsCreated(StartEvent startEvent) {
+		assertEquals(1, pagesNamed(CompilerApp.normalizeElementName(startEvent.getName())).count(), 
+				"There is not exactly one sub page for start event "+startEvent.getName());
 	}
 	
 	@TestWithAllModels
-	public void testActivitySubPageIsCreated() {
-		forEach(Activity.class, activity -> 
-			assertEquals(1, pagesNamed(CompilerApp.normalizeElementName(activity.getName())).count(), 
-					"There is not exactly one sub page for activity "+activity.getName())
-			);
+	@ForEachBpmn(Activity.class)
+	public void testActivitySubPageIsCreated(Activity activity) {
+		assertEquals(1, pagesNamed(CompilerApp.normalizeElementName(activity.getName())).count(), 
+				"There is not exactly one sub page for activity "+activity.getName());
 	}
 
 //TODO: There is not necessarily one node created for each bpmn element (see Gateway). So this is not a valid invariant!
@@ -65,11 +62,10 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 //	}
 	
 	@TestWithAllModels
-	public void testDataObjectPlacesAreCreated() {
-		forEach(DataObject.class, dataObject -> {
-			assertEquals(1, dataObjectPlacesNamed(CompilerApp.normalizeElementName(dataObject.getName())).count(), 
-				"There is not exactly one place for data object "+dataObject.getName());
-		});
+	@ForEachBpmn(DataObject.class)
+	public void testDataObjectPlacesAreCreated(DataObject dataObject) {
+		assertEquals(1, dataObjectPlacesNamed(CompilerApp.normalizeElementName(dataObject.getName())).count(), 
+			"There is not exactly one place for data object "+dataObject.getName());
 	}
 
 }

@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.camunda.bpm.model.bpmn.instance.InteractionNode;
+import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
@@ -14,7 +14,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.ModelStructureTests;
 
 public class BpmnElementProvider implements ArgumentsProvider, AnnotationConsumer<ForEachBpmn>, ArgumentContextNameResolver {
 	
-	private Class<? extends InteractionNode> elementClass;
+	private Class<? extends BaseElement> elementClass;
 
 	@Override
 	public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
@@ -22,7 +22,7 @@ public class BpmnElementProvider implements ArgumentsProvider, AnnotationConsume
 			.map(Arguments::of);
 	}
 	
-	public <T extends InteractionNode> Stream<T> elements(ModelStructureTests test, Class<T> clazz) {
+	public <T extends BaseElement> Stream<T> elements(ModelStructureTests test, Class<T> clazz) {
 		return test.bpmn.getModelElementsByType(clazz).stream();
 	}
 
@@ -33,7 +33,7 @@ public class BpmnElementProvider implements ArgumentsProvider, AnnotationConsume
 
 	@Override
 	public String resolve(ExtensionContext context, Object[] args) {
-		return elementClass.getSimpleName()+": "+Arrays.stream(args).map(each -> ((InteractionNode)each).getId()).collect(Collectors.joining(", "));
+		return elementClass.getSimpleName()+": "+Arrays.stream(args).map(each -> ((BaseElement)each).getId()).collect(Collectors.joining(", "));
 	}
 	
 }
