@@ -187,7 +187,7 @@ public class CompilerApp {
         CPNEnum cpnEnum = CpntypesFactory.INSTANCE.createCPNEnum();
         Collection<DataState> dataStates = bpmn.getModelElementsByType(DataState.class);
         dataStates.stream()
-        	.flatMap(state -> dataObjectStateToNetColors(state.getAttributeValue("name")))
+        	.flatMap(state -> dataObjectStateToNetColors(state.getName()))
             .forEach(cpnEnum::addValue);
         if(!dataStates.isEmpty())builder.declareColorSet(petriNet, "STATE", cpnEnum);
         
@@ -206,13 +206,6 @@ public class CompilerApp {
     	createVariable("count", "INT");
     	createVariable("caseId", "CaseID");
     	createVariable("assoc", "ASSOCIATION");
-    }
-    
-    private static Stream<String> dataObjectStateToNetColors(String state) {
-    	return Arrays.stream(state.replaceAll("\\[", "").replaceAll("\\]", "").split("\\|"))
-    			.map(String::trim)
-    			.map(each -> each.replaceAll("\\s","_"))
-    			.map(String::toUpperCase);
     }
     
     private void translateData() {
@@ -289,32 +282,9 @@ public class CompilerApp {
 		                        return a;
 		                    }
                     ));
-            int numberOfInputSets = inputsPerObject.values().stream()
-                    .mapToInt(List::size)
-                    .reduce(1, (a,b) -> a*b);
-            List<List<StatefulDataAssociation<DataInputAssociation>>> inputSets = new ArrayList<>(numberOfInputSets);
-            for(int i = 0; i < numberOfInputSets; i++) {
-                int j = 1;
-                List<StatefulDataAssociation<DataInputAssociation>> inputSet = new ArrayList<>();
-                for(List<StatefulDataAssociation<DataInputAssociation>> objectVariants : inputsPerObject.values()) {
-                    inputSet.add(objectVariants.get((i/j)%objectVariants.size()));
-                    j *= objectVariants.size();
-                }
-                inputSets.add(inputSet);
-            }
-            int numberOfOutputSets = outputsPerObject.values().stream()
-                    .mapToInt(List::size)
-                    .reduce(1, (a,b) -> a*b);
-            List<List<StatefulDataAssociation<DataOutputAssociation>>> outputSets = new ArrayList<>(numberOfInputSets);
-            for(int i = 0; i < numberOfOutputSets; i++) {
-                int j = 1;
-                List<StatefulDataAssociation<DataOutputAssociation>> outputSet = new ArrayList<>();
-                for(List<StatefulDataAssociation<DataOutputAssociation>> objectVariants : outputsPerObject.values()) {
-                    outputSet.add(objectVariants.get((i/j)%objectVariants.size()));
-                    j *= objectVariants.size();
-                }
-                outputSets.add(outputSet);
-            }
+            
+            List<List<StatefulDataAssociation<DataInputAssociation>>> inputSets = allCombinationsOf(inputsPerObject.values());
+            List<List<StatefulDataAssociation<DataOutputAssociation>>> outputSets = allCombinationsOf(outputsPerObject.values());
 
             Map<StatefulDataAssociation<DataOutputAssociation>, List<Transition>> outputs = each.getDataOutputAssociations().stream()
             		.flatMap(this::splitDataAssociationByState)
@@ -330,13 +300,13 @@ public class CompilerApp {
                     Set<DataObjectWrapper> dataInputs = inputSet.stream()
                             .map(assoc -> assoc.dataElement)
                             .filter(object -> object instanceof DataObjectReference)
-                            .map(object -> (DataObjectReference) object)
+                            .map(DataObjectReference.class::cast)
                             .map(this::wrapperFor)
                             .collect(Collectors.toSet());
                     Set<DataObjectWrapper> createObjects = outputSet.stream()
                             .map(assoc -> assoc.dataElement)
                             .filter(object -> object instanceof DataObjectReference)
-                            .map(object -> (DataObjectReference) object)
+                            .map(DataObjectReference.class::cast)
                             .map(this::wrapperFor)
                             .filter(output -> !dataInputs.contains(output))
                             .collect(Collectors.toSet());
@@ -688,5 +658,29 @@ public class CompilerApp {
 				.collect(Collectors.toList());
     }
     
+    public static Stream<String> dataObjectStateToNetColors(String state) {
+    	return Arrays.stream(state.replaceAll("\\[", "").replaceAll("\\]", "").split("\\|"))
+    			.map(String::trim)
+    			.map(each -> each.replaceAll("\\s","_"))
+    			.map(String::toUpperCase);
+    }
+    
+	public static <T> List<List<T>> allCombinationsOf(Collection<List<T>> sets) {
+        int numberOfCombinations = sets.stream()
+                .mapToInt(Collection::size)
+                .reduce(1, (a,b) -> a*b);
+        
+        List<List<T>> combinations = new ArrayList<>(numberOfCombinations);
+        for(int i = 0; i < numberOfCombinations; i++) {
+            int j = 1;
+            List<T> combination = new ArrayList<>();
+            for(List<T> objectVariants : sets) {
+            	combination.add(objectVariants.get((i/j)%objectVariants.size()));
+                j *= objectVariants.size();
+            }
+            combinations.add(combination);
+        }
+        return combinations;
+	}
 
 }

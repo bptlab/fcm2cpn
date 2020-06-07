@@ -45,7 +45,13 @@ public class ArgumentTreeTests {
 	@SuppressWarnings("unchecked")
 	private DynamicNode resolveArguments(Method method, List<Annotation> remainingSources, List<Object> currentArguments, String contextName) {
 		if(remainingSources.isEmpty()) {
-			return DynamicTest.dynamicTest(contextName, () -> method.invoke(wrappedTestObject, currentArguments.toArray()));
+			return DynamicTest.dynamicTest(contextName, () -> {
+				try {
+					method.invoke(wrappedTestObject, currentArguments.toArray());
+				} catch(InvocationTargetException e) {
+					throw e.getCause();
+				}
+			});
 		} else {
 			Annotation nextSource = remainingSources.get(0);
 			Stream<Object[]> arguments;

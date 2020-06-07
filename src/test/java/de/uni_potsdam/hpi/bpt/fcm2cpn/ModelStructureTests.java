@@ -104,6 +104,17 @@ public abstract class ModelStructureTests {
 		});
 	}
 	
+	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, List<String> inputStates, List<String> outputStates) {
+		return activityTransitionsNamed(page, activityName).filter(transition -> {
+			return inputStates.stream().allMatch(inputState -> 
+					transition.getTargetArc().stream()
+						.anyMatch(arc -> arc.getHlinscription().asString().contains("state = "+inputState)))
+				&& outputStates.stream().allMatch(outputState -> 
+					transition.getSourceArc().stream()
+						.anyMatch(arc -> arc.getHlinscription().asString().contains("state = "+outputState)));
+		});
+	}
+	
 	
 //======= Infrastructure ========
 	@BeforeEach
