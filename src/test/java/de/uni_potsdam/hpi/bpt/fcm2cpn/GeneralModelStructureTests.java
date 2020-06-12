@@ -31,8 +31,9 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.normalizeElementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.elementName;
 
-@ModelsToTest({"Simple", "SimpleWithStates", "SimpleWithEvents", "TranslationJob"})
+@ModelsToTest({"Simple", "SimpleWithStates", "SimpleWithEvents", "SimpleWithGateways", "TranslationJob"})
 public class GeneralModelStructureTests extends ModelStructureTests {
 	
 	@TestWithAllModels
@@ -49,15 +50,15 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(StartEvent.class)
 	public void testStartEventTransitionIsCreated(StartEvent startEvent) {
-		assertEquals(1, instancesNamed(startEvent.getName()).count(), 
-				"There is not exactly one sub page transition for start event "+startEvent.getName());
+		assertEquals(1, instancesNamed(elementName(startEvent)).count(), 
+				"There is not exactly one sub page transition for start event "+elementName(startEvent));
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(BoundaryEvent.class)
 	public void testBoundaryEventTransitionIsCreated(BoundaryEvent boundaryEvent) {
-		assertEquals(1, instancesNamed(boundaryEvent.getName()).count(), 
-				"There is not exactly one sub page transition for boundary event "+boundaryEvent.getName());
+		assertEquals(1, instancesNamed(elementName(boundaryEvent)).count(), 
+				"There is not exactly one sub page transition for boundary event "+elementName(boundaryEvent));
 	}
 	
 	@TestWithAllModels
@@ -70,33 +71,33 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(StartEvent.class)
 	public void testStartEventSubPageIsCreated(StartEvent startEvent) {
-		assertEquals(1, pagesNamed(normalizeElementName(startEvent.getName())).count(), 
-				"There is not exactly one sub page for start event "+startEvent.getName());
+		assertEquals(1, pagesNamed(normalizeElementName(elementName(startEvent))).count(), 
+				"There is not exactly one sub page for start event "+elementName(startEvent));
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(BoundaryEvent.class)
 	public void testBoundaryEventSubPageIsCreated(BoundaryEvent boundaryEvent) {
-		assertEquals(1, pagesNamed(normalizeElementName(boundaryEvent.getName())).count(), 
-				"There is not exactly one sub page for boundary event "+boundaryEvent.getName());
+		assertEquals(1, pagesNamed(normalizeElementName(elementName(boundaryEvent))).count(), 
+				"There is not exactly one sub page for boundary event "+elementName(boundaryEvent));
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(BoundaryEvent.class)
 	public void testBoundaryEventCancelsTaskExecution(BoundaryEvent boundaryEvent) {
 		assumeTrue(boundaryEvent.cancelActivity());
-		Instance transition = instancesNamed(boundaryEvent.getName()).findAny().get();
+		Instance transition = instancesNamed(elementName(boundaryEvent)).findAny().get();
 		String canceledActivityName = boundaryEvent.getAttachedTo().getName();
 		Place commonCaseTokenPlace = (Place) transition.getTargetArc().get(0).getOtherEnd(transition);
 		assertTrue(commonCaseTokenPlace.getSourceArc().stream().map(Arc::getTarget).anyMatch(any -> any.getName().asString().equals(canceledActivityName)),
-			"Boundary Event "+boundaryEvent.getName()+" has no common place to the activity it interrupts: "+canceledActivityName);
+			"Boundary Event "+elementName(boundaryEvent)+" has no common place to the activity it interrupts: "+canceledActivityName);
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(EndEvent.class)
 	public void testEndEventPlaceIsCreated(EndEvent endEvent) {
-		assertEquals(1, placesNamed(endEvent.getName()).count(), 
-				"There is not exactly one place for end event "+endEvent.getName());
+		assertEquals(1, placesNamed(elementName(endEvent)).count(), 
+				"There is not exactly one place for end event "+elementName(endEvent));
 	}
 	
 	@TestWithAllModels

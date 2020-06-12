@@ -33,7 +33,7 @@
         </outputSet>
       </ioSpecification>
     </task>
-    <startEvent id="sid-07428FBD-475F-47BD-905D-455639EB16DD" name="Case&#10;Started">
+    <startEvent id="sid-07428FBD-475F-47BD-905D-455639EB16DD">
       <extensionElements>
         <signavio:signavioMetaData metaKey="bgcolor" metaValue="#ffffff" />
         <signavio:signavioMetaData metaKey="bordercolor" metaValue="#000000" />
@@ -92,7 +92,7 @@
       <outgoing>SequenceFlow_0bk7pz7</outgoing>
     </parallelGateway>
     <sequenceFlow id="SequenceFlow_0c2nlfc" sourceRef="Task_1w0j85f" targetRef="ExclusiveGateway_0xtzqsl" />
-    <endEvent id="EndEvent_10vn14s" name="Case&#10;Ended">
+    <endEvent id="EndEvent_10vn14s">
       <incoming>SequenceFlow_0bk7pz7</incoming>
     </endEvent>
     <sequenceFlow id="SequenceFlow_0bk7pz7" sourceRef="ExclusiveGateway_0xtzqsl" targetRef="EndEvent_10vn14s" />

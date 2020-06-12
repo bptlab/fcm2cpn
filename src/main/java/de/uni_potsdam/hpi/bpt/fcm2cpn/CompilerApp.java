@@ -52,6 +52,7 @@ import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
+import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
@@ -352,7 +353,7 @@ public class CompilerApp {
 	private void translateStartEvents() {
         Collection<StartEvent> events = bpmn.getModelElementsByType(StartEvent.class);
         events.forEach(each -> {
-        	String name = each.getName();
+        	String name = elementName(each);
         	Page eventPage = createPage(normalizeElementName(name));
         	Transition subpageTransition = builder.addTransition(eventPage, name);
             Instance mainPageTransition = createSubpageTransition(name, eventPage);
@@ -398,7 +399,7 @@ public class CompilerApp {
     private void translateEndEvents() {
         Collection<EndEvent> events = bpmn.getModelElementsByType(EndEvent.class);
         events.forEach(each -> {
-        	idsToNodes.put(each.getId(), createPlace(each.getName(), "CaseID"));
+        	idsToNodes.put(each.getId(), createPlace(elementName(each), "CaseID"));
         });
     }
 
@@ -407,7 +408,7 @@ public class CompilerApp {
     	//TODO only interrupting is supported
         Collection<BoundaryEvent> events = bpmn.getModelElementsByType(BoundaryEvent.class);
         events.forEach(each -> {
-        	String name = each.getName();
+        	String name = elementName(each);
         	Page eventPage = createPage(normalizeElementName(name));
         	Transition subpageTransition = builder.addTransition(eventPage, name);
             Instance mainPageTransition = createSubpageTransition(name, eventPage);
@@ -481,14 +482,14 @@ public class CompilerApp {
     private void translateGateways() {
         Collection<ExclusiveGateway> exclusiveGateways = bpmn.getModelElementsByType(ExclusiveGateway.class);
         exclusiveGateways.forEach(each -> {
-        	Node node = createPlace(each.getName(), "CaseID");
+        	String name = elementName(each);
+        	Node node = createPlace(name, "CaseID");
         	idsToNodes.put(each.getId(), node);
         });
 
         Collection<ParallelGateway> parallelGateways = bpmn.getModelElementsByType(ParallelGateway.class);
         parallelGateways.forEach(each -> {        	
-        	String name = each.getName();
-        	if(name == null || name.equals(""))name = each.getId();
+        	String name = elementName(each);
 	    	Page gatewayPage = createPage(name);
 	    	Transition subpageTransition = builder.addTransition(gatewayPage, name);
 	        Instance mainPageTransition = createSubpageTransition(name, gatewayPage);
@@ -648,6 +649,12 @@ public class CompilerApp {
 	}
 	
     //========Static========
+	public static String elementName(FlowElement element) {
+    	String name = element.getName();
+    	if(name == null || name.equals(""))name = element.getId();
+    	return name;
+	}
+	
     public static String normalizeElementName(String name) {
     	return name.replace('\n', ' ').trim();
     }
