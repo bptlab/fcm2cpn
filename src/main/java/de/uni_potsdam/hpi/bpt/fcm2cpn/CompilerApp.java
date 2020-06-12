@@ -90,7 +90,7 @@ public class CompilerApp {
 	public final BuildCPNUtil builder;
 	private PetriNet petriNet;
 	private Map<BaseElement, SubpageElement> subpages;
-	private Map<BaseElement, Node> idsToNodes;
+	private Map<BaseElement, Node> nodeMap;
 	private Place associations;
 	
 	private List<Runnable> deferred;
@@ -148,7 +148,7 @@ public class CompilerApp {
     	this.bpmn = bpmn;
         this.builder = new BuildCPNUtil();
         this.subpages = new HashMap<>();
-        this.idsToNodes = new HashMap<>();
+        this.nodeMap = new HashMap<>();
         this.deferred = new ArrayList<>();
 	}
     
@@ -262,7 +262,7 @@ public class CompilerApp {
             SubpageElement subPage = new SubpageElement(this, each.getId(), activityPage, mainPageTransition, new ArrayList<>());
             List<Transition> subpageTransitions = subPage.getSubpageTransitions();
             subpages.putIfAbsent(each, subPage);
-            idsToNodes.put(each, mainPageTransition);
+            nodeMap.put(each, mainPageTransition);
             Map<DataElementWrapper, List<StatefulDataAssociation<DataInputAssociation>>> inputsPerObject = each.getDataInputAssociations().stream()
             		.flatMap(this::splitDataAssociationByState)
                     .collect(Collectors.toConcurrentMap(
@@ -359,7 +359,7 @@ public class CompilerApp {
         	Page eventPage = createPage(normalizeElementName(name));
         	Transition subpageTransition = builder.addTransition(eventPage, name);
             Instance mainPageTransition = createSubpageTransition(name, eventPage);
-        	idsToNodes.put(each, mainPageTransition);
+        	nodeMap.put(each, mainPageTransition);
             SubpageElement subPage = new SubpageElement(this, each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
             subpages.put(each, subPage);
             
@@ -401,7 +401,7 @@ public class CompilerApp {
     private void translateEndEvents() {
         Collection<EndEvent> events = bpmn.getModelElementsByType(EndEvent.class);
         events.forEach(each -> {
-        	idsToNodes.put(each, createPlace(elementName(each), "CaseID"));
+        	nodeMap.put(each, createPlace(elementName(each), "CaseID"));
         });
     }
 
@@ -416,9 +416,9 @@ public class CompilerApp {
             Instance mainPageTransition = createSubpageTransition(name, eventPage);
             SubpageElement subPage = new SubpageElement(this, each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
             subpages.put(each, subPage);
-        	idsToNodes.put(each, mainPageTransition);
+        	nodeMap.put(each, mainPageTransition);
             
-        	Node attachedNode = idsToNodes.get(each.getAttachedTo());
+        	Node attachedNode = nodeMap.get(each.getAttachedTo());
         	assert !isPlace(attachedNode);
         	defer(() -> {
             	attachedNode.getTargetArc().stream()
@@ -485,7 +485,7 @@ public class CompilerApp {
         exclusiveGateways.forEach(each -> {
         	String name = elementName(each);
         	Node node = createPlace(name, "CaseID");
-        	idsToNodes.put(each, node);
+        	nodeMap.put(each, node);
         });
 
         Collection<ParallelGateway> parallelGateways = bpmn.getModelElementsByType(ParallelGateway.class);
@@ -496,7 +496,7 @@ public class CompilerApp {
 	        Instance mainPageTransition = createSubpageTransition(name, gatewayPage);
 	        SubpageElement subPage = new SubpageElement(this, each.getId(), gatewayPage, mainPageTransition, Arrays.asList(subpageTransition));
 	        subpages.put(each, subPage);
-	    	idsToNodes.put(each, mainPageTransition);
+	    	nodeMap.put(each, mainPageTransition);
         });
     }
     
@@ -505,8 +505,8 @@ public class CompilerApp {
         sequenceFlows.forEach(each -> {
         	FlowNode sourceNode = each.getSource();
         	FlowNode targetNode = each.getTarget();
-        	Node source = idsToNodes.get(sourceNode);
-        	Node target = idsToNodes.get(targetNode);
+        	Node source = nodeMap.get(sourceNode);
+        	Node target = nodeMap.get(targetNode);
         	//System.out.println(source.getName().asString()+" -> "+target.getName().asString());
         	if(isPlace(source) && isPlace(target)) {
         		Transition transition = builder.addTransition(mainPage, null);
