@@ -41,6 +41,7 @@ import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.impl.instance.SourceRef;
 import org.camunda.bpm.model.bpmn.impl.instance.TargetRef;
 import org.camunda.bpm.model.bpmn.instance.Activity;
+import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.BoundaryEvent;
 import org.camunda.bpm.model.bpmn.instance.DataAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
@@ -53,6 +54,7 @@ import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
 import org.camunda.bpm.model.bpmn.instance.FlowElement;
+import org.camunda.bpm.model.bpmn.instance.FlowNode;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
@@ -87,8 +89,8 @@ public class CompilerApp {
 //	private DataModel dataModel = new DataModel();
 	public final BuildCPNUtil builder;
 	private PetriNet petriNet;
-	private Map<String, SubpageElement> subpages;
-	private Map<String, Node> idsToNodes;
+	private Map<BaseElement, SubpageElement> subpages;
+	private Map<BaseElement, Node> idsToNodes;
 	private Place associations;
 	
 	private List<Runnable> deferred;
@@ -259,8 +261,8 @@ public class CompilerApp {
             Instance mainPageTransition = createSubpageTransition(name, activityPage);
             SubpageElement subPage = new SubpageElement(this, each.getId(), activityPage, mainPageTransition, new ArrayList<>());
             List<Transition> subpageTransitions = subPage.getSubpageTransitions();
-            subpages.putIfAbsent(each.getId(), subPage);
-            idsToNodes.put(each.getId(), mainPageTransition);
+            subpages.putIfAbsent(each, subPage);
+            idsToNodes.put(each, mainPageTransition);
             Map<DataElementWrapper, List<StatefulDataAssociation<DataInputAssociation>>> inputsPerObject = each.getDataInputAssociations().stream()
             		.flatMap(this::splitDataAssociationByState)
                     .collect(Collectors.toConcurrentMap(
@@ -357,9 +359,9 @@ public class CompilerApp {
         	Page eventPage = createPage(normalizeElementName(name));
         	Transition subpageTransition = builder.addTransition(eventPage, name);
             Instance mainPageTransition = createSubpageTransition(name, eventPage);
-        	idsToNodes.put(each.getId(), mainPageTransition);
+        	idsToNodes.put(each, mainPageTransition);
             SubpageElement subPage = new SubpageElement(this, each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
-            subpages.put(each.getId(), subPage);
+            subpages.put(each, subPage);
             
             Place caseTokenPlace = createPlace(eventPage, "Case Count", "INT", "1`0");
             builder.addArc(eventPage, caseTokenPlace, subpageTransition, "count");
@@ -399,7 +401,7 @@ public class CompilerApp {
     private void translateEndEvents() {
         Collection<EndEvent> events = bpmn.getModelElementsByType(EndEvent.class);
         events.forEach(each -> {
-        	idsToNodes.put(each.getId(), createPlace(elementName(each), "CaseID"));
+        	idsToNodes.put(each, createPlace(elementName(each), "CaseID"));
         });
     }
 
@@ -413,11 +415,10 @@ public class CompilerApp {
         	Transition subpageTransition = builder.addTransition(eventPage, name);
             Instance mainPageTransition = createSubpageTransition(name, eventPage);
             SubpageElement subPage = new SubpageElement(this, each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
-            subpages.put(each.getId(), subPage);
-        	idsToNodes.put(each.getId(), mainPageTransition);
+            subpages.put(each, subPage);
+        	idsToNodes.put(each, mainPageTransition);
             
-        	String attachedId = each.getAttachedTo().getId();
-        	Node attachedNode = idsToNodes.get(attachedId);
+        	Node attachedNode = idsToNodes.get(each.getAttachedTo());
         	assert !isPlace(attachedNode);
         	defer(() -> {
             	attachedNode.getTargetArc().stream()
@@ -484,7 +485,7 @@ public class CompilerApp {
         exclusiveGateways.forEach(each -> {
         	String name = elementName(each);
         	Node node = createPlace(name, "CaseID");
-        	idsToNodes.put(each.getId(), node);
+        	idsToNodes.put(each, node);
         });
 
         Collection<ParallelGateway> parallelGateways = bpmn.getModelElementsByType(ParallelGateway.class);
@@ -494,18 +495,18 @@ public class CompilerApp {
 	    	Transition subpageTransition = builder.addTransition(gatewayPage, name);
 	        Instance mainPageTransition = createSubpageTransition(name, gatewayPage);
 	        SubpageElement subPage = new SubpageElement(this, each.getId(), gatewayPage, mainPageTransition, Arrays.asList(subpageTransition));
-	        subpages.put(each.getId(), subPage);
-	    	idsToNodes.put(each.getId(), mainPageTransition);
+	        subpages.put(each, subPage);
+	    	idsToNodes.put(each, mainPageTransition);
         });
     }
     
     private void translateControlFlow() {
         Collection<SequenceFlow> sequenceFlows = bpmn.getModelElementsByType(SequenceFlow.class);
         sequenceFlows.forEach(each -> {
-        	String sourceId = each.getSource().getId();
-        	String targetId = each.getTarget().getId();
-        	Node source = idsToNodes.get(sourceId);
-        	Node target = idsToNodes.get(targetId);
+        	FlowNode sourceNode = each.getSource();
+        	FlowNode targetNode = each.getTarget();
+        	Node source = idsToNodes.get(sourceNode);
+        	Node target = idsToNodes.get(targetNode);
         	//System.out.println(source.getName().asString()+" -> "+target.getName().asString());
         	if(isPlace(source) && isPlace(target)) {
         		Transition transition = builder.addTransition(mainPage, null);
@@ -514,7 +515,7 @@ public class CompilerApp {
         	} else if(isPlace(source) || isPlace(target)) {
         		builder.addArc(mainPage, source, target, "");
         		if(!isPlace(target)) {
-        			SubpageElement subPage = subpages.get(targetId);
+        			SubpageElement subPage = subpages.get(targetNode);
         			if(Objects.nonNull(subPage)) {
 	        			subPage.getSubpageTransitions().forEach(transition -> {
 	            			builder.addArc(subPage.getPage(), subPage.refPlaceFor((Place) source), transition, "caseId");
@@ -522,7 +523,7 @@ public class CompilerApp {
         			}
         		}
         		if(!isPlace(source)) {
-        			SubpageElement subPage = subpages.get(sourceId);
+        			SubpageElement subPage = subpages.get(sourceNode);
         			if(Objects.nonNull(subPage)) {
             			subPage.getSubpageTransitions().forEach(transition -> {
                 			builder.addArc(subPage.getPage(), transition, subPage.refPlaceFor((Place) target), "caseId");
@@ -533,7 +534,7 @@ public class CompilerApp {
             	Place place = createPlace(null, "CaseID");
             	
             	builder.addArc(mainPage, source, place, "");
-       			SubpageElement sourceSubPage = subpages.get(sourceId);
+       			SubpageElement sourceSubPage = subpages.get(sourceNode);
        			if(Objects.nonNull(sourceSubPage)) {
         			sourceSubPage.getSubpageTransitions().forEach(transition -> {
             			builder.addArc(sourceSubPage.getPage(), transition, sourceSubPage.refPlaceFor(place), "caseId");
@@ -541,7 +542,7 @@ public class CompilerApp {
        			}
 
             	builder.addArc(mainPage, place, target, "");
-    			SubpageElement targetSubPage = subpages.get(targetId);
+    			SubpageElement targetSubPage = subpages.get(targetNode);
     			if(Objects.nonNull(targetSubPage)) {
         			targetSubPage.getSubpageTransitions().forEach(transition -> {
             			builder.addArc(targetSubPage.getPage(), targetSubPage.refPlaceFor(place), transition, "caseId");
