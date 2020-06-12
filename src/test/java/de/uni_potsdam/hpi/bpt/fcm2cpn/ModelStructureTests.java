@@ -81,7 +81,10 @@ public abstract class ModelStructureTests {
 		return StreamSupport.stream(mainPage.place().spliterator(), true).filter(place -> {
 			return place.getSort().getText().equals("CaseID") 
 					&& place.getTargetArc().get(0).getOtherEnd(place).getName().asString().equals(nodeA)
-					&& place.getSourceArc().get(0).getOtherEnd(place).getName().asString().equals(nodeB);
+					&& (
+						!place.getSourceArc().isEmpty() && place.getSourceArc().get(0).getOtherEnd(place).getName().asString().equals(nodeB)
+						|| place.getName().asString().equals(nodeB)
+					);
 		});
 	}
 
