@@ -84,10 +84,12 @@ public abstract class ModelStructureTests {
 		Page mainPage = petrinet.getPage().get(0);
 		return StreamSupport.stream(mainPage.place().spliterator(), true).filter(place -> {
 			return place.getSort().getText().equals("CaseID") 
-					&& place.getTargetArc().get(0).getOtherEnd(place).getName().asString().equals(nodeA)
 					&& (
-						!place.getSourceArc().isEmpty() && place.getSourceArc().get(0).getOtherEnd(place).getName().asString().equals(nodeB)
-						|| place.getName().asString().equals(nodeB)
+						!place.getTargetArc().isEmpty() && place.getTargetArc().stream().anyMatch(any -> any.getOtherEnd(place).getName().asString().equals(nodeA))
+						|| Objects.toString(place.getName().asString()).equals(nodeA)
+					) && (
+						!place.getSourceArc().isEmpty() && place.getSourceArc().stream().anyMatch(any -> any.getOtherEnd(place).getName().asString().equals(nodeB))
+						|| Objects.toString(place.getName().asString()).equals(nodeB)
 					);
 		});
 	}

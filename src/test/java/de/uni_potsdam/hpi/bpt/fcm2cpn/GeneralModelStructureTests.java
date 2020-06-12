@@ -110,10 +110,8 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(SequenceFlow.class)
 	public void testControlFlowPlaceIsCreated(SequenceFlow sequenceFlow) {
-		assumeFalse(sequenceFlow.getSource() instanceof Gateway, "The sequence started at a gateway");
-		assumeFalse(sequenceFlow.getTarget() instanceof Gateway, "The sequence ended at a gateway");
-		assertEquals(1, controlFlowPlacesBetween(sequenceFlow.getSource().getName(), sequenceFlow.getTarget().getName()).count(), 
-			"There is not exactly one place for the control flow between "+sequenceFlow.getSource().getName()+" and "+sequenceFlow.getTarget().getName());
+		assertEquals(1, controlFlowPlacesBetween(elementName(sequenceFlow.getSource()), elementName(sequenceFlow.getTarget())).count(), 
+			"There is not exactly one place for the control flow between "+elementName(sequenceFlow.getSource())+" and "+elementName(sequenceFlow.getTarget()));
 	}
 	
 	@TestWithAllModels
