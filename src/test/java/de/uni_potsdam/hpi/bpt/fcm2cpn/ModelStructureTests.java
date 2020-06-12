@@ -80,6 +80,12 @@ public abstract class ModelStructureTests {
 				.filter(place -> place.getSort().getText().equals("DATA_OBJECT") );
 	}
 	
+	/**
+	 * Control flow between two bpmn elements is correctly mapped if: <br>
+	 * a) there is a place between transitions with the names <br>
+	 * OR<br> 
+	 * b) if there is a control flow place for one of them that is connected to a transition for the other one
+	 */
 	public Stream<Place> controlFlowPlacesBetween(String nodeA, String nodeB) {
 		Page mainPage = petrinet.getPage().get(0);
 		return StreamSupport.stream(mainPage.place().spliterator(), true).filter(place -> {

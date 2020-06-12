@@ -1,7 +1,11 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.*;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.elementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.normalizeElementName;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.BoundaryEvent;
@@ -18,7 +23,8 @@ import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.EndEvent;
-import org.camunda.bpm.model.bpmn.instance.Gateway;
+import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
+import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
@@ -29,9 +35,6 @@ import org.cpntools.accesscpn.model.Place;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
-
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.normalizeElementName;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.elementName;
 
 @ModelsToTest({"Simple", "SimpleWithStates", "SimpleWithEvents", "SimpleWithGateways", "TranslationJob"})
 public class GeneralModelStructureTests extends ModelStructureTests {
@@ -113,6 +116,53 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		assertEquals(1, controlFlowPlacesBetween(elementName(sequenceFlow.getSource()), elementName(sequenceFlow.getTarget())).count(), 
 			"There is not exactly one place for the control flow between "+elementName(sequenceFlow.getSource())+" and "+elementName(sequenceFlow.getTarget()));
 	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(ExclusiveGateway.class)
+	public void testExclusiveGatewayPlaceIsCreated(ExclusiveGateway gateway) {
+		assertEquals(1, placesNamed(elementName(gateway)).count(),
+			"There is not exactly one place for exclusive gatewax "+elementName(gateway));
+	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(ExclusiveGateway.class)
+	public void testExclusiveGatewayPlaceHasCorrectArcs(ExclusiveGateway gateway) {
+		Place gatewayPlace = placesNamed(elementName(gateway)).findAny().get();
+		List<String> incomingNames = gatewayPlace.getTargetArc().stream().map(arc -> arc.getSource().getName().asString()).collect(Collectors.toList());
+		List<String> outgoingNames = gatewayPlace.getSourceArc().stream().map(arc -> arc.getTarget().getName().asString()).collect(Collectors.toList());
+		
+		List<SequenceFlow> unmappedFlows = Stream.concat(
+				gateway.getIncoming().stream().filter(controlFlow -> incomingNames.stream().noneMatch(elementName(controlFlow.getSource())::equals)),
+				gateway.getOutgoing().stream().filter(controlFlow -> outgoingNames.stream().noneMatch(elementName(controlFlow.getTarget())::equals))
+		).collect(Collectors.toList());
+		assertTrue(unmappedFlows.isEmpty(), "Unmapped sequence flows for exclusive gateway "+elementName(gateway)+": "+unmappedFlows);
+	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(ParallelGateway.class)
+	public void testParallelGatewayTransitionIsCreated(ParallelGateway gateway) {
+		assertEquals(1, instancesNamed(elementName(gateway)).count(), 
+				"There is not exactly one transition for parallel gateway "+elementName(gateway));
+	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(ParallelGateway.class)
+	public void testParallelGatewaySubPageIsCreated(ParallelGateway gateway) {
+		assertEquals(1, pagesNamed(normalizeElementName(elementName(gateway))).count(), 
+				"There is not exactly one sub page for parallel gateway "+elementName(gateway));
+	}
+
+	@TestWithAllModels
+	@ForEachBpmn(ParallelGateway.class)
+	public void testParallelGatewayPlaceHasCorrectArcs(ParallelGateway gateway) {		
+		List<SequenceFlow> unmappedFlows = Stream.concat(
+				gateway.getIncoming().stream().filter(controlFlow -> controlFlowPlacesBetween(elementName(controlFlow.getSource()), elementName(gateway)).count() == 0),
+				gateway.getOutgoing().stream().filter(controlFlow -> controlFlowPlacesBetween(elementName(gateway), elementName(controlFlow.getTarget())).count() == 0)
+		).collect(Collectors.toList());
+		assertTrue(unmappedFlows.isEmpty(), "Unmapped sequence flows for parallel gateway "+elementName(gateway)+": "
+				+unmappedFlows.stream().map(each -> elementName(each.getSource())+" -> "+elementName(each.getTarget())).collect(Collectors.toList()));
+	}
+	
 	
 	@TestWithAllModels
 	@ForEachBpmn(DataObject.class)
