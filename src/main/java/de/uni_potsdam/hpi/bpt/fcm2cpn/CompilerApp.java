@@ -62,6 +62,7 @@ import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Instance;
+import org.cpntools.accesscpn.model.ModelFactory;
 import org.cpntools.accesscpn.model.ModelPrinter;
 import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Page;
@@ -176,6 +177,8 @@ public class CompilerApp {
 	private void initializeCPNModel() {
         System.out.print("Initalizing CPN model... ");
         petriNet = builder.createPetriNet();
+        petriNet.setName(ModelFactory.INSTANCE.createName());
+        petriNet.getName().setText("Compiled BPMN Model");
         mainPage = createPage("Main Page");
         initializeDefaultColorSets();
         initializeDefaultVariables();
