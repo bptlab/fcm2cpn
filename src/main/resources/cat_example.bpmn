@@ -283,6 +283,7 @@
       <outgoing>sid-E0D0D1B1-231E-4E6A-9D68-81B150C360F9</outgoing>
       <ioSpecification id="sid-3de414cc-cbcc-45ca-9060-72ac0b4422cf">
         <dataInput id="sid-65040ff0-3b17-4f99-b6bd-0d1719dfd61c" />
+        <dataOutput id="sid-model-was-broken" />
         <inputSet id="sid-ae59d059-68e8-4219-88cb-c21fd64d74d4" name="DefaultInputSet">
           <dataInputRefs>sid-65040ff0-3b17-4f99-b6bd-0d1719dfd61c</dataInputRefs>
           <outputSetRefs>sid-aebc5663-d341-4c5f-9086-6b5856e03b15</outputSetRefs>
@@ -300,6 +301,7 @@
         <targetRef>sid-65040ff0-3b17-4f99-b6bd-0d1719dfd61c</targetRef>
       </dataInputAssociation>
       <dataOutputAssociation id="DataOutputAssociation_14sdbda">
+        <sourceRef>sid-model-was-broken</sourceRef>
         <targetRef>sid-342354B1-02DE-402D-A4C2-8B92E3E199BB</targetRef>
       </dataOutputAssociation>
     </task>
