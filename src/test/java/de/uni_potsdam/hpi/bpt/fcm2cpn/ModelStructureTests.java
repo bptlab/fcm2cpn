@@ -6,6 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -67,13 +68,16 @@ public abstract class ModelStructureTests {
 	public Stream<Page> pagesNamed(String name) {
 		return petrinet.getPage().stream().filter(page -> page.getName().asString().equals(name));
 	}
+	
+	public Stream<Place> placesNamed(String name) {
+		Page mainPage = petrinet.getPage().get(0);
+		return StreamSupport.stream(mainPage.place().spliterator(), true)
+				.filter(place -> Objects.toString(place.getName().asString()).equals(name));
+	}
 
 	public Stream<Place> dataObjectPlacesNamed(String name) {
-		Page mainPage = petrinet.getPage().get(0);
-		return StreamSupport.stream(mainPage.place().spliterator(), true).filter(place -> {
-			return place.getSort().getText().equals("DATA_OBJECT") 
-					&& place.getName().asString().equals(name);
-		});
+		return placesNamed(name)
+				.filter(place -> place.getSort().getText().equals("DATA_OBJECT") );
 	}
 	
 	public Stream<Place> controlFlowPlacesBetween(String nodeA, String nodeB) {

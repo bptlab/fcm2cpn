@@ -1,8 +1,7 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,21 +12,27 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
+import org.camunda.bpm.model.bpmn.instance.BoundaryEvent;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
+import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.Gateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
+import org.cpntools.accesscpn.model.Arc;
+import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.Place;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 
-@ModelsToTest({"Simple", "SimpleWithStates", "TranslationJob"})
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.normalizeElementName;
+
+@ModelsToTest({"Simple", "SimpleWithStates", "SimpleWithEvents", "TranslationJob"})
 public class GeneralModelStructureTests extends ModelStructureTests {
 	
 	@TestWithAllModels
@@ -49,6 +54,13 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	}
 	
 	@TestWithAllModels
+	@ForEachBpmn(BoundaryEvent.class)
+	public void testBoundaryEventTransitionIsCreated(BoundaryEvent boundaryEvent) {
+		assertEquals(1, instancesNamed(boundaryEvent.getName()).count(), 
+				"There is not exactly one sub page transition for boundary event "+boundaryEvent.getName());
+	}
+	
+	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testActivityTransitionIsCreated(Activity activity) {
 		assertEquals(1, instancesNamed(activity.getName()).count(), 
@@ -58,14 +70,39 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(StartEvent.class)
 	public void testStartEventSubPageIsCreated(StartEvent startEvent) {
-		assertEquals(1, pagesNamed(CompilerApp.normalizeElementName(startEvent.getName())).count(), 
+		assertEquals(1, pagesNamed(normalizeElementName(startEvent.getName())).count(), 
 				"There is not exactly one sub page for start event "+startEvent.getName());
+	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(BoundaryEvent.class)
+	public void testBoundaryEventSubPageIsCreated(BoundaryEvent boundaryEvent) {
+		assertEquals(1, pagesNamed(normalizeElementName(boundaryEvent.getName())).count(), 
+				"There is not exactly one sub page for boundary event "+boundaryEvent.getName());
+	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(BoundaryEvent.class)
+	public void testBoundaryEventCancelsTaskExecution(BoundaryEvent boundaryEvent) {
+		assumeTrue(boundaryEvent.cancelActivity());
+		Instance transition = instancesNamed(boundaryEvent.getName()).findAny().get();
+		String canceledActivityName = boundaryEvent.getAttachedTo().getName();
+		Place commonCaseTokenPlace = (Place) transition.getTargetArc().get(0).getOtherEnd(transition);
+		assertTrue(commonCaseTokenPlace.getSourceArc().stream().map(Arc::getTarget).anyMatch(any -> any.getName().asString().equals(canceledActivityName)),
+			"Boundary Event "+boundaryEvent.getName()+" has no common place to the activity it interrupts: "+canceledActivityName);
+	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(EndEvent.class)
+	public void testEndEventPlaceIsCreated(EndEvent endEvent) {
+		assertEquals(1, placesNamed(endEvent.getName()).count(), 
+				"There is not exactly one place for end event "+endEvent.getName());
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testActivitySubPageIsCreated(Activity activity) {
-		assertEquals(1, pagesNamed(CompilerApp.normalizeElementName(activity.getName())).count(), 
+		assertEquals(1, pagesNamed(normalizeElementName(activity.getName())).count(), 
 				"There is not exactly one sub page for activity "+activity.getName());
 	}
 
@@ -81,7 +118,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(DataObject.class)
 	public void testDataObjectPlacesAreCreated(DataObject dataObject) {
-		assertEquals(1, dataObjectPlacesNamed(CompilerApp.normalizeElementName(dataObject.getName())).count(), 
+		assertEquals(1, dataObjectPlacesNamed(normalizeElementName(dataObject.getName())).count(), 
 			"There is not exactly one place for data object "+dataObject.getName());
 	}
 	
@@ -148,7 +185,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 			.map(DataObjectReference.class::cast)
 			.filter(each -> Objects.nonNull(each.getDataState()))
 			.forEach(each -> inputStates
-				.computeIfAbsent(CompilerApp.normalizeElementName(each.getDataObject().getName()), $ -> new ArrayList<>())
+				.computeIfAbsent(normalizeElementName(each.getDataObject().getName()), $ -> new ArrayList<>())
 				.addAll(CompilerApp.dataObjectStateToNetColors(each.getDataState().getName()).collect(Collectors.toList())));
 		
 		activity.getDataOutputAssociations().stream()
@@ -157,7 +194,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 			.map(DataObjectReference.class::cast)
 			.filter(each -> Objects.nonNull(each.getDataState()))
 			.forEach(each -> outputStates
-				.computeIfAbsent(CompilerApp.normalizeElementName(each.getDataObject().getName()), $ -> new ArrayList<>())
+				.computeIfAbsent(normalizeElementName(each.getDataObject().getName()), $ -> new ArrayList<>())
 				.addAll(CompilerApp.dataObjectStateToNetColors(each.getDataState().getName()).collect(Collectors.toList())));
 		
 		assumeTrue(!inputStates.isEmpty() || !outputStates.isEmpty(), "Activity has no input or out sets");
@@ -168,7 +205,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		if(possibleInputSets.isEmpty()) possibleInputSets.add(Collections.emptyList());
 		if(possibleOutputSets.isEmpty()) possibleOutputSets.add(Collections.emptyList());
 
-		Page activityPage = pagesNamed(CompilerApp.normalizeElementName(activity.getName())).findAny().get();
+		Page activityPage = pagesNamed(normalizeElementName(activity.getName())).findAny().get();
 		for(List<String> inputSet : possibleInputSets) {
 			for(List<String> outputSet : possibleOutputSets) {
 				assertEquals(1, activityTransitionsForTransput(activityPage, activity.getName(), inputSet, outputSet).count(), 
