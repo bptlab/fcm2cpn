@@ -1,10 +1,14 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
+import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Place;
 
 public abstract class DataElementWrapper<Element extends ItemAwareElement, Reference> {
@@ -15,10 +19,16 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 	private final List<Element> mappedElements = new ArrayList<>();
 	private final List<Reference> mappedReferences = new ArrayList<>();
 
+	protected final Map<BaseElement, Arc> outgoingArcs;
+	protected final Map<BaseElement, Arc> incomingArcs;
+
 	public DataElementWrapper(CompilerApp compilerApp, String trimmedName) {
 		this.compilerApp = compilerApp;
 		this.trimmedName = trimmedName;
 		this.place = createPlace();
+		
+		outgoingArcs = new HashMap<>();
+		incomingArcs = new HashMap<>();
 	}
 	
 	protected abstract Place createPlace();
@@ -27,11 +37,11 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 		return trimmedName.replaceAll("\\s", "_");
 	}
 
-	public String dataObjectId() {
+	public String dataElementId() {
 		return namePrefix() + "Id";
 	}
 
-	public String dataObjectCount() {
+	public String dataElementCount() {
 		return namePrefix() + "Count";
 	}
 	
@@ -53,6 +63,19 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 	public boolean isForReference(Reference reference) {
 		return mappedReferences.contains(reference);
 	}
+
+	public abstract boolean isDataObjectWrapper();
+	public abstract boolean isDataStoreWrapper();
+	
+	
+	public Arc assertMainPageArcTo(BaseElement element) {
+		return outgoingArcs.computeIfAbsent(element, _element -> compilerApp.createArc(place, compilerApp.nodeFor(_element)));
+	}
+	
+	public Arc assertMainPageArcFrom(BaseElement element) {
+		return incomingArcs.computeIfAbsent(element, _element -> compilerApp.createArc(compilerApp.nodeFor(_element), place));
+	}
+	
 
 
 }

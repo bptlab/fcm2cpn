@@ -19,6 +19,9 @@ import java.util.stream.StreamSupport;
 
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
+import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
+import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
+import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.LocalCheckFailed;
@@ -46,6 +49,21 @@ public abstract class ModelStructureTests {
 	public String model;
 	public BpmnModelInstance bpmn;
 	public PetriNet petrinet;
+	
+	
+	public List<ModelElementInstance> readingElements(ItemAwareElement dataElementReference) {
+		return bpmn.getModelElementsByType(DataInputAssociation.class).stream()
+				.filter(assoc -> assoc.getSources().contains(dataElementReference))
+				.map(DataInputAssociation::getParentElement)
+				.collect(Collectors.toList());
+	}
+	
+	public List<ModelElementInstance> writingElements(ItemAwareElement dataElementReference) {
+		return bpmn.getModelElementsByType(DataOutputAssociation.class).stream()
+			.filter(assoc -> assoc.getTarget().equals(dataElementReference))
+			.map(DataOutputAssociation::getParentElement)
+			.collect(Collectors.toList());
+	}
 	
 	public <T extends ModelElementInstance> void forEach(Class<T> elementClass, Consumer<? super T> testBody) {
 		bpmn.getModelElementsByType(elementClass).forEach(testBody);
@@ -89,6 +107,11 @@ public abstract class ModelStructureTests {
 	public Stream<Place> dataObjectPlacesNamed(String name) {
 		return placesNamed(name)
 				.filter(place -> place.getSort().getText().equals("DATA_OBJECT") );
+	}
+	
+	public Stream<Place> dataStorePlacesNamed(String name) {
+		return placesNamed(name)
+				.filter(place -> place.getSort().getText().equals("DATA_STORE") );
 	}
 	
 	/**
