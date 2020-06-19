@@ -1,9 +1,12 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.normalizeElementName;
+
 import java.io.File;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -19,7 +22,9 @@ import java.util.stream.StreamSupport;
 
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
+import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
+import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
@@ -41,8 +46,8 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.platform.commons.annotation.Testable;
 import org.junit.platform.commons.util.ReflectionUtils;
 
-import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ArgumentTreeTests;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 
 public abstract class ModelStructureTests {
 
@@ -50,6 +55,7 @@ public abstract class ModelStructureTests {
 	public BpmnModelInstance bpmn;
 	public PetriNet petrinet;
 	
+	public DataModel dataModel = new DataModel();//TODO
 	
 	public List<ModelElementInstance> readingElements(ItemAwareElement dataElementReference) {
 		return bpmn.getModelElementsByType(DataInputAssociation.class).stream()
@@ -63,6 +69,24 @@ public abstract class ModelStructureTests {
 			.filter(assoc -> assoc.getTarget().equals(dataElementReference))
 			.map(DataOutputAssociation::getParentElement)
 			.collect(Collectors.toList());
+	}
+	
+	public List<String[]> dataObjectAssociations() {
+		List<String> dataObjects = bpmn.getModelElementsByType(DataObject.class).stream()
+				.map(DataObject::getName)
+				.map(CompilerApp::normalizeElementName)
+				.distinct()
+				.collect(Collectors.toList());
+		List<String[]> associated = new ArrayList<>();
+		for(int i = 0; i < dataObjects.size(); i++) {
+			String first = dataObjects.get(i);
+			for(int j = 0; j < dataObjects.size(); j++) {
+				if(i == j)continue;
+				String second = dataObjects.get(j);
+				if(dataModel.isAssociated(first, second)) associated.add(new String[] {first, second});
+			}
+		}
+		return associated;
 	}
 	
 	public <T extends ModelElementInstance> void forEach(Class<T> elementClass, Consumer<? super T> testBody) {
@@ -135,11 +159,11 @@ public abstract class ModelStructureTests {
 	}
 
 	public Stream<Arc> arcsToNodeNamed(Node source, String targetName) {
-		return source.getSourceArc().stream().filter(arc -> arc.getOtherEnd(source).getName().asString().equals(targetName));
+		return source.getSourceArc().stream().filter(arc -> targetName.equals(arc.getOtherEnd(source).getName().asString()));
 	}
 	
-	public Stream<Arc> arcsFromNodeNamed(Node source, String targetName) {
-		return source.getTargetArc().stream().filter(arc -> arc.getOtherEnd(source).getName().asString().equals(targetName));
+	public Stream<Arc> arcsFromNodeNamed(Node target, String sourceName) {
+		return target.getTargetArc().stream().filter(arc -> arc.getOtherEnd(target).getName().asString().equals(sourceName));
 	}
 	
 	public Stream<Transition> activityTransitionsNamed(Page page, String activityName) {
@@ -162,6 +186,11 @@ public abstract class ModelStructureTests {
 					transition.getSourceArc().stream()
 						.anyMatch(arc -> arc.getHlinscription().asString().contains("state = "+outputState)));
 		});
+	}
+	
+	public Stream<Transition> transitionsForActivity(Activity activity) {
+		Page activityPage = pagesNamed(normalizeElementName(activity.getName())).findAny().get();
+		return StreamSupport.stream(activityPage.transition().spliterator(), true);
 	}
 	
 	

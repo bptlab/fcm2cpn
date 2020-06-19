@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +19,6 @@ import java.util.stream.Stream;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.BoundaryEvent;
-import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
@@ -326,5 +326,49 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 					"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to writing node "+nodeName);
 		});
 	}
+	
+	
+	@TestWithAllModels
+	public void associationPlaceIsCreated() {
+		assertEquals(1, placesNamed("associations").count(),
+				"There is not exactly one place for associations");
+	}
+	
+	@TestWithAllModels
+	public void testDataAssociationsBetweenReadAndWriteAreCreated() {		
+		dataObjectAssociations().forEach(association -> {
+			String first = association[0];
+			String second = association[1];
+			forEach(Activity.class, activity -> {
+				boolean readsFirst = activity.getDataInputAssociations().stream()
+					.flatMap(assoc -> assoc.getSources().stream())
+					.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
+					.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(first));
+				boolean writesSecond = activity.getDataOutputAssociations().stream()
+					.map(assoc -> assoc.getTarget())
+					.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
+					.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(second));
+				if(readsFirst && writesSecond) {
+					transitionsForActivity(activity).forEach(transition -> {
+						assertEquals(1, arcsToNodeNamed(transition, "associations")
+								.map(each -> each.getHlinscription().getText())
+								.map(each -> each.substring(1, each.length() - 1).replace("\"", "").split(", "))
+								.map(Arrays::asList)
+								.filter(each -> each.contains(first+"Id") && each.contains(second+"Id"))
+								.count(),
+								"There is not exactly one association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
+					});
+
+//					assertEquals(1, arcsFromNodeNamed(associationPlace, normalizeElementName(activity.getName()))
+//							.map(each -> each.getHlinscription().getText())
+//							.peek(System.out::println)
+//							.filter(each -> each.contains(first) && each.contains(second))
+//							.count(),
+//							"There is not exactly one association arc for objects "+first+" "+second+" at activity "+normalizeElementName(activity.getName()));
+				}
+			});
+		});
+	}
+	
 
 }

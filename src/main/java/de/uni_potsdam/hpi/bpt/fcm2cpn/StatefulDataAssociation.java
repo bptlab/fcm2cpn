@@ -4,6 +4,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.camunda.bpm.model.bpmn.instance.DataAssociation;
+import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
+import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 
 public class StatefulDataAssociation<T extends DataAssociation> {
@@ -13,6 +15,8 @@ public class StatefulDataAssociation<T extends DataAssociation> {
 	public StatefulDataAssociation(T bpmnAssociation, String stateName, ItemAwareElement dataElement) {
 		this.bpmnAssociation = bpmnAssociation;
 		this.stateName = Optional.ofNullable(stateName);
+		
+		assert dataElement instanceof DataObjectReference || dataElement instanceof DataStoreReference;
 		this.dataElement = dataElement;
 	}
 	@Override

@@ -14,7 +14,7 @@ import org.cpntools.accesscpn.model.Place;
 public abstract class DataElementWrapper<Element extends ItemAwareElement, Reference> {
 
 	protected final CompilerApp compilerApp;
-	protected final String trimmedName;
+	protected final String normalizedName;
 	protected final Place place;
 	private final List<Element> mappedElements = new ArrayList<>();
 	private final List<Reference> mappedReferences = new ArrayList<>();
@@ -24,7 +24,7 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 
 	public DataElementWrapper(CompilerApp compilerApp, String trimmedName) {
 		this.compilerApp = compilerApp;
-		this.trimmedName = trimmedName;
+		this.normalizedName = trimmedName;
 		this.place = createPlace();
 		
 		outgoingArcs = new HashMap<>();
@@ -33,8 +33,12 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 	
 	protected abstract Place createPlace();
 	
+	public String getNormalizedName() {
+		return normalizedName;
+	}
+	
 	public String namePrefix() {
-		return trimmedName.replaceAll("\\s", "_");
+		return normalizedName.replaceAll("\\s", "_");
 	}
 
 	public String dataElementId() {

@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -87,12 +88,15 @@ public class CompilerApp {
 
 	private Page mainPage;
 	private BpmnModelInstance bpmn;
-//	private DataModel dataModel = new DataModel();
+	private DataModel dataModel = new DataModel();
 	public final BuildCPNUtil builder;
 	private PetriNet petriNet;
 	private Map<BaseElement, SubpageElement> subpages;
 	private Map<BaseElement, Node> nodeMap;
-	private Place associations;
+	
+	private Place associationsPlace;
+	private final Set<Activity> associationReaders;
+	private final Set<Activity> associationWriters;
 	
 	private List<Runnable> deferred;
 	
@@ -161,6 +165,10 @@ public class CompilerApp {
         this.subpages = new HashMap<>();
         this.nodeMap = new HashMap<>();
         this.deferred = new ArrayList<>();
+        this.dataModel = new DataModel();
+        
+        this.associationReaders = new HashSet<>();
+        this.associationWriters = new HashSet<>();
 	}
     
     private static BpmnModelInstance loadBPMNFile(File bpmnFile) {
@@ -236,7 +244,7 @@ public class CompilerApp {
 
     	Collection<DataObject> dataObjects = bpmn.getModelElementsByType(DataObject.class);
         dataObjects.forEach(each -> dataObjectsNamesToWrappers
-        		.computeIfAbsent(normalizeElementName(each.getName()), trimmedName -> new DataObjectWrapper(this, trimmedName))
+        		.computeIfAbsent(normalizeElementName(each.getName()), normalizedName -> new DataObjectWrapper(this, normalizedName))
         		.addMappedElement(each));
         
         Collection<DataObjectReference> dataObjectRefs = bpmn.getModelElementsByType(DataObjectReference.class);
@@ -252,7 +260,7 @@ public class CompilerApp {
         
         Collection<DataStore> dataStores = bpmn.getModelElementsByType(DataStore.class);
         dataStores.forEach(each -> dataStoreNamesToWrappers
-        		.computeIfAbsent(normalizeElementName(each.getName()), trimmedName -> new DataStoreWrapper(this, trimmedName))
+        		.computeIfAbsent(normalizeElementName(each.getName()), normalizedName -> new DataStoreWrapper(this, normalizedName))
         		.addMappedElement(each));
         Collection<DataStoreReference> dataStoreRefs = bpmn.getModelElementsByType(DataStoreReference.class);
         dataStoreRefs.forEach(each -> dataStoreNamesToWrappers
@@ -263,7 +271,7 @@ public class CompilerApp {
     }
     
     private void createAssociationPlace() {
-    	associations = createPlace("associations", "ASSOCIATION");
+    	associationsPlace = createPlace("associations", "ASSOCIATION");
     }
     
     private void translateActivities() {
@@ -337,10 +345,11 @@ public class CompilerApp {
                 inputSetIndex++;
             }
             translateDataAssociations(each, outputs, inputs);
+            associateWrittenDataObjects(each, inputsPerObject.keySet(), outputsPerObject.keySet(), subpageTransitions);
         });
     }
-    
-    private void attachObjectCreationCounters(Transition transition, Set<DataObjectWrapper> createObjects) {
+
+	private void attachObjectCreationCounters(Transition transition, Set<DataObjectWrapper> createObjects) {
         String countVariables = createObjects.stream().map(DataObjectWrapper::dataElementCount).collect(Collectors.joining(",\n"));
         String idVariables = createObjects.stream().map(DataObjectWrapper::dataElementId).collect(Collectors.joining(",\n"));
         String idGeneration = createObjects.stream().map(object -> "String.concat[\"" + object.namePrefix() + "\", Int.toString(" + object.dataElementCount() +")]").collect(Collectors.joining(",\n"));
@@ -504,6 +513,35 @@ public class CompilerApp {
     	transitions.forEach(subPageTransition -> {
     		builder.addArc(subPageTransition.getPage(), subPage.refPlaceFor(dataElement.place), subPageTransition, annotation);
     	});
+    }
+    
+
+    
+    private void associateWrittenDataObjects(Activity activity, Set<DataElementWrapper<?, ?>> readDataElements, Set<DataElementWrapper<?, ?>> writtenDataElements, Collection<Transition> transitions) {
+		SubpageElement subPage = subpages.get(activity);
+		Set<Set<DataObjectWrapper>> associations = new HashSet<>();
+		Set<DataObjectWrapper> readDataObjects = readDataElements.stream().filter(DataElementWrapper::isDataObjectWrapper).map(DataObjectWrapper.class::cast).collect(Collectors.toSet());
+		Set<DataObjectWrapper> writtenDataObjects = writtenDataElements.stream().filter(DataElementWrapper::isDataObjectWrapper).map(DataObjectWrapper.class::cast).collect(Collectors.toSet());
+		
+		for(DataObjectWrapper writtenObject : writtenDataObjects) {
+			for(DataObjectWrapper readObject : readDataObjects) {
+				if(!writtenObject.equals(readObject) && dataModel.isAssociated(writtenObject.getNormalizedName(), readObject.getNormalizedName())) {
+					associations.add(new HashSet<>(Arrays.asList(writtenObject, readObject)));
+				}
+			}
+		}
+		
+		associations.forEach(assoc -> {
+			String annotation = assoc.stream().map(each -> "\""+each.dataElementId()+"\"").collect(Collectors.toList()).toString();
+			for(Transition transition : transitions) {
+	    		createArc(subPage.getPage(), transition, subPage.refPlaceFor(associationsPlace), annotation);
+			}
+		});
+		
+		if(!associationWriters.contains(activity) && !associations.isEmpty()) {
+			createArc(nodeFor(activity), associationsPlace);
+			associationWriters.add(activity);
+		}
     }
     
     

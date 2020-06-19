@@ -17,7 +17,7 @@ public class DataStoreWrapper extends DataElementWrapper<DataStore, DataStoreRef
 
 	@Override
 	protected Place createPlace() {
-    	return compilerApp.createPlace(trimmedName, "DATA_STORE", "1`\"store_"+namePrefix()+"\"");
+    	return compilerApp.createPlace(normalizedName, "DATA_STORE", "1`\"store_"+namePrefix()+"\"");
 	}
 
 	@Override

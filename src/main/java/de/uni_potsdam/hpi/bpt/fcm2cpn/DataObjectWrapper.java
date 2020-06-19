@@ -30,7 +30,7 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 
 	@Override
 	protected Place createPlace() {
-		return compilerApp.createPlace(trimmedName, "DATA_OBJECT");
+		return compilerApp.createPlace(normalizedName, "DATA_OBJECT");
 	}
 
 
