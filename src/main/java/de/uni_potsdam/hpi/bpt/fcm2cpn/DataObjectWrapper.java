@@ -42,7 +42,8 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 	@Override
 	public String annotationForDataFlow(Optional<String> stateName) {
         String stateString = stateName.map(x -> ", state = "+x).orElse("");
-        return "{id = "+dataElementId()+" , caseId = caseId"+stateString+"}";
+        String caseId = compilerApp.caseWrapper.dataElementId();
+        return "{id = "+dataElementId()+" , "+caseId+" = "+caseId+stateString+"}";
 	}
 
 

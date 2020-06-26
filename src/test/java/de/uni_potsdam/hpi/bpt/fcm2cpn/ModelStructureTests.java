@@ -105,13 +105,20 @@ public abstract class ModelStructureTests {
 			.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
 	}
 	
-	public Predicate<Arc> isListInscriptionFor(String... elements) {
+	public Predicate<Arc> hasAssociation(String first, String second) {
 		return arc -> {
-			String inscription = arc.getHlinscription().getText();
-			if(!(inscription.startsWith("[") && inscription.endsWith("]"))) return false;
-			List<String> listElements = Arrays.asList(inscription.substring(1, inscription.length() - 1).split(", "));
-			return listElements.containsAll(Arrays.asList(elements));
+			String inscription = arc.getHlinscription().getText().replace("\n", "").replace("1`", "");
+			String[] tokens = inscription.split("\\+\\+");
+			return Arrays.stream(tokens)
+					.map(String::trim)
+					.anyMatch(token -> isListInscriptionFor(token, first, second));
 		};
+	}
+	
+	public boolean isListInscriptionFor(String inscription, String... elements) {
+		if(!(inscription.startsWith("[") && inscription.endsWith("]"))) return false;
+		List<String> listElements = Arrays.asList(inscription.substring(1, inscription.length() - 1).split(", "));
+		return listElements.containsAll(Arrays.asList(elements));
 	}
 	
 	public <T extends ModelElementInstance> void forEach(Class<T> elementClass, Consumer<? super T> testBody) {

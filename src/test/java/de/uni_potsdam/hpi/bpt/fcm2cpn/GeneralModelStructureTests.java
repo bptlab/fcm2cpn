@@ -342,8 +342,8 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testDataAssociationsBetweenReadAndWriteAreCreated(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && writes(activity, second), "Activity does not read the first and write the second data object.");
 		transitionsForActivity(activity).forEach(transition -> {
-			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(isListInscriptionFor(first+"Id", second+"Id")).count(),
-				"There is not exactly one association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
+			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(hasAssociation(first+"Id", second+"Id")).count(),
+				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
 	}
 	
@@ -353,8 +353,30 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testDataAssociationsBetweenParallelWritesAreCreated(String first, String second, Activity activity) {
 		assumeTrue(writes(activity, first) && writes(activity, second), "Activity does not write both data objects.");
 		transitionsForActivity(activity).forEach(transition -> {
-			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(isListInscriptionFor(first+"Id", second+"Id")).count(),
-				"There is not exactly one association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
+			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(hasAssociation(first+"Id", second+"Id")).count(),
+				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
+		});
+	}
+	
+	@TestWithAllModels
+	@ArgumentsSource(AssociationsProvider.class)
+	@ForEachBpmn(Activity.class)
+	public void testAssociationsAreCheckedWhenReading(String first, String second, Activity activity) {
+		assumeTrue(reads(activity, first) && reads(activity, second), "Activity does not read both data objects.");
+		transitionsForActivity(activity).forEach(transition -> {
+			assertEquals(1, arcsFromNodeNamed(transition, "associations").filter(hasAssociation(first+"Id", second+"Id")).count(),
+				"There is not exactly one reading association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
+		});
+	}
+	
+	@TestWithAllModels
+	@ArgumentsSource(AssociationsProvider.class)
+	@ForEachBpmn(Activity.class)
+	public void testCheckedAssociationsAreWrittenBack(String first, String second, Activity activity) {
+		assumeTrue(reads(activity, first) && reads(activity, second), "Activity does not read both data objects.");
+		transitionsForActivity(activity).forEach(transition -> {
+			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(hasAssociation(first+"Id", second+"Id")).count(),
+				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
 	}
 	
