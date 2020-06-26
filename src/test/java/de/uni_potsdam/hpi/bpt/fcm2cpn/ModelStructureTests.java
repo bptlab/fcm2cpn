@@ -109,7 +109,7 @@ public abstract class ModelStructureTests {
 		return arc -> {
 			String inscription = arc.getHlinscription().getText();
 			if(!(inscription.startsWith("[") && inscription.endsWith("]"))) return false;
-			List<String> listElements = Arrays.asList(inscription.substring(1, inscription.length() - 1).replace("\"", "").split(", "));
+			List<String> listElements = Arrays.asList(inscription.substring(1, inscription.length() - 1).split(", "));
 			return listElements.containsAll(Arrays.asList(elements));
 		};
 	}

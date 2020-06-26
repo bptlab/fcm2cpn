@@ -346,6 +346,7 @@ public class CompilerApp {
             }
             translateDataAssociations(each, outputs, inputs);
             associateWrittenDataObjects(each, inputsPerObject.keySet(), outputsPerObject.keySet(), subpageTransitions);
+            checkAssociationsOfReadDataObjects(each, inputsPerObject.keySet(), subpageTransitions);
         });
     }
 
@@ -537,7 +538,7 @@ public class CompilerApp {
 		}
 		
 		associations.forEach(assoc -> {
-			String annotation = assoc.stream().map(each -> "\""+each.dataElementId()+"\"").collect(Collectors.toList()).toString();
+			String annotation = assoc.stream().map(DataObjectWrapper::dataElementId).collect(Collectors.toList()).toString();
 			for(Transition transition : transitions) {
 	    		createArc(subPage.getPage(), transition, subPage.refPlaceFor(associationsPlace), annotation);
 			}
@@ -546,6 +547,19 @@ public class CompilerApp {
 		if(!associationWriters.contains(activity) && !associations.isEmpty()) {
 			createArc(nodeFor(activity), associationsPlace);
 			associationWriters.add(activity);
+		}
+    }
+    
+    private void checkAssociationsOfReadDataObjects(Activity activity, Set<DataElementWrapper<?, ?>> readDataElements, Collection<Transition> transitions) {
+    	Set<DataObjectWrapper> readDataObjects = readDataElements.stream().filter(DataElementWrapper::isDataObjectWrapper).map(DataObjectWrapper.class::cast).collect(Collectors.toSet());
+		Set<Set<DataObjectWrapper>> associationsToCheck = new HashSet<>();
+		
+		for(DataObjectWrapper readObject : readDataObjects) {
+			for(DataObjectWrapper otherReadObject : readDataObjects) {
+				if(!readObject.equals(otherReadObject) && dataModel.isAssociated(readObject.getNormalizedName(), otherReadObject.getNormalizedName())) {
+					associationsToCheck.add(new HashSet<>(Arrays.asList(readObject, otherReadObject)));
+				}
+			}
 		}
     }
     
