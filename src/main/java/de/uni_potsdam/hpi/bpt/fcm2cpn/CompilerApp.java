@@ -529,6 +529,11 @@ public class CompilerApp {
 					associations.add(new HashSet<>(Arrays.asList(writtenObject, readObject)));
 				}
 			}
+			for(DataObjectWrapper otherWrittenObject : writtenDataObjects) {
+				if(!writtenObject.equals(otherWrittenObject) && dataModel.isAssociated(writtenObject.getNormalizedName(), otherWrittenObject.getNormalizedName())) {
+					associations.add(new HashSet<>(Arrays.asList(writtenObject, otherWrittenObject)));
+				}
+			}
 		}
 		
 		associations.forEach(assoc -> {

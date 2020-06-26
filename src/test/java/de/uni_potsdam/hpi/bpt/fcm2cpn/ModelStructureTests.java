@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -25,6 +26,7 @@ import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
+import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
@@ -87,6 +89,29 @@ public abstract class ModelStructureTests {
 			}
 		}
 		return associated;
+	}
+	
+	public boolean reads(Activity activity, String dataObject) {
+		return activity.getDataInputAssociations().stream()
+			.flatMap(assoc -> assoc.getSources().stream())
+			.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
+			.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
+	}
+	
+	public boolean writes(Activity activity, String dataObject) {
+		return activity.getDataOutputAssociations().stream()
+			.map(assoc -> assoc.getTarget())
+			.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
+			.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
+	}
+	
+	public Predicate<Arc> isListInscriptionFor(String... elements) {
+		return arc -> {
+			String inscription = arc.getHlinscription().getText();
+			if(!(inscription.startsWith("[") && inscription.endsWith("]"))) return false;
+			List<String> listElements = Arrays.asList(inscription.substring(1, inscription.length() - 1).replace("\"", "").split(", "));
+			return listElements.containsAll(Arrays.asList(elements));
+		};
 	}
 	
 	public <T extends ModelElementInstance> void forEach(Class<T> elementClass, Consumer<? super T> testBody) {

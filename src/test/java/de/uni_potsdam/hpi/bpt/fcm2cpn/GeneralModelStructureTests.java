@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +33,9 @@ import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.Place;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.AssociationsProvider;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 
@@ -336,68 +337,24 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	}
 	
 	@TestWithAllModels
-	public void testDataAssociationsBetweenReadAndWriteAreCreated() {		
-		dataObjectAssociations().forEach(association -> {
-			String first = association[0];
-			String second = association[1];
-			forEach(Activity.class, activity -> {
-				boolean readsFirst = activity.getDataInputAssociations().stream()
-					.flatMap(assoc -> assoc.getSources().stream())
-					.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
-					.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(first));
-				boolean writesSecond = activity.getDataOutputAssociations().stream()
-					.map(assoc -> assoc.getTarget())
-					.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
-					.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(second));
-				if(readsFirst && writesSecond) {
-					transitionsForActivity(activity).forEach(transition -> {
-						assertEquals(1, arcsToNodeNamed(transition, "associations")
-								.map(each -> each.getHlinscription().getText())
-								.map(each -> each.substring(1, each.length() - 1).replace("\"", "").split(", "))
-								.map(Arrays::asList)
-								.filter(each -> each.contains(first+"Id") && each.contains(second+"Id"))
-								.count(),
-								"There is not exactly one association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
-					});
-
-//					assertEquals(1, arcsFromNodeNamed(associationPlace, normalizeElementName(activity.getName()))
-//							.map(each -> each.getHlinscription().getText())
-//							.peek(System.out::println)
-//							.filter(each -> each.contains(first) && each.contains(second))
-//							.count(),
-//							"There is not exactly one association arc for objects "+first+" "+second+" at activity "+normalizeElementName(activity.getName()));
-				}
-			});
+	@ArgumentsSource(AssociationsProvider.class)
+	@ForEachBpmn(Activity.class)
+	public void testDataAssociationsBetweenReadAndWriteAreCreated(String first, String second, Activity activity) {
+		assumeTrue(reads(activity, first) && writes(activity, second), "Activity does not read the first and write the second data object.");
+		transitionsForActivity(activity).forEach(transition -> {
+			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(isListInscriptionFor(first+"Id", second+"Id")).count(),
+				"There is not exactly one association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
 	}
 	
 	@TestWithAllModels
-	public void testDataAssociationsBetweenParallelWritesAreCreated() {		
-		dataObjectAssociations().forEach(association -> {
-			String first = association[0];
-			String second = association[1];
-			forEach(Activity.class, activity -> {
-				boolean writesFirst = activity.getDataOutputAssociations().stream()
-					.map(assoc -> assoc.getTarget())
-					.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
-					.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(first));
-				boolean writesSecond = activity.getDataOutputAssociations().stream()
-					.map(assoc -> assoc.getTarget())
-					.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
-					.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(second));
-				System.out.println(first+"\t"+second+"\t"+normalizeElementName(activity.getName())+"\t"+writesFirst+"\t"+writesSecond);
-				if(writesFirst && writesSecond) {
-					transitionsForActivity(activity).forEach(transition -> {
-						assertEquals(1, arcsToNodeNamed(transition, "associations")
-								.map(each -> each.getHlinscription().getText())
-								.map(each -> each.substring(1, each.length() - 1).replace("\"", "").split(", "))
-								.map(Arrays::asList)
-								.filter(each -> each.contains(first+"Id") && each.contains(second+"Id"))
-								.count(),
-								"There is not exactly one association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
-					});
-				}
-			});
+	@ArgumentsSource(AssociationsProvider.class)
+	@ForEachBpmn(Activity.class)
+	public void testDataAssociationsBetweenParallelWritesAreCreated(String first, String second, Activity activity) {
+		assumeTrue(writes(activity, first) && writes(activity, second), "Activity does not write both data objects.");
+		transitionsForActivity(activity).forEach(transition -> {
+			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(isListInscriptionFor(first+"Id", second+"Id")).count(),
+				"There is not exactly one association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
 	}
 	
