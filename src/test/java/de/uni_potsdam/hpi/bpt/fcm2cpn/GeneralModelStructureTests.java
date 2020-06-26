@@ -44,7 +44,8 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 	"SimpleWithEvents", 
 	"SimpleWithGateways", 
 	"SimpleWithDataStore", 
-	"TranslationJob"
+	"TranslationJob",
+	"Associations"
 })
 public class GeneralModelStructureTests extends ModelStructureTests {
 	
@@ -365,6 +366,36 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 //							.filter(each -> each.contains(first) && each.contains(second))
 //							.count(),
 //							"There is not exactly one association arc for objects "+first+" "+second+" at activity "+normalizeElementName(activity.getName()));
+				}
+			});
+		});
+	}
+	
+	@TestWithAllModels
+	public void testDataAssociationsBetweenParallelWritesAreCreated() {		
+		dataObjectAssociations().forEach(association -> {
+			String first = association[0];
+			String second = association[1];
+			forEach(Activity.class, activity -> {
+				boolean writesFirst = activity.getDataOutputAssociations().stream()
+					.map(assoc -> assoc.getTarget())
+					.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
+					.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(first));
+				boolean writesSecond = activity.getDataOutputAssociations().stream()
+					.map(assoc -> assoc.getTarget())
+					.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
+					.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(second));
+				System.out.println(first+"\t"+second+"\t"+normalizeElementName(activity.getName())+"\t"+writesFirst+"\t"+writesSecond);
+				if(writesFirst && writesSecond) {
+					transitionsForActivity(activity).forEach(transition -> {
+						assertEquals(1, arcsToNodeNamed(transition, "associations")
+								.map(each -> each.getHlinscription().getText())
+								.map(each -> each.substring(1, each.length() - 1).replace("\"", "").split(", "))
+								.map(Arrays::asList)
+								.filter(each -> each.contains(first+"Id") && each.contains(second+"Id"))
+								.count(),
+								"There is not exactly one association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
+					});
 				}
 			});
 		});
