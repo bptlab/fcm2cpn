@@ -85,19 +85,31 @@ public class CompilerApp {
     public final static String licenseInfo = "fCM2CPN translator  Copyright (C) 2020  Hasso Plattner Institute gGmbH, University of Potsdam, Germany\n" +
             "This program comes with ABSOLUTELY NO WARRANTY.\n" +
             "This is free software, and you are welcome to redistribute it under certain conditions.\n";
-
-	private Page mainPage;
+    
+    /** The bpmn model to be parsed*/
 	private BpmnModelInstance bpmn;
+    /** Parsed data model of the bpmn model*/
 	private DataModel dataModel = new DataModel();
-	public final BuildCPNUtil builder;
-	private PetriNet petriNet;
-	private Map<BaseElement, SubpageElement> subpages;
-	private Map<BaseElement, Node> nodeMap;
 	
+	/** Helper for constructing the resulting net*/
+	public final BuildCPNUtil builder;
+	/** The resulting petri net*/
+	private PetriNet petriNet;
+    /** Net page that includes high level subpage transitions for bpmn elements like events, activities and gateways*/
+	private Page mainPage;
+	/** Maps from bpmn elments to their representations on the {@link #mainPage}*/
+	private Map<BaseElement, Node> nodeMap;
+	/** Maps sub pages for elements like like events, activities and gateways*/
+	private Map<BaseElement, SubpageElement> subpages;
+	
+	/** Global place for all associations*/
 	private Place associationsPlace;
+	/** Set of activities that read from {@link #associationsPlace}, to avoid duplicate arcs on main page*/
 	private final Set<Activity> associationReaders;
+	/** Set of activities that write to {@link #associationsPlace}, to avoid duplicate arcs on main page*/
 	private final Set<Activity> associationWriters;
 	
+	/** Steps that run after (most of) the net is created; used e.g. in {@link #translateBoundaryEvents()} to access all control flow places of an interrupted activity*/
 	private List<Runnable> deferred;
 	
 	public final DataElementWrapper<ItemAwareElement, Object> caseWrapper = new DataElementWrapper<ItemAwareElement, Object>(this, "case") {
@@ -121,7 +133,11 @@ public class CompilerApp {
 			return false;
 		}
 	};
+	
+	/** Wrapper for data objects, see {@link DataObjectWrapper}*/
 	private Collection<DataObjectWrapper> dataObjectWrappers;
+
+	/** Wrapper for data stores, see {@link DataStoreWrapper}*/
 	private Collection<DataStoreWrapper> dataStoreWrappers;
 
     public static void main(final String[] args) throws Exception {
@@ -430,26 +446,29 @@ public class CompilerApp {
     
     private void translateBoundaryEvents() {
     	//TODO only interrupting is supported
-        Collection<BoundaryEvent> events = bpmn.getModelElementsByType(BoundaryEvent.class);
+    	
+    	Collection<BoundaryEvent> events = bpmn.getModelElementsByType(BoundaryEvent.class);
         events.forEach(each -> {
-        	String name = elementName(each);
+        	//Must be called before control flow arcs and places are created, because it needs to have the outgoing control flow created
+            String name = elementName(each);
         	Page eventPage = createPage(normalizeElementName(name));
         	Transition subpageTransition = builder.addTransition(eventPage, name);
             Instance mainPageTransition = createSubpageTransition(name, eventPage);
             SubpageElement subPage = new SubpageElement(this, each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
             subpages.put(each, subPage);
         	nodeMap.put(each, mainPageTransition);
-            
-        	Node attachedNode = nodeMap.get(each.getAttachedTo());
-        	assert !isPlace(attachedNode);
+
+		    //Must be called after control flow places are created, to know which will be there and which to consume
         	defer(() -> {
-            	attachedNode.getTargetArc().stream()
-	    			.map(arc -> arc.getPlaceNode())
-	    			.filter(place -> place.getSort().getText().equals("CaseID"))
-	    			.forEach(place -> {
-	    				builder.addArc(eventPage, subPage.refPlaceFor((Place) place), subpageTransition, caseWrapper.dataElementId());
-	    				builder.addArc(mainPage, place, mainPageTransition, "");
-	    			});
+    			Node attachedNode = nodeMap.get(each.getAttachedTo());
+    			assert !isPlace(attachedNode);
+    			attachedNode.getTargetArc().stream()
+    				.map(arc -> arc.getPlaceNode())
+    				.filter(place -> place.getSort().getText().equals("CaseID"))
+    				.forEach(place -> {
+    					builder.addArc(eventPage, subPage.refPlaceFor((Place) place), subpageTransition, caseWrapper.dataElementId());
+    					builder.addArc(mainPage, place, mainPageTransition, "");
+    				});
         	});
         });
 	}
@@ -772,7 +791,7 @@ public class CompilerApp {
     //========Static========
 	public static String elementName(FlowElement element) {
     	String name = element.getName();
-    	if(name == null || name.equals(""))name = element.getId();
+    	if(name == null || name.equals("")) name = element.getId();
     	return name;
 	}
 	
