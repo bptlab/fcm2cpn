@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -361,7 +360,7 @@ public class CompilerApp {
                 inputSetIndex++;
             }
             translateDataAssociations(each, outputs, inputs);
-            associateDataObjects(each, inputsPerObject.keySet(), outputsPerObject.keySet(), subpageTransitions);
+            associateDataObjects(each, inputsPerObject.keySet(), outputsPerObject.keySet());
         });
     }
 
@@ -536,7 +535,7 @@ public class CompilerApp {
     
 
     
-    private void associateDataObjects(Activity activity, Set<DataElementWrapper<?, ?>> readDataElements, Set<DataElementWrapper<?, ?>> writtenDataElements, Collection<Transition> transitions) {
+    private void associateDataObjects(Activity activity, Set<DataElementWrapper<?, ?>> readDataElements, Set<DataElementWrapper<?, ?>> writtenDataElements) {
 		SubpageElement subPage = subpages.get(activity);
 		Set<Set<DataObjectWrapper>> associationsToWrite = new HashSet<>();
 		Set<DataObjectWrapper> readDataObjects = readDataElements.stream().filter(DataElementWrapper::isDataObjectWrapper).map(DataObjectWrapper.class::cast).collect(Collectors.toSet());
@@ -555,7 +554,7 @@ public class CompilerApp {
 				}
 			}
 		}
-		Set<Set<DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(activity, readDataObjects, transitions);
+		Set<Set<DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(activity, readDataObjects);
 		//Write all read associations back (they are not consumed), but check for duplicates with created associations (therefore use set of assoc)
 		associationsToWrite.addAll(checkedAssociations);
 		
@@ -563,9 +562,7 @@ public class CompilerApp {
 			String annotation = associationsToWrite.stream()
 				.map(assoc -> "1`"+assoc.stream().map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
 				.collect(Collectors.joining("++\n"));
-			for(Transition transition : transitions) {
-				createArc(subPage.getPage(), transition, subPage.refPlaceFor(associationsPlace), annotation);
-			}
+			subPage.createArcsTo(associationsPlace, annotation);
 			if(!associationWriters.contains(activity) && !associationsToWrite.isEmpty()) {
 				createArc(nodeFor(activity), associationsPlace);
 				associationWriters.add(activity);
@@ -573,7 +570,7 @@ public class CompilerApp {
 		}
     }
     
-    private Set<Set<DataObjectWrapper>> checkAssociationsOfReadDataObjects(Activity activity, Set<DataObjectWrapper> readDataObjects, Collection<Transition> transitions) {
+    private Set<Set<DataObjectWrapper>> checkAssociationsOfReadDataObjects(Activity activity, Set<DataObjectWrapper> readDataObjects) {
     	SubpageElement subPage = subpages.get(activity);
 		Set<Set<DataObjectWrapper>> associationsToCheck = new HashSet<>();
 		
@@ -595,9 +592,7 @@ public class CompilerApp {
 			String annotation = associationsToCheck.stream()
 				.map(assoc -> "1`"+assoc.stream().map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
 				.collect(Collectors.joining("++\n"));
-			for(Transition transition : transitions) {
-				createArc(subPage.getPage(), subPage.refPlaceFor(associationsPlace), transition, annotation);
-			}
+			subPage.createArcsFrom(associationsPlace, annotation);
 			if(!associationReaders.contains(activity)) {
 				createArc(associationsPlace, nodeFor(activity));
 				associationReaders.add(activity);
@@ -639,41 +634,27 @@ public class CompilerApp {
         		Transition transition = builder.addTransition(mainPage, null);
         		builder.addArc(mainPage, source, transition, caseWrapper.dataElementId());
         		builder.addArc(mainPage, transition, target, caseWrapper.dataElementId());
+        		
         	} else if(isPlace(source) || isPlace(target)) {
         		builder.addArc(mainPage, source, target, "");
-        		if(!isPlace(target)) {
-        			SubpageElement subPage = subpages.get(targetNode);
-        			if(Objects.nonNull(subPage)) {
-	        			subPage.getSubpageTransitions().forEach(transition -> {
-	            			builder.addArc(subPage.getPage(), subPage.refPlaceFor((Place) source), transition, caseWrapper.dataElementId());
-	        			});
-        			}
+        		if(subpages.containsKey(targetNode)) {
+        			subpages.get(targetNode).createArcsFrom((Place) source, caseWrapper.dataElementId());
         		}
-        		if(!isPlace(source)) {
-        			SubpageElement subPage = subpages.get(sourceNode);
-        			if(Objects.nonNull(subPage)) {
-            			subPage.getSubpageTransitions().forEach(transition -> {
-                			builder.addArc(subPage.getPage(), transition, subPage.refPlaceFor((Place) target), caseWrapper.dataElementId());
-            			});
-        			}
+        		if(subpages.containsKey(sourceNode)) {
+        			subpages.get(sourceNode).createArcsTo((Place) target, caseWrapper.dataElementId());
         		}
+        		
         	} else {
             	Place place = createPlace(null, "CaseID");
             	
             	builder.addArc(mainPage, source, place, "");
-       			SubpageElement sourceSubPage = subpages.get(sourceNode);
-       			if(Objects.nonNull(sourceSubPage)) {
-        			sourceSubPage.getSubpageTransitions().forEach(transition -> {
-            			builder.addArc(sourceSubPage.getPage(), transition, sourceSubPage.refPlaceFor(place), caseWrapper.dataElementId());
-        			});
+       			if(subpages.containsKey(sourceNode)) {
+           			subpages.get(sourceNode).createArcsTo(place, caseWrapper.dataElementId());
        			}
 
             	builder.addArc(mainPage, place, target, "");
-    			SubpageElement targetSubPage = subpages.get(targetNode);
-    			if(Objects.nonNull(targetSubPage)) {
-        			targetSubPage.getSubpageTransitions().forEach(transition -> {
-            			builder.addArc(targetSubPage.getPage(), targetSubPage.refPlaceFor(place), transition, caseWrapper.dataElementId());
-        			});
+    			if(subpages.containsKey(targetNode)) {
+        			subpages.get(targetNode).createArcsFrom(place, caseWrapper.dataElementId());
     			}
         	}
         });
