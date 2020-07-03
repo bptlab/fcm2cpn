@@ -64,7 +64,7 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 		mappedReferences.add(reference);
 	}
 	
-	public boolean isForReference(Reference reference) {
+	public boolean isForReference(ItemAwareElement reference) {
 		return mappedReferences.contains(reference);
 	}
 
