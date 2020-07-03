@@ -111,7 +111,7 @@ public class CompilerApp {
 	/** Steps that run after (most of) the net is created; used e.g. in {@link #translateBoundaryEvents()} to access all control flow places of an interrupted activity*/
 	private List<Runnable> deferred;
 	
-	public final DataElementWrapper<ItemAwareElement, Object> caseWrapper = new DataElementWrapper<ItemAwareElement, Object>(this, "case") {
+	private final DataElementWrapper<ItemAwareElement, Object> caseWrapper = new DataElementWrapper<ItemAwareElement, Object>(this, "case") {
 		@Override
 		protected Place createPlace() {
 			return null;
@@ -232,7 +232,7 @@ public class CompilerApp {
         
         CPNRecord dataObject = CpntypesFactory.INSTANCE.createCPNRecord();
         dataObject.addValue("id", "STRING");
-        dataObject.addValue(caseWrapper.dataElementId(), "STRING");
+        dataObject.addValue(caseId(), "STRING");
         if(!dataStates.isEmpty())dataObject.addValue("state", "STATE");
         builder.declareColorSet(petriNet, "DATA_OBJECT", dataObject);
         
@@ -243,7 +243,7 @@ public class CompilerApp {
     
     private void initializeDefaultVariables() {
     	createVariable("count", "INT");
-    	createVariable(caseWrapper.dataElementId(), "CaseID");
+    	createVariable(caseId(), "CaseID");
     	createVariable("assoc", "ASSOCIATION");
     }
     
@@ -439,13 +439,13 @@ public class CompilerApp {
 
 		    //Must be called after control flow places are created, to know which will be there and which to consume
         	defer(() -> {
-    			Node attachedNode = nodeMap.get(each.getAttachedTo());
+    			Node attachedNode = nodeFor(each.getAttachedTo());
     			assert !isPlace(attachedNode);
     			attachedNode.getTargetArc().stream()
     				.map(arc -> arc.getPlaceNode())
     				.filter(place -> place.getSort().getText().equals("CaseID"))
     				.forEach(place -> {
-    					builder.addArc(eventPage, subPage.refPlaceFor((Place) place), subpageTransition, caseWrapper.dataElementId());
+    					builder.addArc(eventPage, subPage.refPlaceFor((Place) place), subpageTransition, caseId());
     					builder.addArc(mainPage, place, mainPageTransition, "");
     				});
         	});
@@ -607,21 +607,21 @@ public class CompilerApp {
         sequenceFlows.forEach(each -> {
         	FlowNode sourceNode = each.getSource();
         	FlowNode targetNode = each.getTarget();
-        	Node source = nodeMap.get(sourceNode);
-        	Node target = nodeMap.get(targetNode);
+        	Node source = nodeFor(sourceNode);
+        	Node target = nodeFor(targetNode);
         	//System.out.println(source.getName().asString()+" -> "+target.getName().asString());
         	if(isPlace(source) && isPlace(target)) {
         		Transition transition = builder.addTransition(mainPage, null);
-        		builder.addArc(mainPage, source, transition, caseWrapper.dataElementId());
-        		builder.addArc(mainPage, transition, target, caseWrapper.dataElementId());
+        		builder.addArc(mainPage, source, transition, caseId());
+        		builder.addArc(mainPage, transition, target, caseId());
         		
         	} else if(isPlace(source) || isPlace(target)) {
         		builder.addArc(mainPage, source, target, "");
         		if(subpages.containsKey(targetNode)) {
-        			subpages.get(targetNode).createArcsFrom((Place) source, caseWrapper.dataElementId());
+        			subpages.get(targetNode).createArcsFrom((Place) source, caseId());
         		}
         		if(subpages.containsKey(sourceNode)) {
-        			subpages.get(sourceNode).createArcsTo((Place) target, caseWrapper.dataElementId());
+        			subpages.get(sourceNode).createArcsTo((Place) target, caseId());
         		}
         		
         	} else {
@@ -629,12 +629,12 @@ public class CompilerApp {
             	
             	builder.addArc(mainPage, source, place, "");
        			if(subpages.containsKey(sourceNode)) {
-           			subpages.get(sourceNode).createArcsTo(place, caseWrapper.dataElementId());
+           			subpages.get(sourceNode).createArcsTo(place, caseId());
        			}
 
             	builder.addArc(mainPage, place, target, "");
     			if(subpages.containsKey(targetNode)) {
-        			subpages.get(targetNode).createArcsFrom(place, caseWrapper.dataElementId());
+        			subpages.get(targetNode).createArcsFrom(place, caseId());
     			}
         	}
         });
@@ -721,6 +721,10 @@ public class CompilerApp {
 	
 	public Node nodeFor(BaseElement element) {
 		return nodeMap.get(element);
+	}
+	
+	public String caseId() {
+		return caseWrapper.dataElementId();
 	}
 	
     //========Static========
