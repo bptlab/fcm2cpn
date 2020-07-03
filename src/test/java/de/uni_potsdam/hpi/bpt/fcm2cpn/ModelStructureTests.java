@@ -256,15 +256,28 @@ public abstract class ModelStructureTests {
 	@Testable
 	protected static @interface TestWithAllModels {}
 	
+	public Stream<String> allModels() {
+		return Stream.of(
+			"Simple", 
+			"SimpleWithStates", 
+			"SimpleWithEvents", 
+			"SimpleWithGateways", 
+			"SimpleWithDataStore", 
+			"TranslationJob",
+			"Associations"
+		);
+	}
+	
 	
 	@TestFactory
 	public Stream<DynamicContainer> forEachModel() {
 		List<Method> methodsToTest = Arrays.stream(getClass().getMethods()).filter(method -> method.isAnnotationPresent(TestWithAllModels.class)).collect(Collectors.toList());
-		Stream<String> modelsToTest = Optional.of(getClass())
-				.map(clazz -> clazz.getAnnotation(ModelsToTest.class))
-				.map(ModelsToTest::value)
-				.stream()
-				.flatMap(Arrays::stream);
+		Stream<String> modelsToTest = allModels();
+//			Optional.of(getClass())
+//				.map(clazz -> clazz.getAnnotation(ModelsToTest.class))
+//				.map(ModelsToTest::value)
+//				.stream()
+//				.flatMap(Arrays::stream);
 		return modelsToTest.map(model -> {
 			ModelStructureTests instance = ReflectionUtils.newInstance(getClass());
 			instance.compileModel(model);

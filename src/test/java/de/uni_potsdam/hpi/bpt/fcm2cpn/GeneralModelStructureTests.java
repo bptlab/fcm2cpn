@@ -39,15 +39,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.AssociationsProvider;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 
-@ModelsToTest({
-	"Simple", 
-	"SimpleWithStates", 
-	"SimpleWithEvents", 
-	"SimpleWithGateways", 
-	"SimpleWithDataStore", 
-	"TranslationJob",
-	"Associations"
-})
+
 public class GeneralModelStructureTests extends ModelStructureTests {
 	
 	@TestWithAllModels
@@ -378,6 +370,20 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(hasAssociation(first+"Id", second+"Id")).count(),
 				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
+	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(DataObject.class)
+	@ForEachBpmn(DataObject.class)
+	public void testNoAssociationsForUnassociatedDataObjects(DataObject first, DataObject second) {
+		String dataObjectA = normalizeElementName(first.getName());
+		String dataObjectB = normalizeElementName(second.getName());
+		assumeFalse(dataModel.isAssociated(dataObjectA, dataObjectB));
+		long numberOfAssociationArcs = petrinet.getPage().stream()
+			.flatMap(page -> page.getArc().stream())
+			.filter(hasAssociation(dataObjectA+"Id", dataObjectB+"Id"))
+			.count();
+		assertEquals(0, numberOfAssociationArcs, "There are association arcs for data objects "+dataObjectA+" and "+dataObjectB+" though they are not associated");
 	}
 	
 
