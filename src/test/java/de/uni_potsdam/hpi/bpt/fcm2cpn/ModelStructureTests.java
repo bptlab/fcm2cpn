@@ -179,7 +179,7 @@ public abstract class ModelStructureTests {
 	public Stream<Place> controlFlowPlacesBetween(String nodeA, String nodeB) {
 		Page mainPage = petrinet.getPage().get(0);
 		return StreamSupport.stream(mainPage.place().spliterator(), true).filter(place -> {
-			return place.getSort().getText().equals("CaseID") 
+			return isControlFlowPlace(place) 
 					&& (
 						!place.getTargetArc().isEmpty() && place.getTargetArc().stream().anyMatch(any -> any.getOtherEnd(place).getName().asString().equals(nodeA))
 						|| Objects.toString(place.getName().asString()).equals(nodeA)
@@ -188,6 +188,10 @@ public abstract class ModelStructureTests {
 						|| Objects.toString(place.getName().asString()).equals(nodeB)
 					);
 		});
+	}
+	
+	public boolean isControlFlowPlace(Place place) {
+		return place.getSort().getText().equals("CaseID");
 	}
 
 	public Stream<Arc> arcsToNodeNamed(Node source, String targetName) {

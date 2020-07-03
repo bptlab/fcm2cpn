@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -92,11 +93,24 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@ForEachBpmn(BoundaryEvent.class)
 	public void testBoundaryEventCancelsTaskExecution(BoundaryEvent boundaryEvent) {
 		assumeTrue(boundaryEvent.cancelActivity());
-		Instance transition = instancesNamed(elementName(boundaryEvent)).findAny().get();
+		Instance eventTransition = instancesNamed(elementName(boundaryEvent)).findAny().get();
 		String canceledActivityName = boundaryEvent.getAttachedTo().getName();
-		Place commonCaseTokenPlace = (Place) transition.getTargetArc().get(0).getOtherEnd(transition);
-		assertTrue(commonCaseTokenPlace.getSourceArc().stream().map(Arc::getTarget).anyMatch(any -> any.getName().asString().equals(canceledActivityName)),
-			"Boundary Event "+elementName(boundaryEvent)+" has no common place to the activity it interrupts: "+canceledActivityName);
+		Instance canceledActivityTransition = instancesNamed(canceledActivityName).findAny().get();
+		
+		Set<Place> activityConsumedControlFlow = canceledActivityTransition.getTargetArc().stream()
+				.map(arc -> (Place)arc.getOtherEnd(canceledActivityTransition))
+				.filter(this::isControlFlowPlace)
+				.collect(Collectors.toSet());
+		
+		Set<Place> eventConsumedControlFlow = eventTransition.getTargetArc().stream()
+				.map(arc -> (Place)arc.getOtherEnd(eventTransition))
+				.filter(this::isControlFlowPlace)
+				.collect(Collectors.toSet());
+		
+		
+		assertEquals(activityConsumedControlFlow, eventConsumedControlFlow,
+				"Cancelling boundary Event "+elementName(boundaryEvent)+" does not consume all control flow of activity: "+canceledActivityName);
+		assert !activityConsumedControlFlow.isEmpty() && !eventConsumedControlFlow.isEmpty();
 	}
 	
 	@TestWithAllModels
