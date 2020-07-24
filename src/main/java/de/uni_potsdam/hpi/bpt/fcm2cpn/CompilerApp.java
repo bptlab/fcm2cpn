@@ -236,15 +236,19 @@ public class CompilerApp {
         if(!dataStates.isEmpty())dataObject.addValue("state", "STATE");
         builder.declareColorSet(petriNet, "DATA_OBJECT", dataObject);
         
-        CPNList asssociation = CpntypesFactory.INSTANCE.createCPNList();
-        asssociation.setSort("STRING");
-        builder.declareColorSet(petriNet, "ASSOCIATION", asssociation);
+        CPNList association = CpntypesFactory.INSTANCE.createCPNList();
+        association.setSort("STRING");
+        builder.declareColorSet(petriNet, "ASSOCIATION", association);
+
+        CPNList listOfAssociation = CpntypesFactory.INSTANCE.createCPNList();
+        listOfAssociation.setSort("ASSOCIATION");
+        builder.declareColorSet(petriNet, "LIST_OF_ASSOCIATION", listOfAssociation);
     }
     
     private void initializeDefaultVariables() {
     	createVariable("count", "INT");
     	createVariable(caseId(), "CaseID");
-    	createVariable("assoc", "ASSOCIATION");
+    	createVariable("assoc", "LIST_OF_ASSOCIATION");
     }
     
     private void translateData() {
@@ -286,7 +290,7 @@ public class CompilerApp {
     }
     
     private void createAssociationPlace() {
-    	associationsPlace = createPlace("associations", "ASSOCIATION");
+    	associationsPlace = createPlace("associations", "LIST_OF_ASSOCIATION", "[]");
     }
     
     private void translateActivities() {
@@ -536,14 +540,31 @@ public class CompilerApp {
 		}
 		Set<Set<DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(activity, readDataObjects);
 		//Write all read associations back (they are not consumed), but check for duplicates with created associations (therefore use set of assoc)
-		associationsToWrite.addAll(checkedAssociations);
+		Set<Set<DataObjectWrapper>> allAssocations = new HashSet<>();
+		allAssocations.addAll(checkedAssociations);
+		allAssocations.addAll(associationsToWrite);
 		
-		if(!associationsToWrite.isEmpty()) {
-			String annotation = associationsToWrite.stream()
-				.map(assoc -> "1`"+assoc.stream().map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
-				.collect(Collectors.joining("++\n"));
-			subPage.createArcsTo(associationsPlace, annotation);
-			if(!associationWriters.contains(activity) && !associationsToWrite.isEmpty()) {
+		//If either new assocs are created or old assocs are checked, we need arcs from and to the assoc place
+		if(!allAssocations.isEmpty()) {
+			// Create reading arcs
+			String readAnnotation = "assoc";
+			subPage.createArcsFrom(associationsPlace, readAnnotation);
+			if(!associationReaders.contains(activity)) {
+				createArc(associationsPlace, nodeFor(activity));
+				associationReaders.add(activity);
+			}
+			
+			//Create write back arcs; if new assocs are create, write the union back; if assocs are checked, they already exist
+			String writeAnnotation = "assoc";
+			associationsToWrite.removeAll(checkedAssociations);
+			if(!associationsToWrite.isEmpty()) {
+				writeAnnotation = "union assoc "+associationsToWrite.stream()
+					.map(assoc -> assoc.stream().map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
+					.collect(Collectors.toList())
+					.toString();
+			}
+			subPage.createArcsTo(associationsPlace, writeAnnotation);
+			if(!associationWriters.contains(activity)) {
 				createArc(nodeFor(activity), associationsPlace);
 				associationWriters.add(activity);
 			}
@@ -569,14 +590,14 @@ public class CompilerApp {
 //			}
 //		});
 		if(!associationsToCheck.isEmpty()) {
-			String annotation = associationsToCheck.stream()
-				.map(assoc -> "1`"+assoc.stream().map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
-				.collect(Collectors.joining("++\n"));
-			subPage.createArcsFrom(associationsPlace, annotation);
-			if(!associationReaders.contains(activity)) {
-				createArc(associationsPlace, nodeFor(activity));
-				associationReaders.add(activity);
-			}
+//			String annotation = associationsToCheck.stream()
+//				.map(assoc -> "1`"+assoc.stream().map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
+//				.collect(Collectors.joining("++\n"));
+			String guard = "contains assoc "+ associationsToCheck.stream()
+				.map(assoc -> assoc.stream().map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
+				.collect(Collectors.toList())
+				.toString();
+			subPage.createGuards(guard);
 		}
 		return associationsToCheck;
     }

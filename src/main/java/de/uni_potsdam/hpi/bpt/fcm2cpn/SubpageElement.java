@@ -52,6 +52,13 @@ public class SubpageElement {
 				.map(transition -> compilerApp.createArc(getPage(), transition, refPlaceFor(place), inscription))
 				.collect(Collectors.toList());
 	}
+	
+	public void createGuards(String guard) {
+		getSubpageTransitions().stream().forEach(transition -> {
+			
+			transition.getCondition().setText(guard);
+		});
+	}
 
 	public Instance getMainTransition() {
 		return mainTransition;
