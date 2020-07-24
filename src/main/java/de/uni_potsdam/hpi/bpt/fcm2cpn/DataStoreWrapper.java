@@ -11,18 +11,28 @@ public class DataStoreWrapper extends DataElementWrapper<DataStore, DataStoreRef
 	public DataStoreWrapper(CompilerApp compilerApp, String trimmedName) {
 		super(compilerApp, trimmedName);
 
-        compilerApp.createVariable(dataObjectId(), "STRING");
+        compilerApp.createVariable(dataElementId(), "STRING");
 		
 	}
 
 	@Override
 	protected Place createPlace() {
-    	return compilerApp.createPlace(trimmedName, "DATA_STORE", "1`\"store_"+namePrefix()+"\"");
+    	return compilerApp.createPlace(normalizedName, "DATA_STORE", "1`\"store_"+namePrefix()+"\"");
 	}
 
 	@Override
 	public String annotationForDataFlow(Optional<String> stateName) {
-        return dataObjectId();
+        return dataElementId();
+	}
+
+	@Override
+	public boolean isDataObjectWrapper() {
+		return false;
+	}
+
+	@Override
+	public boolean isDataStoreWrapper() {
+		return true;
 	}
 
 }

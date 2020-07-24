@@ -3,7 +3,9 @@ package de.uni_potsdam.hpi.bpt.fcm2cpn;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.Place;
@@ -37,6 +39,18 @@ public class SubpageElement {
 				sourcePlace, 
 				mainTransition);
 		});
+	}
+	
+	public List<Arc> createArcsFrom(Place place, String inscription) {
+		return getSubpageTransitions().stream()
+				.map(transition -> compilerApp.createArc(getPage(), refPlaceFor(place), transition, inscription))
+				.collect(Collectors.toList());
+	}
+	
+	public List<Arc> createArcsTo(Place place, String inscription) {
+		return getSubpageTransitions().stream()
+				.map(transition -> compilerApp.createArc(getPage(), transition, refPlaceFor(place), inscription))
+				.collect(Collectors.toList());
 	}
 
 	public Instance getMainTransition() {

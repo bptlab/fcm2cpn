@@ -102,7 +102,7 @@ public class ArgumentTreeTests {
 	}
 	
 	private static boolean isArgumentsSourceType(Class<?> annotationType) {
-		return annotationType.equals(ArgumentsSource.class) || AnnotationUtils.isAnnotated(annotationType, ArgumentsSource.class);
+		return annotationType.equals(ArgumentsSource.class) || ArgumentsSource.class.isAssignableFrom(annotationType) || AnnotationUtils.isAnnotated(annotationType, ArgumentsSource.class);
 	}
 	
 	private static ArgumentsProvider providerFor(Annotation sourceAnnotation) {

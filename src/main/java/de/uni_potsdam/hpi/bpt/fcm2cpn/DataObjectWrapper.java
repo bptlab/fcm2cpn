@@ -23,26 +23,39 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 	public DataObjectWrapper(CompilerApp compilerApp, String trimmedName) {
 		super(compilerApp, trimmedName);
 		
-        compilerApp.createVariable(dataObjectId(), "STRING");
-        compilerApp.createVariable(dataObjectCount(), "INT");
+        compilerApp.createVariable(dataElementId(), "STRING");
+        compilerApp.createVariable(dataElementCount(), "INT");
 	}
 
 
 	@Override
 	protected Place createPlace() {
-		return compilerApp.createPlace(trimmedName, "DATA_OBJECT");
+		return compilerApp.createPlace(normalizedName, "DATA_OBJECT");
 	}
 
 
 	public PlaceNode creationCounterForPage(Page page) {
-		return creationCounterPlaces.computeIfAbsent(page, _page -> compilerApp.createFusionPlace(_page, namePrefix()+" Count", "INT", "1`0", dataObjectCount()));
+		return creationCounterPlaces.computeIfAbsent(page, _page -> compilerApp.createFusionPlace(_page, namePrefix()+" Count", "INT", "1`0", dataElementCount()));
 	}
 
 
 	@Override
 	public String annotationForDataFlow(Optional<String> stateName) {
         String stateString = stateName.map(x -> ", state = "+x).orElse("");
-        return "{id = "+dataObjectId()+" , caseId = caseId"+stateString+"}";
+        String caseId = compilerApp.caseId();
+        return "{id = "+dataElementId()+" , "+caseId+" = "+caseId+stateString+"}";
+	}
+
+
+	@Override
+	public boolean isDataObjectWrapper() {
+		return true;
+	}
+
+
+	@Override
+	public boolean isDataStoreWrapper() {
+		return false;
 	}
 
 }
