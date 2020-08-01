@@ -292,7 +292,8 @@ public abstract class ModelStructureTests {
 			"SimpleWithGateways", 
 			"SimpleWithDataStore", 
 			"TranslationJob",
-			"Associations"
+			"Associations",
+			"TransputSets"
 		);
 	}
 	
