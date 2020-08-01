@@ -256,8 +256,11 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		
 		assumeTrue(!inputStates.isEmpty() || !outputStates.isEmpty(), "Activity has no input or out sets");
 
-		List<List<String>> possibleInputSets = CompilerApp.allCombinationsOf(inputStates.values());
-		List<List<String>> possibleOutputSets = CompilerApp.allCombinationsOf(outputStates.values());
+		List<String> inputObjects = new ArrayList<>(inputStates.keySet());
+		List<String> outputObjects = new ArrayList<>(outputStates.keySet());
+		
+		List<List<String>> possibleInputSets = CompilerApp.allCombinationsOf(inputObjects.stream().map(inputStates::get).collect(Collectors.toList()));
+		List<List<String>> possibleOutputSets = CompilerApp.allCombinationsOf(outputObjects.stream().map(outputStates::get).collect(Collectors.toList()));
 
 		if(possibleInputSets.isEmpty()) possibleInputSets.add(Collections.emptyList());
 		if(possibleOutputSets.isEmpty()) possibleOutputSets.add(Collections.emptyList());
@@ -265,7 +268,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		Page activityPage = pagesNamed(normalizeElementName(activity.getName())).findAny().get();
 		for(List<String> inputSet : possibleInputSets) {
 			for(List<String> outputSet : possibleOutputSets) {
-				assertEquals(1, activityTransitionsForTransput(activityPage, activity.getName(), inputSet, outputSet).count(), 
+				assertEquals(1, activityTransitionsForTransput(activityPage, activity.getName(), inputObjects, inputSet, outputObjects, outputSet).count(), 
 						"There was no arc for activity "+activity.getName()+" with inputs "+inputSet+" and outputs "+outputSet);
 			}
 		}

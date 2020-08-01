@@ -237,14 +237,16 @@ public abstract class ModelStructureTests {
 		});
 	}
 	
-	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, List<String> inputStates, List<String> outputStates) {
+	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, List<String> inputObjects, List<String> inputStates, List<String> outputObjects, List<String> outputStates) {
 		return activityTransitionsNamed(page, activityName).filter(transition -> {
-			return inputStates.stream().allMatch(inputState -> 
+			return inputObjects.stream().allMatch(inputObject -> 
 					transition.getTargetArc().stream()
-						.anyMatch(arc -> arc.getHlinscription().asString().contains("state = "+inputState)))
-				&& outputStates.stream().allMatch(outputState -> 
+						.map(arc -> arc.getHlinscription().asString())
+						.anyMatch(inscription -> inscription.contains(inputObject+"Id") && inscription.contains("state = "+inputStates.get(inputObjects.indexOf(inputObject)))))
+				&& outputObjects.stream().allMatch(outputObject -> 
 					transition.getSourceArc().stream()
-						.anyMatch(arc -> arc.getHlinscription().asString().contains("state = "+outputState)));
+						.map(arc -> arc.getHlinscription().asString())
+						.anyMatch(inscription -> inscription.contains(outputObject+"Id") && inscription.contains("state = "+outputStates.get(outputObjects.indexOf(outputObject)))));
 		});
 	}
 	
