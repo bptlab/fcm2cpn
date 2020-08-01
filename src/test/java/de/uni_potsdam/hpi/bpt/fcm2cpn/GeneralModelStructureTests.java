@@ -347,8 +347,9 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	public void testDataAssociationsBetweenReadAndWriteAreCreated(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && writes(activity, second), "Activity does not read the first and write the second data object.");
+		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
 		transitionsForActivity(activity).forEach(transition -> {
-			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(hasAssociation(first+"Id", second+"Id")).count(),
+			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
 				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
 	}
@@ -358,8 +359,9 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	public void testDataAssociationsBetweenParallelWritesAreCreated(String first, String second, Activity activity) {
 		assumeTrue(writes(activity, first) && writes(activity, second), "Activity does not write both data objects.");
+		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
 		transitionsForActivity(activity).forEach(transition -> {
-			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(hasAssociation(first+"Id", second+"Id")).count(),
+			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
 				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
 	}
@@ -370,19 +372,19 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testAssociationsAreCheckedWhenReading(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && reads(activity, second), "Activity does not read both data objects.");
 		transitionsForActivity(activity).forEach(transition -> {
-			assertEquals(1, arcsFromNodeNamed(transition, "associations").filter(hasAssociation(first+"Id", second+"Id")).count(),
-				"There is not exactly one reading association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
+			assertTrue(hasGuardForAssociation(transition, first+"Id", second+"Id"),
+				"There is no guard for association when reading objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
 	}
 	
 	@TestWithAllModels
 	@ArgumentsSource(AssociationsProvider.class)
 	@ForEachBpmn(Activity.class)
-	public void testCheckedAssociationsAreWrittenBack(String first, String second, Activity activity) {
+	public void testCheckedAssociationsAreNotDuplicated(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && reads(activity, second), "Activity does not read both data objects.");
 		transitionsForActivity(activity).forEach(transition -> {
-			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(hasAssociation(first+"Id", second+"Id")).count(),
-				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
+			assertEquals(0, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
+				"There is a writing association arc for objects "+first+" and "+second+" (which should already be associated) at activity "+normalizeElementName(activity.getName()));
 		});
 	}
 	
@@ -395,9 +397,9 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		assumeFalse(dataModel.isAssociated(dataObjectA, dataObjectB));
 		long numberOfAssociationArcs = petrinet.getPage().stream()
 			.flatMap(page -> page.getArc().stream())
-			.filter(hasAssociation(dataObjectA+"Id", dataObjectB+"Id"))
+			.filter(writesAssociation(dataObjectA+"Id", dataObjectB+"Id"))
 			.count();
-		assertEquals(0, numberOfAssociationArcs, "There are association arcs for data objects "+dataObjectA+" and "+dataObjectB+" though they are not associated");
+		assertEquals(0, numberOfAssociationArcs, "There are association write arcs for data objects "+dataObjectA+" and "+dataObjectB+" though they are not associated");
 	}
 	
 

@@ -8,6 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -105,20 +106,43 @@ public abstract class ModelStructureTests {
 			.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
 	}
 	
-	public Predicate<Arc> hasAssociation(String first, String second) {
+	public Predicate<Arc> writesAssociation(String first, String second) {
 		return arc -> {
-			String inscription = arc.getHlinscription().getText().replace("\n", "").replace("1`", "");
-			String[] tokens = inscription.split("\\+\\+");
-			return Arrays.stream(tokens)
-					.map(String::trim)
-					.anyMatch(token -> isListInscriptionFor(token, first, second));
+			String inscription = arc.getHlinscription().getText();
+			String list = inscription.replace("union assoc", "").trim();
+			return inscription.contains("union assoc") && toList(list).stream().anyMatch(assoc -> isListInscriptionFor(assoc, first, second));
 		};
+	}
+	
+	public boolean hasGuardForAssociation(Transition transition, String first, String second) {
+		String guard = transition.getCondition().getText();
+		String list = guard.replace("contains assoc ", "").trim();
+		return guard.contains("contains assoc") && toList(list).stream().anyMatch(assoc -> isListInscriptionFor(assoc, first, second));
 	}
 	
 	public boolean isListInscriptionFor(String inscription, String... elements) {
 		if(!(inscription.startsWith("[") && inscription.endsWith("]"))) return false;
-		List<String> listElements = Arrays.asList(inscription.substring(1, inscription.length() - 1).split(", "));
+		List<String> listElements = toList(inscription);
 		return listElements.containsAll(Arrays.asList(elements));
+	}
+	
+	public List<String> toList(String inscription) {
+		if(!(inscription.startsWith("[") && inscription.endsWith("]"))) return Collections.emptyList();
+		String body = inscription.substring(1, inscription.length() - 1);
+		List<String> list = new ArrayList<>();
+		String currentElement = "";
+		int currentDepth = 0;
+		for(char c : body.toCharArray()) {
+			if(c == '[') currentDepth++;
+			else if(c == ']') currentDepth--;
+			
+			if(c == ',' && currentDepth == 0) {
+				list.add(currentElement.trim());
+				currentElement = "";
+			} else currentElement += c;
+		}
+		list.add(currentElement.trim());
+		return list;
 	}
 	
 	public <T extends ModelElementInstance> void forEach(Class<T> elementClass, Consumer<? super T> testBody) {
