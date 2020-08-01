@@ -1,6 +1,7 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.normalizeElementName;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
 import java.lang.annotation.Retention;
@@ -9,7 +10,9 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -92,18 +95,49 @@ public abstract class ModelStructureTests {
 		return associated;
 	}
 	
-	public boolean reads(Activity activity, String dataObject) {
+	public Stream<DataObjectReference> readDataObjectRefs(Activity activity) {
 		return activity.getDataInputAssociations().stream()
-			.flatMap(assoc -> assoc.getSources().stream())
-			.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
-			.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
+				.flatMap(assoc -> assoc.getSources().stream())
+				.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
+	}
+	
+	public Stream<DataObjectReference> writtenDataObjectRefs(Activity activity) {
+		return activity.getDataOutputAssociations().stream()
+				.map(assoc -> assoc.getTarget())
+				.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
+	}
+	
+	public boolean reads(Activity activity, String dataObject) {
+		return readDataObjectRefs(activity)
+				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
 	}
 	
 	public boolean writes(Activity activity, String dataObject) {
-		return activity.getDataOutputAssociations().stream()
-			.map(assoc -> assoc.getTarget())
-			.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
-			.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
+		return writtenDataObjectRefs(activity)
+				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
+	}
+	
+	public Map<String, List<String>> dataObjectToStateMap(Stream<DataObjectReference> dataObjectReferences) {
+		return dataObjectReferences
+			.filter(each -> Objects.nonNull(each.getDataState()))
+			.collect(Collectors.groupingBy(
+					each -> normalizeElementName(each.getDataObject().getName()),
+					Collectors.flatMapping(each -> CompilerApp.dataObjectStateToNetColors(each.getDataState().getName()), Collectors.toList())));
+	}
+	
+	public List<Map<String, String>> indexedCombinationsOf(Map<String, List<String>> groups) {
+		//Get defined order into collection
+		List<String> keys = new ArrayList<>(groups.keySet());
+		List<List<String>> combinations = CompilerApp.allCombinationsOf(keys.stream().map(groups::get).collect(Collectors.toList()));
+		
+		//Zip keys with each combination
+		return combinations.stream().map(combination -> {
+			HashMap<String, String> map = new HashMap<>();
+			for(int i = 0; i < keys.size(); i++) {
+				map.put(keys.get(i), combination.get(i));
+			}
+			return map;
+		}).collect(Collectors.toList());
 	}
 	
 	public Predicate<Arc> writesAssociation(String first, String second) {
@@ -237,16 +271,16 @@ public abstract class ModelStructureTests {
 		});
 	}
 	
-	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, List<String> inputObjects, List<String> inputStates, List<String> outputObjects, List<String> outputStates) {
+	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, Map<String, String> inputStates, Map<String, String> outputStates) {
 		return activityTransitionsNamed(page, activityName).filter(transition -> {
-			return inputObjects.stream().allMatch(inputObject -> 
+			return inputStates.entrySet().stream().allMatch(inputObject -> 
 					transition.getTargetArc().stream()
 						.map(arc -> arc.getHlinscription().asString())
-						.anyMatch(inscription -> inscription.contains(inputObject+"Id") && inscription.contains("state = "+inputStates.get(inputObjects.indexOf(inputObject)))))
-				&& outputObjects.stream().allMatch(outputObject -> 
+						.anyMatch(inscription -> inscription.contains(inputObject.getKey()+"Id") && inscription.contains("state = "+inputObject.getValue())))
+				&& outputStates.entrySet().stream().allMatch(outputObject -> 
 					transition.getSourceArc().stream()
 						.map(arc -> arc.getHlinscription().asString())
-						.anyMatch(inscription -> inscription.contains(outputObject+"Id") && inscription.contains("state = "+outputStates.get(outputObjects.indexOf(outputObject)))));
+						.anyMatch(inscription -> inscription.contains(outputObject.getKey()+"Id") && inscription.contains("state = "+outputObject.getValue())));
 		});
 	}
 	

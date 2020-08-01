@@ -234,41 +234,21 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testInputAndOutputCombinations(Activity activity) {
-		Map<String, List<String>> inputStates = new HashMap<>();
-		Map<String, List<String>> outputStates = new HashMap<>();
-		activity.getDataInputAssociations().stream()
-			.flatMap(assoc -> assoc.getSources().stream())
-			.filter(each -> each instanceof DataObjectReference)
-			.map(DataObjectReference.class::cast)
-			.filter(each -> Objects.nonNull(each.getDataState()))
-			.forEach(each -> inputStates
-				.computeIfAbsent(normalizeElementName(each.getDataObject().getName()), $ -> new ArrayList<>())
-				.addAll(CompilerApp.dataObjectStateToNetColors(each.getDataState().getName()).collect(Collectors.toList())));
-		
-		activity.getDataOutputAssociations().stream()
-			.map(DataOutputAssociation::getTarget)
-			.filter(each -> each instanceof DataObjectReference)
-			.map(DataObjectReference.class::cast)
-			.filter(each -> Objects.nonNull(each.getDataState()))
-			.forEach(each -> outputStates
-				.computeIfAbsent(normalizeElementName(each.getDataObject().getName()), $ -> new ArrayList<>())
-				.addAll(CompilerApp.dataObjectStateToNetColors(each.getDataState().getName()).collect(Collectors.toList())));
-		
+		Map<String, List<String>> inputStates = dataObjectToStateMap(readDataObjectRefs(activity));
+		Map<String, List<String>> outputStates = dataObjectToStateMap(writtenDataObjectRefs(activity));
+			
 		assumeTrue(!inputStates.isEmpty() || !outputStates.isEmpty(), "Activity has no input or out sets");
 
-		List<String> inputObjects = new ArrayList<>(inputStates.keySet());
-		List<String> outputObjects = new ArrayList<>(outputStates.keySet());
-		
-		List<List<String>> possibleInputSets = CompilerApp.allCombinationsOf(inputObjects.stream().map(inputStates::get).collect(Collectors.toList()));
-		List<List<String>> possibleOutputSets = CompilerApp.allCombinationsOf(outputObjects.stream().map(outputStates::get).collect(Collectors.toList()));
+		List<Map<String, String>> possibleInputSets = indexedCombinationsOf(inputStates);
+		List<Map<String, String>> possibleOutputSets = indexedCombinationsOf(outputStates);
 
-		if(possibleInputSets.isEmpty()) possibleInputSets.add(Collections.emptyList());
-		if(possibleOutputSets.isEmpty()) possibleOutputSets.add(Collections.emptyList());
+		if(possibleInputSets.isEmpty()) possibleInputSets.add(Collections.emptyMap());
+		if(possibleOutputSets.isEmpty()) possibleOutputSets.add(Collections.emptyMap());
 
 		Page activityPage = pagesNamed(normalizeElementName(activity.getName())).findAny().get();
-		for(List<String> inputSet : possibleInputSets) {
-			for(List<String> outputSet : possibleOutputSets) {
-				assertEquals(1, activityTransitionsForTransput(activityPage, activity.getName(), inputObjects, inputSet, outputObjects, outputSet).count(), 
+		for(Map<String, String> inputSet : possibleInputSets) {
+			for(Map<String, String> outputSet : possibleOutputSets) {
+				assertEquals(1, activityTransitionsForTransput(activityPage, activity.getName(), inputSet, outputSet).count(), 
 						"There was no arc for activity "+activity.getName()+" with inputs "+inputSet+" and outputs "+outputSet);
 			}
 		}
