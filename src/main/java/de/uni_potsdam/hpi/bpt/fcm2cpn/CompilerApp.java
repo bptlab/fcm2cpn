@@ -295,20 +295,20 @@ public class CompilerApp {
     
     private void translateActivities() {
         Collection<Activity> activities = bpmn.getModelElementsByType(Activity.class);
-        activities.forEach(each -> {
-        	String name = each.getName();
+        activities.forEach(activity -> {
+        	String name = activity.getName();
         	Page activityPage = createPage(normalizeElementName(name));
             Instance mainPageTransition = createSubpageTransition(name, activityPage);
-            SubpageElement subPage = new SubpageElement(this, each.getId(), activityPage, mainPageTransition, new ArrayList<>());
+            SubpageElement subPage = new SubpageElement(this, activity.getId(), activityPage, mainPageTransition, new ArrayList<>());
             List<Transition> subpageTransitions = subPage.getSubpageTransitions();
-            subpages.putIfAbsent(each, subPage);
-            nodeMap.put(each, mainPageTransition);
+            subpages.putIfAbsent(activity, subPage);
+            nodeMap.put(activity, mainPageTransition);
             
             
-            Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataInputAssociation>>> inputsPerObject = each.getDataInputAssociations().stream()
+            Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataInputAssociation>>> inputsPerObject = activity.getDataInputAssociations().stream()
             		.flatMap(this::splitDataAssociationByState)
             		.collect(Collectors.groupingBy(this::wrapperFor));
-            Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataOutputAssociation>>> outputsPerObject = each.getDataOutputAssociations().stream()
+            Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataOutputAssociation>>> outputsPerObject = activity.getDataOutputAssociations().stream()
             		.flatMap(this::splitDataAssociationByState)
             		.collect(Collectors.groupingBy(this::wrapperFor));
             
@@ -321,10 +321,10 @@ public class CompilerApp {
             List<List<StatefulDataAssociation<DataInputAssociation>>> inputSets = allCombinationsOf(inputsPerObject.values());
             List<List<StatefulDataAssociation<DataOutputAssociation>>> outputSets = allCombinationsOf(outputsPerObject.values());
 
-            Map<StatefulDataAssociation<DataOutputAssociation>, List<Transition>> outputtingTransitions = each.getDataOutputAssociations().stream()
+            Map<StatefulDataAssociation<DataOutputAssociation>, List<Transition>> outputtingTransitions = activity.getDataOutputAssociations().stream()
             		.flatMap(this::splitDataAssociationByState)
             		.collect(Collectors.toMap(Function.identity(), x -> new ArrayList<>()));
-            Map<StatefulDataAssociation<DataInputAssociation>, List<Transition>> inputtingTransitions = each.getDataInputAssociations().stream()
+            Map<StatefulDataAssociation<DataInputAssociation>, List<Transition>> inputtingTransitions = activity.getDataInputAssociations().stream()
             		.flatMap(this::splitDataAssociationByState)
             		.collect(Collectors.toMap(Function.identity(), x -> new ArrayList<>()));
             
@@ -341,8 +341,8 @@ public class CompilerApp {
                 }
                 inputSetIndex++;
             }
-            translateDataAssociations(each, outputtingTransitions, inputtingTransitions);
-            associateDataObjects(each, inputsPerObject.keySet(), outputsPerObject.keySet());
+            translateDataAssociations(activity, outputtingTransitions, inputtingTransitions);
+            associateDataObjects(activity, inputsPerObject.keySet(), outputsPerObject.keySet());
         });
     }
 
