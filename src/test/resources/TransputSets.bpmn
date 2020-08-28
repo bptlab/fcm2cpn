@@ -204,13 +204,13 @@
             <signavio:signavioMetaData metaKey="bordercolor" metaValue="#000000"/>
          </extensionElements>
       </sequenceFlow>
-      <dataObjectReference dataObjectRef="sid-11c1b037-2922-493b-89db-5c1aaffbe33d" id="sid-CF4D323E-E4D9-47DA-B71B-C68E075EA4C2" name="A [Init]">
+      <dataObjectReference dataObjectRef="sid-11c1b037-2922-493b-89db-5c1aaffbe33d" id="sid-CF4D323E-E4D9-47DA-B71B-C68E075EA4C2" name="A [Init | Pre-Init]">
          <extensionElements>
             <signavio:signavioMetaData metaKey="bgcolor" metaValue="#ffffff"/>
             <signavio:signavioMetaData metaKey="bordercolor" metaValue="#000000"/>
             <signavio:signavioMetaData metaKey="externaldocuments" metaValue="[]"/>
          </extensionElements>
-         <dataState id="sid-b5247b2e-4337-4781-936f-02cc8cd50722" name="Init"/>
+         <dataState id="sid-b5247b2e-4337-4781-936f-02cc8cd50722" name="Init | Pre-Init"/>
       </dataObjectReference>
       <dataObjectReference dataObjectRef="sid-bcc8c40d-46e0-47fa-abf8-4f2692ee64bd" id="sid-977AEF98-0D0A-4F46-B783-EFBF51424E54" name="B [Init]">
          <extensionElements>

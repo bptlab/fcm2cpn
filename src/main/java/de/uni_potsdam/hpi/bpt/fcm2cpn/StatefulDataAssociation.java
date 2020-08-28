@@ -47,4 +47,9 @@ public class StatefulDataAssociation<T extends DataAssociation> {
 		StatefulDataAssociation<?> other = (StatefulDataAssociation<?>) obj;
 		return Objects.equals(bpmnAssociation, other.bpmnAssociation) && Objects.equals(stateName, other.stateName);
 	}
+	
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName()+"("+dataElement.getAttributeValue("name")+", "+stateName.orElse(null)+")";
+	}
 }

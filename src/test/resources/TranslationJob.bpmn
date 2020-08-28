@@ -289,6 +289,7 @@
           <outputSetRefs>sid-aebc5663-d341-4c5f-9086-6b5856e03b15</outputSetRefs>
         </inputSet>
         <outputSet id="sid-aebc5663-d341-4c5f-9086-6b5856e03b15" name="DefaultOutputSet">
+          <dataOutputRefs>sid-model-was-broken</dataOutputRefs>
           <inputSetRefs>sid-ae59d059-68e8-4219-88cb-c21fd64d74d4</inputSetRefs>
         </outputSet>
       </ioSpecification>
@@ -318,8 +319,10 @@
       </extensionElements>
       <incoming>sid-E0D0D1B1-231E-4E6A-9D68-81B150C360F9</incoming>
       <ioSpecification id="sid-bf840c40-c5c2-464c-980e-960929f29f89">
+        <dataInput id="sid-manual-fix" />
         <dataOutput id="sid-ddf59220-f5f0-47d7-9873-bc74c00f68a9" />
         <inputSet id="sid-571212b1-f1ae-4c0e-85f3-6727bc8fa1ce" name="DefaultInputSet">
+          <dataInputRefs>sid-manual-fix</dataInputRefs>
           <outputSetRefs>sid-8810d653-a786-4563-9c2e-a6eee79310a5</outputSetRefs>
         </inputSet>
         <outputSet id="sid-8810d653-a786-4563-9c2e-a6eee79310a5" name="DefaultOutputSet">
@@ -330,7 +333,7 @@
       <property id="Property_1myabj6" name="__targetRef_placeholder" />
       <dataInputAssociation id="DataInputAssociation_1ikakii">
         <sourceRef>sid-342354B1-02DE-402D-A4C2-8B92E3E199BB</sourceRef>
-        <targetRef>Property_1myabj6</targetRef>
+        <targetRef>sid-manual-fix</targetRef>
       </dataInputAssociation>
       <dataOutputAssociation id="sid-779568D4-0C3F-43E5-8DFC-721AB236DF7B">
         <extensionElements>
