@@ -21,18 +21,6 @@
          </extensionElements>
          <incoming>sid-BA2D6EC0-0C27-4012-B55B-53855020E71E</incoming>
          <outgoing>sid-8F832F1E-3CF4-4F3D-A7A9-5D8F3D1FC52B</outgoing>
-         <ioSpecification id="sid-94da2d48-b0df-4e5b-8e63-c3bbd2b271c7">
-            <dataInput id="sid-957bc0b7-1bd2-4e69-81d7-4bdb8d3185ae" isCollection="false"/>
-            <dataOutput id="sid-f759b219-fe26-487d-aee7-cd638db97f45" isCollection="false"/>
-            <inputSet id="sid-6d0efb69-36ce-4d6c-bebf-e8f0fe86999d" name="DefaultInputSet">
-               <dataInputRefs>sid-957bc0b7-1bd2-4e69-81d7-4bdb8d3185ae</dataInputRefs>
-               <outputSetRefs>sid-23ff8a66-40af-4b2c-b7d3-9d6f28b407dc</outputSetRefs>
-            </inputSet>
-            <outputSet id="sid-23ff8a66-40af-4b2c-b7d3-9d6f28b407dc" name="DefaultOutputSet">
-               <dataOutputRefs>sid-f759b219-fe26-487d-aee7-cd638db97f45</dataOutputRefs>
-               <inputSetRefs>sid-6d0efb69-36ce-4d6c-bebf-e8f0fe86999d</inputSetRefs>
-            </outputSet>
-         </ioSpecification>
          <dataOutputAssociation id="sid-2966B0D1-C034-4737-9E78-A6D42221F5D6">
             <extensionElements>
                <signavio:signavioMetaData metaKey="bordercolor" metaValue="#000000"/>

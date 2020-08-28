@@ -35,7 +35,6 @@
                <inputSetRefs>sid-6d0efb69-36ce-4d6c-bebf-e8f0fe86999d</inputSetRefs>
             </outputSet>
          </ioSpecification>
-         <property id="Property_1epbt43" name="__targetRef_placeholder"/>
          <dataInputAssociation id="sid-CB8CBF75-96EC-4185-8B81-2CE143096621">
             <extensionElements>
                <signavio:signavioMetaData metaKey="bordercolor" metaValue="#000000"/>

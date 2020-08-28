@@ -20,18 +20,6 @@
       </extensionElements>
       <incoming>SequenceFlow_1f7m2uh</incoming>
       <outgoing>SequenceFlow_1bpjkeh</outgoing>
-      <ioSpecification id="sid-a38d0cc4-efdf-4a91-aec3-3706ed173914">
-        <dataInput id="sid-957bc0b7-1bd2-4e69-81d7-4bdb8d3185ae" />
-        <dataOutput id="sid-f759b219-fe26-487d-aee7-cd638db97f45" />
-        <inputSet id="sid-6d0efb69-36ce-4d6c-bebf-e8f0fe86999d" name="DefaultInputSet">
-          <dataInputRefs>sid-957bc0b7-1bd2-4e69-81d7-4bdb8d3185ae</dataInputRefs>
-          <outputSetRefs>sid-23ff8a66-40af-4b2c-b7d3-9d6f28b407dc</outputSetRefs>
-        </inputSet>
-        <outputSet id="sid-23ff8a66-40af-4b2c-b7d3-9d6f28b407dc" name="DefaultOutputSet">
-          <dataOutputRefs>sid-f759b219-fe26-487d-aee7-cd638db97f45</dataOutputRefs>
-          <inputSetRefs>sid-6d0efb69-36ce-4d6c-bebf-e8f0fe86999d</inputSetRefs>
-        </outputSet>
-      </ioSpecification>
     </task>
     <startEvent id="sid-07428FBD-475F-47BD-905D-455639EB16DD">
       <extensionElements>
