@@ -235,6 +235,21 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		});
 	}
 
+	@TestWithAllModels
+	@ForEachBpmn(Activity.class)
+	public void testConsumedDataObjectsAreReproduced(Activity activity) {
+		Set<Pair<Map<String, String>, Map<String, String>>> ioCombinations = ioCombinationsInNet(activity);
+		ioCombinations.forEach(ioCombination -> {
+			Map<String, String> inputs = ioCombination.first;
+			Map<String, String> outputs = ioCombination.second;
+			
+			Set<String> missingWriteBacks = new HashSet<>(inputs.keySet());
+			missingWriteBacks.removeAll(outputs.keySet());
+			assertEquals(Collections.emptySet(), missingWriteBacks, 
+					"Activity \""+elementName(activity)+"\" has a transition that consumes data elements "+missingWriteBacks+" but does not write them back;\n IO is: "+ioCombinations);
+		});
+	}
+
 	
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
@@ -298,45 +313,12 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		//TODO what happens when there are different input states, but no output states (or vice versa) -> ignored, only one state, tested in other tests
 		//TODO what happens when an object is just written back?
 		
-		Set<Pair<Map<String, String>, Map<String, String>>> supportedConfigurations = new HashSet<>();
-		transitionsForActivity(activity).forEach(transition -> {
-			Map<String, String> supportedInputs = new HashMap<>();
-			Map<String, String> supportedOutputs = new HashMap<>();
-			transition.getTargetArc().stream().forEach(inputArc -> {
-				String dataId = null;
-				String state = null;
-				List<String[]> statements = Arrays.stream(inputArc.getHlinscription().asString().replaceAll("[\\{\\}]", "").split(","))
-					.map(String::trim)
-					.map(statement -> statement.split("="))
-					.filter(statement -> statement.length == 2)
-					.collect(Collectors.toList());
-				for(String[] statement : statements) {
-					if(statement[0].trim().equals("id")) dataId = statement[1].trim().replaceAll("Id$", "");
-					if(statement[0].trim().equals("state")) state = statement[1].trim();
-				}
-				if(dataId != null && state != null) supportedInputs.put(dataId, state);
-			});
-			
-			transition.getSourceArc().stream().forEach(outputArc -> {
-				String dataId = null;
-				String state = null;
-				List<String[]> statements = Arrays.stream(outputArc.getHlinscription().asString().replaceAll("[\\{\\}]", "").split(","))
-					.map(String::trim)
-					.map(statement -> statement.split("="))
-					.collect(Collectors.toList());
-				for(String[] statement : statements) {
-					if(statement.length != 2) continue;
-					if(statement[0].trim().equals("id")) dataId = statement[1].trim().replaceAll("Id$", "");
-					if(statement[0].trim().equals("state")) state = statement[1].trim();
-				}
-				if(dataId != null && state != null) supportedOutputs.put(dataId, state);
-			});
-			supportedConfigurations.add(new Pair<Map<String,String>, Map<String,String>>(supportedInputs, supportedOutputs));
-			
-		});
-		
+		Set<Pair<Map<String, String>, Map<String, String>>> supportedConfigurations = ioCombinationsInNet(activity);
+
+		System.out.println("Expected: "+expectedConfigurations);
+		System.out.println("Actual: "+supportedConfigurations);
 		assertEquals(expectedConfigurations, supportedConfigurations, () -> {
-			StringBuilder builder = new StringBuilder("Possible i/o state configurations did not match for activity \""+normalizeElementName(activity.getName())+"\":");
+			StringBuilder builder = new StringBuilder("Possible i/o state configurations did not match for activity \""+elementName(activity)+"\":");
 			builder.append("\n\t Expected but not present: "+expectedConfigurations.stream().filter(each -> !supportedConfigurations.contains(each)).collect(Collectors.toList()));
 			builder.append("\n\t Present but not Expected: "+supportedConfigurations.stream().filter(each -> !expectedConfigurations.contains(each)).collect(Collectors.toList()));
 			builder.append("\n");

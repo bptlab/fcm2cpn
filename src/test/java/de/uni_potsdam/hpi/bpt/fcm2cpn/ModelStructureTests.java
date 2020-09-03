@@ -11,12 +11,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -123,6 +125,46 @@ public abstract class ModelStructureTests {
 			.collect(Collectors.groupingBy(
 					each -> normalizeElementName(each.getDataObject().getName()),
 					Collectors.flatMapping(each -> CompilerApp.dataObjectStateToNetColors(each.getDataState().getName()), Collectors.toList())));
+	}
+	
+	public Set<Pair<Map<String, String>, Map<String, String>>> ioCombinationsInNet(Activity activity) {
+		Set<Pair<Map<String, String>, Map<String, String>>> ioCombinations = new HashSet<>();
+		transitionsForActivity(activity).forEach(transition -> {
+			Map<String, String> inputs = new HashMap<>();
+			Map<String, String> outputs = new HashMap<>();
+			transition.getTargetArc().stream().forEach(inputArc -> {
+				String dataId = null;
+				String state = null;
+				List<String[]> statements = Arrays.stream(inputArc.getHlinscription().asString().replaceAll("[\\{\\}]", "").split(","))
+					.map(String::trim)
+					.map(statement -> statement.split("="))
+					.filter(statement -> statement.length == 2)
+					.collect(Collectors.toList());
+				for(String[] statement : statements) {
+					if(statement[0].trim().equals("id")) dataId = statement[1].trim().replaceAll("Id$", "");
+					if(statement[0].trim().equals("state")) state = statement[1].trim();
+				}
+				if(dataId != null && state != null) inputs.put(dataId, state);
+			});
+			
+			transition.getSourceArc().stream().forEach(outputArc -> {
+				String dataId = null;
+				String state = null;
+				List<String[]> statements = Arrays.stream(outputArc.getHlinscription().asString().replaceAll("[\\{\\}]", "").split(","))
+					.map(String::trim)
+					.map(statement -> statement.split("="))
+					.collect(Collectors.toList());
+				for(String[] statement : statements) {
+					if(statement.length != 2) continue;
+					if(statement[0].trim().equals("id")) dataId = statement[1].trim().replaceAll("Id$", "");
+					if(statement[0].trim().equals("state")) state = statement[1].trim();
+				}
+				if(dataId != null && state != null) outputs.put(dataId, state);
+			});
+			ioCombinations.add(new Pair<Map<String,String>, Map<String,String>>(inputs, outputs));
+		});
+		
+		return ioCombinations;
 	}
 	
 	public static List<Map<String, String>> indexedCombinationsOf(Map<String, List<String>> groups) {
