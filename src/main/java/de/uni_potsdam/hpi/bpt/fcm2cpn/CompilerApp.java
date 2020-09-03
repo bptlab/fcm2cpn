@@ -304,7 +304,6 @@ public class CompilerApp {
         Collection<Activity> activities = bpmn.getModelElementsByType(Activity.class);
         activities.forEach(activity -> {
         	String name = activity.getName();
-        	System.out.println("======"+normalizeElementName(name));
         	Page activityPage = createPage(normalizeElementName(name));
             Instance mainPageTransition = createSubpageTransition(name, activityPage);
             SubpageElement subPage = new SubpageElement(this, activity.getId(), activityPage, mainPageTransition, new ArrayList<>());
@@ -825,10 +824,15 @@ public class CompilerApp {
     
     public static Stream<String> dataObjectStateToNetColors(String state) {
     	return Arrays.stream(state.replaceAll("\\[", "").replaceAll("\\]", "").split("\\|"))
-    			.map(String::trim)
-    			.map(each -> each.replaceAll("\\s","_"))
-    			.map(each -> each.replaceAll("-","_"))
-    			.map(String::toUpperCase);
+    			.map(CompilerApp::singleDataObjectStateToNetColor);
+    }
+    
+    public static String singleDataObjectStateToNetColor(String state) {
+    	return state
+			.trim()
+    		.replaceAll("\\s","_")
+    		.replaceAll("-","_")
+    		.toUpperCase();
     }
     
     public static DataInputAssociation getAssociation(DataInput input) {

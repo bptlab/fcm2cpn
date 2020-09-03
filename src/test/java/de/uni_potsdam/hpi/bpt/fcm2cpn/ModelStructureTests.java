@@ -125,7 +125,7 @@ public abstract class ModelStructureTests {
 					Collectors.flatMapping(each -> CompilerApp.dataObjectStateToNetColors(each.getDataState().getName()), Collectors.toList())));
 	}
 	
-	public List<Map<String, String>> indexedCombinationsOf(Map<String, List<String>> groups) {
+	public static List<Map<String, String>> indexedCombinationsOf(Map<String, List<String>> groups) {
 		//Get defined order into collection
 		List<String> keys = new ArrayList<>(groups.keySet());
 		List<List<String>> combinations = CompilerApp.allCombinationsOf(keys.stream().map(groups::get).collect(Collectors.toList()));

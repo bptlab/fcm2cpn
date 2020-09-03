@@ -8,17 +8,21 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.BoundaryEvent;
+import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
@@ -26,6 +30,7 @@ import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
+import org.camunda.bpm.model.bpmn.instance.OutputSet;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
@@ -234,24 +239,110 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testInputAndOutputCombinations(Activity activity) {
-		Map<String, List<String>> inputStates = dataObjectToStateMap(readDataObjectRefs(activity));
-		Map<String, List<String>> outputStates = dataObjectToStateMap(writtenDataObjectRefs(activity));
-			
-		assumeTrue(!inputStates.isEmpty() || !outputStates.isEmpty(), "Activity has no input or out sets");
+		Set<Pair<Map<String, String>, Map<String, String>>> expectedConfigurations = new HashSet<>();
+		if(activity.getIoSpecification() == null) {
+			// All read states, grouped by data objects
+			Map<String, List<String>> inputStates = dataObjectToStateMap(readDataObjectRefs(activity));
+			Map<String, List<String>> outputStates = dataObjectToStateMap(writtenDataObjectRefs(activity));
 
-		List<Map<String, String>> possibleInputSets = indexedCombinationsOf(inputStates);
-		List<Map<String, String>> possibleOutputSets = indexedCombinationsOf(outputStates);
+			// All possible combinations, assuming that all possible objects are read and written
+			List<Map<String, String>> possibleInputSets = indexedCombinationsOf(inputStates);
+			List<Map<String, String>> possibleOutputSets = indexedCombinationsOf(outputStates);
 
-		if(possibleInputSets.isEmpty()) possibleInputSets.add(Collections.emptyMap());
-		if(possibleOutputSets.isEmpty()) possibleOutputSets.add(Collections.emptyMap());
+			if(possibleInputSets.isEmpty() && !possibleOutputSets.isEmpty()) possibleInputSets.add(Collections.emptyMap());
+			if(possibleOutputSets.isEmpty()&& !possibleInputSets.isEmpty()) possibleOutputSets.add(Collections.emptyMap());
+			for(Map<String, String> inputSet : possibleInputSets) {
+				for(Map<String, String> outputSet : possibleOutputSets) {
+					expectedConfigurations.add(new Pair<>(inputSet, new HashMap<>(outputSet)));
+				}
+			}
+		} else {
+			Map<String, List<Map<String, String>>> outputSetsToPossibleForms = activity.getIoSpecification().getOutputSets().stream()
+				.collect(Collectors.toMap(OutputSet::getId, outputSet -> {
+					Stream<DataObjectReference> writtenReferences = outputSet.getDataOutputRefs().stream()
+							.map(CompilerApp::getAssociation)
+							.map(DataOutputAssociation::getTarget)
+							.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
+					Map<String, List<String>> outputStates = dataObjectToStateMap(writtenReferences);
+					List<Map<String, String>> possibleForms = indexedCombinationsOf(outputStates);
+					return possibleForms;
+				}));
+			activity.getIoSpecification().getInputSets().stream().forEach(inputSet -> {
+				Stream<DataObjectReference> readReferences = inputSet.getDataInputs().stream()
+						.map(CompilerApp::getAssociation)
+						.flatMap(assoc -> assoc.getSources().stream())
+						.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
+				Map<String, List<String>> inputStates = dataObjectToStateMap(readReferences);
+				List<Map<String, String>> possibleForms = indexedCombinationsOf(inputStates);
+				
+				for(OutputSet associatedOutputSet : inputSet.getOutputSets()) {
+					for(Map<String, String> inputSetForm : possibleForms) {
+						for(Map<String, String> outputSetForm : outputSetsToPossibleForms.get(associatedOutputSet.getId())) {
+							expectedConfigurations.add(new Pair<>(inputSetForm, new HashMap<>(outputSetForm)));
+						}
+					}
+				}
+			});
+		}
 
-		Page activityPage = pagesNamed(normalizeElementName(activity.getName())).findAny().get();
-		for(Map<String, String> inputSet : possibleInputSets) {
-			for(Map<String, String> outputSet : possibleOutputSets) {
-				assertEquals(1, activityTransitionsForTransput(activityPage, activity.getName(), inputSet, outputSet).count(), 
-						"There was no arc for activity "+activity.getName()+" with inputs "+inputSet+" and outputs "+outputSet);
+		//Expect read objects that are not explicitly written to be written back in the same state as they are read
+		for(Pair<Map<String, String>, Map<String, String>> ioConfiguration : expectedConfigurations) {
+			Map<String, String> inputSet = ioConfiguration.first;
+			Map<String, String> outputSet = ioConfiguration.second;
+			for(String inputObject : inputSet.keySet()) {
+				if(!outputSet.containsKey(inputObject)) outputSet.put(inputObject, inputSet.get(inputObject));
 			}
 		}
+		
+		//TODO what about data stores -> ignored, as they only have one state
+		//TODO what happens when there are different input states, but no output states (or vice versa) -> ignored, only one state, tested in other tests
+		//TODO what happens when an object is just written back?
+		
+		Set<Pair<Map<String, String>, Map<String, String>>> supportedConfigurations = new HashSet<>();
+		transitionsForActivity(activity).forEach(transition -> {
+			Map<String, String> supportedInputs = new HashMap<>();
+			Map<String, String> supportedOutputs = new HashMap<>();
+			transition.getTargetArc().stream().forEach(inputArc -> {
+				String dataId = null;
+				String state = null;
+				List<String[]> statements = Arrays.stream(inputArc.getHlinscription().asString().replaceAll("[\\{\\}]", "").split(","))
+					.map(String::trim)
+					.map(statement -> statement.split("="))
+					.filter(statement -> statement.length == 2)
+					.collect(Collectors.toList());
+				for(String[] statement : statements) {
+					if(statement[0].trim().equals("id")) dataId = statement[1].trim().replaceAll("Id$", "");
+					if(statement[0].trim().equals("state")) state = statement[1].trim();
+				}
+				if(dataId != null && state != null) supportedInputs.put(dataId, state);
+			});
+			
+			transition.getSourceArc().stream().forEach(outputArc -> {
+				String dataId = null;
+				String state = null;
+				List<String[]> statements = Arrays.stream(outputArc.getHlinscription().asString().replaceAll("[\\{\\}]", "").split(","))
+					.map(String::trim)
+					.map(statement -> statement.split("="))
+					.collect(Collectors.toList());
+				for(String[] statement : statements) {
+					if(statement.length != 2) continue;
+					if(statement[0].trim().equals("id")) dataId = statement[1].trim().replaceAll("Id$", "");
+					if(statement[0].trim().equals("state")) state = statement[1].trim();
+				}
+				if(dataId != null && state != null) supportedOutputs.put(dataId, state);
+			});
+			supportedConfigurations.add(new Pair<Map<String,String>, Map<String,String>>(supportedInputs, supportedOutputs));
+			
+		});
+		
+		assertEquals(expectedConfigurations, supportedConfigurations, () -> {
+			StringBuilder builder = new StringBuilder("Possible i/o state configurations did not match for activity \""+normalizeElementName(activity.getName())+"\":");
+			builder.append("\n\t Expected but not present: "+expectedConfigurations.stream().filter(each -> !supportedConfigurations.contains(each)).collect(Collectors.toList()));
+			builder.append("\n\t Present but not Expected: "+supportedConfigurations.stream().filter(each -> !expectedConfigurations.contains(each)).collect(Collectors.toList()));
+			builder.append("\n");
+			return builder.toString();
+		});
+		
 	}
 	
 	
