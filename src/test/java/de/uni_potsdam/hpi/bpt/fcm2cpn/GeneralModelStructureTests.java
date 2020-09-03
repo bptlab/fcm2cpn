@@ -43,7 +43,6 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.AssociationsProvider;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 
 
 public class GeneralModelStructureTests extends ModelStructureTests {
@@ -253,77 +252,16 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
-	public void testInputAndOutputCombinations(Activity activity) {
-		Set<Pair<Map<String, String>, Map<String, String>>> expectedConfigurations = new HashSet<>();
-		if(activity.getIoSpecification() == null) {
-			// All read states, grouped by data objects
-			Map<String, List<String>> inputStates = dataObjectToStateMap(readDataObjectRefs(activity));
-			Map<String, List<String>> outputStates = dataObjectToStateMap(writtenDataObjectRefs(activity));
-
-			// All possible combinations, assuming that all possible objects are read and written
-			List<Map<String, String>> possibleInputSets = indexedCombinationsOf(inputStates);
-			List<Map<String, String>> possibleOutputSets = indexedCombinationsOf(outputStates);
-
-			if(possibleInputSets.isEmpty() && !possibleOutputSets.isEmpty()) possibleInputSets.add(Collections.emptyMap());
-			if(possibleOutputSets.isEmpty()&& !possibleInputSets.isEmpty()) possibleOutputSets.add(Collections.emptyMap());
-			for(Map<String, String> inputSet : possibleInputSets) {
-				for(Map<String, String> outputSet : possibleOutputSets) {
-					expectedConfigurations.add(new Pair<>(inputSet, new HashMap<>(outputSet)));
-				}
-			}
-		} else {
-			Map<String, List<Map<String, String>>> outputSetsToPossibleForms = activity.getIoSpecification().getOutputSets().stream()
-				.collect(Collectors.toMap(OutputSet::getId, outputSet -> {
-					Stream<DataObjectReference> writtenReferences = outputSet.getDataOutputRefs().stream()
-							.map(CompilerApp::getAssociation)
-							.map(DataOutputAssociation::getTarget)
-							.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
-					Map<String, List<String>> outputStates = dataObjectToStateMap(writtenReferences);
-					List<Map<String, String>> possibleForms = indexedCombinationsOf(outputStates);
-					return possibleForms;
-				}));
-			activity.getIoSpecification().getInputSets().stream().forEach(inputSet -> {
-				Stream<DataObjectReference> readReferences = inputSet.getDataInputs().stream()
-						.map(CompilerApp::getAssociation)
-						.flatMap(assoc -> assoc.getSources().stream())
-						.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
-				Map<String, List<String>> inputStates = dataObjectToStateMap(readReferences);
-				List<Map<String, String>> possibleForms = indexedCombinationsOf(inputStates);
-				
-				for(OutputSet associatedOutputSet : inputSet.getOutputSets()) {
-					for(Map<String, String> inputSetForm : possibleForms) {
-						for(Map<String, String> outputSetForm : outputSetsToPossibleForms.get(associatedOutputSet.getId())) {
-							expectedConfigurations.add(new Pair<>(inputSetForm, new HashMap<>(outputSetForm)));
-						}
-					}
-				}
-			});
-		}
-
-		//Expect read objects that are not explicitly written to be written back in the same state as they are read
-		for(Pair<Map<String, String>, Map<String, String>> ioConfiguration : expectedConfigurations) {
-			Map<String, String> inputSet = ioConfiguration.first;
-			Map<String, String> outputSet = ioConfiguration.second;
-			for(String inputObject : inputSet.keySet()) {
-				if(!outputSet.containsKey(inputObject)) outputSet.put(inputObject, inputSet.get(inputObject));
-			}
-		}
+	public void testInputAndOutputStateCombinations(Activity activity) {
+		Set<Pair<Map<String, String>, Map<String, String>>> expectedCombinations = expectedIOCombinations(activity);
+		Set<Pair<Map<String, String>, Map<String, String>>> supportedCombinations = ioCombinationsInNet(activity);
 		
-		//TODO what about data stores -> ignored, as they only have one state
-		//TODO what happens when there are different input states, but no output states (or vice versa) -> ignored, only one state, tested in other tests
-		//TODO what happens when an object is just written back?
-		
-		Set<Pair<Map<String, String>, Map<String, String>>> supportedConfigurations = ioCombinationsInNet(activity);
-
-		System.out.println("Expected: "+expectedConfigurations);
-		System.out.println("Actual: "+supportedConfigurations);
-		assertEquals(expectedConfigurations, supportedConfigurations, () -> {
-			StringBuilder builder = new StringBuilder("Possible i/o state configurations did not match for activity \""+elementName(activity)+"\":");
-			builder.append("\n\t Expected but not present: "+expectedConfigurations.stream().filter(each -> !supportedConfigurations.contains(each)).collect(Collectors.toList()));
-			builder.append("\n\t Present but not Expected: "+supportedConfigurations.stream().filter(each -> !expectedConfigurations.contains(each)).collect(Collectors.toList()));
-			builder.append("\n");
-			return builder.toString();
-		});
+		assertEquals(supportedCombinations, expectedCombinations,
+			"Possible i/o state combinations did not match for activity \""+elementName(activity)+"\":"
+			+ "\n\t Expected but not present: "+expectedCombinations.stream().filter(each -> !supportedCombinations.contains(each)).collect(Collectors.toList())
+			+ "\n\t Present but not Expected: "+supportedCombinations.stream().filter(each -> !expectedCombinations.contains(each)).collect(Collectors.toList())
+			+ "\n"
+		);
 		
 	}
 	

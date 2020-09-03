@@ -35,6 +35,7 @@ import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
+import org.camunda.bpm.model.bpmn.instance.OutputSet;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.LocalCheckFailed;
@@ -97,13 +98,13 @@ public abstract class ModelStructureTests {
 		return associated;
 	}
 	
-	public Stream<DataObjectReference> readDataObjectRefs(Activity activity) {
+	public static Stream<DataObjectReference> readDataObjectRefs(Activity activity) {
 		return activity.getDataInputAssociations().stream()
 				.flatMap(assoc -> assoc.getSources().stream())
 				.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
 	}
 	
-	public Stream<DataObjectReference> writtenDataObjectRefs(Activity activity) {
+	public static Stream<DataObjectReference> writtenDataObjectRefs(Activity activity) {
 		return activity.getDataOutputAssociations().stream()
 				.map(assoc -> assoc.getTarget())
 				.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
@@ -119,12 +120,75 @@ public abstract class ModelStructureTests {
 				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
 	}
 	
-	public Map<String, List<String>> dataObjectToStateMap(Stream<DataObjectReference> dataObjectReferences) {
+	public static Map<String, List<String>> dataObjectToStateMap(Stream<DataObjectReference> dataObjectReferences) {
 		return dataObjectReferences
 			.filter(each -> Objects.nonNull(each.getDataState()))
 			.collect(Collectors.groupingBy(
 					each -> normalizeElementName(each.getDataObject().getName()),
 					Collectors.flatMapping(each -> CompilerApp.dataObjectStateToNetColors(each.getDataState().getName()), Collectors.toList())));
+	}
+	
+	public static Set<Pair<Map<String, String>, Map<String, String>>> expectedIOCombinations(Activity activity) {
+		Set<Pair<Map<String, String>, Map<String, String>>> expectedCombinations = new HashSet<>();
+		
+		//Default if no specification: Use all inputs and outputs
+		if(activity.getIoSpecification() == null) {
+			// All read states, grouped by data objects
+			Map<String, List<String>> inputStates = dataObjectToStateMap(readDataObjectRefs(activity));
+			Map<String, List<String>> outputStates = dataObjectToStateMap(writtenDataObjectRefs(activity));
+
+			// All possible combinations, assuming that all possible objects are read and written
+			List<Map<String, String>> possibleInputSets = indexedCombinationsOf(inputStates);
+			List<Map<String, String>> possibleOutputSets = indexedCombinationsOf(outputStates);
+
+			if(possibleInputSets.isEmpty() && !possibleOutputSets.isEmpty()) possibleInputSets.add(Collections.emptyMap());
+			if(possibleOutputSets.isEmpty()&& !possibleInputSets.isEmpty()) possibleOutputSets.add(Collections.emptyMap());
+			for(Map<String, String> inputSet : possibleInputSets) {
+				for(Map<String, String> outputSet : possibleOutputSets) {
+					expectedCombinations.add(new Pair<>(inputSet, new HashMap<>(outputSet)));
+				}
+			}
+		
+		// Else parse io specification
+		} else {
+			Map<String, List<Map<String, String>>> outputSetsToPossibleForms = activity.getIoSpecification().getOutputSets().stream()
+				.collect(Collectors.toMap(OutputSet::getId, outputSet -> {
+					Stream<DataObjectReference> writtenReferences = outputSet.getDataOutputRefs().stream()
+							.map(CompilerApp::getAssociation)
+							.map(DataOutputAssociation::getTarget)
+							.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
+					Map<String, List<String>> outputStates = dataObjectToStateMap(writtenReferences);
+					List<Map<String, String>> possibleForms = indexedCombinationsOf(outputStates);
+					return possibleForms;
+				}));
+			activity.getIoSpecification().getInputSets().stream().forEach(inputSet -> {
+				Stream<DataObjectReference> readReferences = inputSet.getDataInputs().stream()
+						.map(CompilerApp::getAssociation)
+						.flatMap(assoc -> assoc.getSources().stream())
+						.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
+				Map<String, List<String>> inputStates = dataObjectToStateMap(readReferences);
+				List<Map<String, String>> possibleForms = indexedCombinationsOf(inputStates);
+				
+				for(OutputSet associatedOutputSet : inputSet.getOutputSets()) {
+					for(Map<String, String> inputSetForm : possibleForms) {
+						for(Map<String, String> outputSetForm : outputSetsToPossibleForms.get(associatedOutputSet.getId())) {
+							expectedCombinations.add(new Pair<>(inputSetForm, new HashMap<>(outputSetForm)));
+						}
+					}
+				}
+			});
+		}
+
+		//Expect read objects that are not explicitly written to be written back in the same state as they are read
+		for(Pair<Map<String, String>, Map<String, String>> ioConfiguration : expectedCombinations) {
+			Map<String, String> inputSet = ioConfiguration.first;
+			Map<String, String> outputSet = ioConfiguration.second;
+			for(String inputObject : inputSet.keySet()) {
+				if(!outputSet.containsKey(inputObject)) outputSet.put(inputObject, inputSet.get(inputObject));
+			}
+		}
+		
+		return expectedCombinations;
 	}
 	
 	public Set<Pair<Map<String, String>, Map<String, String>>> ioCombinationsInNet(Activity activity) {

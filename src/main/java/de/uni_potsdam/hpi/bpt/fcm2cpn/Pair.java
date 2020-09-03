@@ -19,15 +19,16 @@ public class Pair<S,T> {
 	
 	@Override
 	public int hashCode() {
-		final int prime = 5;
-		int result = 1;
-		result = prime * result + Objects.hash(first, second);
-		return result;
+		return Objects.hash(first, second);
 	}
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) return true;
 		if (obj == null) return false;
+		if(getClass() != obj.getClass()) {
+			Pair<?, ?> other = (Pair<?, ?>) obj;
+			if(Objects.equals(first, other.first) && Objects.equals(second, other.second)) throw new Error("Not possible");
+		}
 		if (getClass() != obj.getClass()) return false;
 		Pair<?, ?> other = (Pair<?, ?>) obj;
 		return Objects.equals(first, other.first) && Objects.equals(second, other.second);

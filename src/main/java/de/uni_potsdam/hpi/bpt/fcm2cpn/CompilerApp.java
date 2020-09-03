@@ -321,7 +321,7 @@ public class CompilerApp {
                 		.flatMap(this::splitDataAssociationByState)
                 		.collect(Collectors.groupingBy(this::wrapperFor));
 
-                // All written data elements with all states in that they are read
+                // All written data elements with all states in that they are written
                 Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataOutputAssociation>>> outputsPerObject = activity.getDataOutputAssociations().stream()
                 		.flatMap(this::splitDataAssociationByState)
                 		.collect(Collectors.groupingBy(this::wrapperFor));
@@ -363,11 +363,11 @@ public class CompilerApp {
                 Transition subpageTransition = builder.addTransition(activityPage, name + "_" + transputSetIndex);
                 subpageTransitions.add(subpageTransition);
                 attachObjectCreationCounters(subpageTransition, createdObjects);
+                
+                associateDataObjects(activity, subpageTransition, readObjects, writtenObjects);
             	
                 inputSet.forEach(input -> inputtingTransitions.get(input).add(subpageTransition));
                 outputSet.forEach(output -> outputtingTransitions.get(output).add(subpageTransition));
-                
-                associateDataObjects(activity, subpageTransition, readObjects, writtenObjects);
                 
                 transputSetIndex++;
             }
@@ -538,6 +538,9 @@ public class CompilerApp {
     	Set<DataElementWrapper<?,?>> readElements = inputs.keySet().stream().map(this::wrapperFor).collect(Collectors.toSet());
     	Set<DataElementWrapper<?,?>> writtenElements = outputs.keySet().stream().map(this::wrapperFor).collect(Collectors.toSet());
     	
+    	System.out.println(inputs+" "+outputs);
+    	System.out.println(readElements+" "+writtenElements);
+    	
         outputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = wrapperFor(assoc);
         	String annotation = dataElement.annotationForDataFlow(assoc.getStateName());
@@ -553,11 +556,12 @@ public class CompilerApp {
         	DataElementWrapper<?,?> dataElement = wrapperFor(assoc);
             String annotation = dataElement.annotationForDataFlow(assoc.getStateName());
     		linkReadingTransitions(element, dataElement, annotation, transitions);
+
     		/**Assert that when reading and not writing, the unchanged token is put back*/
-        	if(!writtenElements.contains(dataElement)) {
-        		linkWritingTransitions(element, dataElement, annotation, transitions);
-            	writtenElements.add(dataElement);
-        	}
+    		List<Transition> readOnlyTransitions = transitions.stream()
+    				.filter(transition -> outputs.entrySet().stream().noneMatch(entry -> wrapperFor(entry.getKey()).equals(dataElement) && entry.getValue().contains(transition)))
+    				.collect(Collectors.toList());
+    		linkWritingTransitions(element, dataElement, annotation, readOnlyTransitions);
         });
     }
     

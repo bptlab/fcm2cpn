@@ -80,6 +80,11 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 		return incomingArcs.computeIfAbsent(element, _element -> compilerApp.createArc(compilerApp.nodeFor(_element), place));
 	}
 	
+	@Override
+	public String toString() {
+		return getClass().getSimpleName()+"("+normalizedName+")";
+	}
+	
 
 
 }
