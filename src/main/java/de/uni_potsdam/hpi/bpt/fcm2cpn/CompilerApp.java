@@ -404,7 +404,24 @@ public class CompilerApp {
             	}
             }
         });
-        return transputSets;
+        
+        //Data Stores are (at least in Signavio) not part of input or output sets
+        List<StatefulDataAssociation<DataInputAssociation>> dataStoreInputs = activity.getDataInputAssociations().stream()
+			   .filter(assoc -> getSource(assoc) instanceof DataStoreReference)
+			   .flatMap(this::splitDataAssociationByState)
+			   .collect(Collectors.toList());
+
+        List<StatefulDataAssociation<DataOutputAssociation>> dataStoreOutputs = activity.getDataOutputAssociations().stream()
+ 			   .filter(assoc -> getTarget(assoc) instanceof DataStoreReference)
+ 			   .flatMap(this::splitDataAssociationByState)
+ 			   .collect(Collectors.toList());
+        
+        for(Pair<InputSetWrapper, OutputSetWrapper> transputSet : transputSets) {
+        	transputSet.first.addAll(dataStoreInputs);
+        	transputSet.second.addAll(dataStoreOutputs);
+        }
+    
+    	return transputSets;
     }
 
 	private void attachObjectCreationCounters(Transition transition, Set<DataObjectWrapper> createObjects) {
