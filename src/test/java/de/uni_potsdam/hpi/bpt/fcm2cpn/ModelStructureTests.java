@@ -32,6 +32,7 @@ import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
+import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.OutputSet;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
@@ -191,7 +192,7 @@ public abstract class ModelStructureTests {
 	
 	public Set<Pair<Map<String, String>, Map<String, String>>> ioCombinationsInNet(Activity activity) {
 		Set<Pair<Map<String, String>, Map<String, String>>> ioCombinations = new HashSet<>();
-		transitionsForActivity(activity).forEach(transition -> {
+		transitionsFor(activity).forEach(transition -> {
 			Map<String, String> inputs = new HashMap<>();
 			Map<String, String> outputs = new HashMap<>();
 			transition.getTargetArc().stream().forEach(inputArc -> {
@@ -316,6 +317,10 @@ public abstract class ModelStructureTests {
 		return petrinet.getPage().stream().filter(page -> page.getName().asString().equals(name));
 	}
 	
+	public Page pageNamed(String name) {
+		return pagesNamed(name).findAny().get();
+	}
+	
 	public Stream<Place> placesNamed(String name) {
 		Page mainPage = petrinet.getPage().get(0);
 		return StreamSupport.stream(mainPage.place().spliterator(), true)
@@ -388,7 +393,7 @@ public abstract class ModelStructureTests {
 		});
 	}
 	
-	public Stream<Transition> transitionsForActivity(Activity activity) {
+	public Stream<Transition> transitionsFor(FlowElement activity) {
 		Page activityPage = pagesNamed(normalizeElementName(activity.getName())).findAny().get();
 		return StreamSupport.stream(activityPage.transition().spliterator(), true);
 	}

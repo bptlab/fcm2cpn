@@ -22,6 +22,7 @@ import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
+import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
@@ -270,10 +271,16 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		assumeFalse(readingElements.isEmpty(), "The data store reference is not read");
 		Place dataStorePlace = dataStorePlacesNamed(normalizeElementName(dataStoreReference.getDataStore().getName())).findAny().get();
 		
-		readingElements.forEach(node -> {
-			String nodeName = node.getAttributeValue("name");
+		readingElements.forEach(element -> {
+			String nodeName = element.getAttributeValue("name");
 			assertEquals(1, arcsToNodeNamed(dataStorePlace, nodeName).count(),
 					"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to node "+nodeName);
+			
+			transitionsFor((FlowElement) element).forEach(readingTransition -> {
+				assertEquals(1, arcsFromNodeNamed(readingTransition, normalizeElementName(dataStoreReference.getName())).count(),
+						"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to node "+nodeName+" in subpage transition");
+			});
+			
 		});	
 	}
 	
@@ -284,10 +291,15 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		assumeFalse(writingElements.isEmpty(), "The data store reference is not written");
 		Place dataStorePlace = dataStorePlacesNamed(normalizeElementName(dataStoreReference.getDataStore().getName())).findAny().get();
 
-		writingElements.forEach(node -> {
-			String nodeName = node.getAttributeValue("name");
+		writingElements.forEach(element -> {
+			String nodeName = element.getAttributeValue("name");
 			assertEquals(1, arcsFromNodeNamed(dataStorePlace, nodeName).count(),
 					"There is not exactly one write arc from node "+nodeName+" to data store reference "+dataStoreReference.getName());
+			
+			transitionsFor((FlowElement) element).forEach(writingTransition -> {
+				assertEquals(1, arcsToNodeNamed(writingTransition, normalizeElementName(dataStoreReference.getName())).count(),
+						"There is not exactly write arc from node "+nodeName+" to data store reference "+dataStoreReference.getName()+" in subpage transition");
+			});
 		});
 	}
 	
@@ -332,7 +344,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testDataAssociationsBetweenReadAndWriteAreCreated(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && writes(activity, second), "Activity does not read the first and write the second data object.");
 		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
-		transitionsForActivity(activity).forEach(transition -> {
+		transitionsFor(activity).forEach(transition -> {
 			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
 				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
@@ -344,7 +356,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testDataAssociationsBetweenParallelWritesAreCreated(String first, String second, Activity activity) {
 		assumeTrue(writes(activity, first) && writes(activity, second), "Activity does not write both data objects.");
 		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
-		transitionsForActivity(activity).forEach(transition -> {
+		transitionsFor(activity).forEach(transition -> {
 			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
 				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
@@ -355,7 +367,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	public void testAssociationsAreCheckedWhenReading(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && reads(activity, second), "Activity does not read both data objects.");
-		transitionsForActivity(activity).forEach(transition -> {
+		transitionsFor(activity).forEach(transition -> {
 			assertTrue(hasGuardForAssociation(transition, first+"Id", second+"Id"),
 				"There is no guard for association when reading objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
@@ -366,7 +378,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	public void testCheckedAssociationsAreNotDuplicated(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && reads(activity, second), "Activity does not read both data objects.");
-		transitionsForActivity(activity).forEach(transition -> {
+		transitionsFor(activity).forEach(transition -> {
 			assertEquals(0, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
 				"There is a writing association arc for objects "+first+" and "+second+" (which should already be associated) at activity "+normalizeElementName(activity.getName()));
 		});
