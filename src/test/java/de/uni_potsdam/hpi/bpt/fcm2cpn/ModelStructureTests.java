@@ -1,6 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.normalizeElementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.*;
 
 import java.io.File;
 import java.lang.annotation.Retention;
@@ -81,7 +81,7 @@ public abstract class ModelStructureTests {
 	public List<String[]> dataObjectAssociations() {
 		List<String> dataObjects = bpmn.getModelElementsByType(DataObject.class).stream()
 				.map(DataObject::getName)
-				.map(CompilerApp::normalizeElementName)
+				.map(Utils::normalizeElementName)
 				.distinct()
 				.collect(Collectors.toList());
 		List<String[]> associated = new ArrayList<>();
@@ -123,7 +123,7 @@ public abstract class ModelStructureTests {
 			.filter(each -> Objects.nonNull(each.getDataState()))
 			.collect(Collectors.groupingBy(
 					each -> normalizeElementName(each.getDataObject().getName()),
-					Collectors.flatMapping(each -> CompilerApp.dataObjectStateToNetColors(each.getDataState().getName()), Collectors.toList())));
+					Collectors.flatMapping(each -> Utils.dataObjectStateToNetColors(each.getDataState().getName()), Collectors.toList())));
 	}
 	
 	public static Set<Pair<Map<String, String>, Map<String, String>>> expectedIOCombinations(Activity activity) {
@@ -152,7 +152,7 @@ public abstract class ModelStructureTests {
 			Map<String, List<Map<String, String>>> outputSetsToPossibleForms = activity.getIoSpecification().getOutputSets().stream()
 				.collect(Collectors.toMap(OutputSet::getId, outputSet -> {
 					Stream<DataObjectReference> writtenReferences = outputSet.getDataOutputRefs().stream()
-							.map(CompilerApp::getAssociation)
+							.map(Utils::getAssociation)
 							.map(DataOutputAssociation::getTarget)
 							.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
 					Map<String, List<String>> outputStates = dataObjectToStateMap(writtenReferences);
@@ -161,7 +161,7 @@ public abstract class ModelStructureTests {
 				}));
 			activity.getIoSpecification().getInputSets().stream().forEach(inputSet -> {
 				Stream<DataObjectReference> readReferences = inputSet.getDataInputs().stream()
-						.map(CompilerApp::getAssociation)
+						.map(Utils::getAssociation)
 						.flatMap(assoc -> assoc.getSources().stream())
 						.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
 				Map<String, List<String>> inputStates = dataObjectToStateMap(readReferences);
@@ -232,7 +232,7 @@ public abstract class ModelStructureTests {
 	public static List<Map<String, String>> indexedCombinationsOf(Map<String, List<String>> groups) {
 		//Get defined order into collection
 		List<String> keys = new ArrayList<>(groups.keySet());
-		List<List<String>> combinations = CompilerApp.allCombinationsOf(keys.stream().map(groups::get).collect(Collectors.toList()));
+		List<List<String>> combinations = Utils.allCombinationsOf(keys.stream().map(groups::get).collect(Collectors.toList()));
 		
 		//Zip keys with each combination
 		return combinations.stream().map(combination -> {

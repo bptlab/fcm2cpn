@@ -18,6 +18,13 @@
 
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.allCombinationsOf;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.dataObjectStateToNetColors;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.elementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.getSource;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.getTarget;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.normalizeElementName;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,31 +45,25 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
-import org.camunda.bpm.model.bpmn.impl.instance.SourceRef;
-import org.camunda.bpm.model.bpmn.impl.instance.TargetRef;
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.BoundaryEvent;
 import org.camunda.bpm.model.bpmn.instance.DataAssociation;
-import org.camunda.bpm.model.bpmn.instance.DataInput;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
-import org.camunda.bpm.model.bpmn.instance.DataOutput;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataState;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
-import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.FlowNode;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.OutputSet;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
-import org.camunda.bpm.model.xml.ModelInstance;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Instance;
@@ -383,7 +384,7 @@ public class CompilerApp {
         // Output sets mapped to data assocs and split by "|" state shortcuts
     	Map<OutputSet, List<OutputSetWrapper>> translatedOutputSets = activity.getIoSpecification().getOutputSets().stream().collect(Collectors.toMap(Function.identity(), outputSet -> {
             Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataOutputAssociation>>> outputsPerObject = outputSet.getDataOutputRefs().stream()
-            		.map(CompilerApp::getAssociation)
+            		.map(Utils::getAssociation)
             		.flatMap(this::splitDataAssociationByState)
             		.collect(Collectors.groupingBy(this::wrapperFor));
             return allCombinationsOf(outputsPerObject.values()).stream().map(OutputSetWrapper::new).collect(Collectors.toList());
@@ -391,7 +392,7 @@ public class CompilerApp {
     	
         activity.getIoSpecification().getInputSets().forEach(inputSet -> {
             Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataInputAssociation>>> inputsPerObject = inputSet.getDataInputs().stream()
-            		.map(CompilerApp::getAssociation)
+            		.map(Utils::getAssociation)
             		.flatMap(this::splitDataAssociationByState)
             		.collect(Collectors.groupingBy(this::wrapperFor));
             List<InputSetWrapper> translatedInputSets = allCombinationsOf(inputsPerObject.values()).stream().map(InputSetWrapper::new).collect(Collectors.toList());
@@ -517,9 +518,9 @@ public class CompilerApp {
 	}
     
     private <T extends DataAssociation> Stream<StatefulDataAssociation<T>> splitDataAssociationByState(T assoc) {
-    	ItemAwareElement source = findParentDataElement(getReferenceIds(assoc, SourceRef.class).get(0));
-    	ItemAwareElement target = findParentDataElement(getReferenceIds(assoc, TargetRef.class).get(0));
-        ItemAwareElement dataElement = source instanceof DataObjectReference || source instanceof DataStoreReference ? source : target;
+    	BaseElement source = getSource(assoc);
+    	BaseElement target = getTarget(assoc);
+        ItemAwareElement dataElement = (ItemAwareElement) (source instanceof DataObjectReference || source instanceof DataStoreReference ? source : target);
         assert dataElement != null;
     	Stream<String> possibleStates = Optional.ofNullable(dataElement.getDataState())
         		.map(DataState::getName)
@@ -538,8 +539,6 @@ public class CompilerApp {
     	Set<DataElementWrapper<?,?>> readElements = inputs.keySet().stream().map(this::wrapperFor).collect(Collectors.toSet());
     	Set<DataElementWrapper<?,?>> writtenElements = outputs.keySet().stream().map(this::wrapperFor).collect(Collectors.toSet());
     	
-    	System.out.println(inputs+" "+outputs);
-    	System.out.println(readElements+" "+writtenElements);
     	
         outputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = wrapperFor(assoc);
@@ -807,86 +806,6 @@ public class CompilerApp {
 	
 	public String caseId() {
 		return caseWrapper.dataElementId();
-	}
-	
-    //========Static========
-	public static String elementName(FlowElement element) {
-    	String name = element.getName();
-    	if(name == null || name.equals("")) name = element.getId();
-    	return name;
-	}
-	
-    public static String normalizeElementName(String name) {
-    	return name.replace('\n', ' ').trim();
-    }
-    
-    public static <T extends ModelElementInstance> List<String> getReferenceIds(DataAssociation association, Class<T> referenceClass) {
-		return association.getChildElementsByType(referenceClass).stream()
-				.map(each -> each.getTextContent())
-				.collect(Collectors.toList());
-    }
-    
-    public static Stream<String> dataObjectStateToNetColors(String state) {
-    	return Arrays.stream(state.replaceAll("\\[", "").replaceAll("\\]", "").split("\\|"))
-    			.map(CompilerApp::singleDataObjectStateToNetColor);
-    }
-    
-    public static String singleDataObjectStateToNetColor(String state) {
-    	return state
-			.trim()
-    		.replaceAll("\\s","_")
-    		.replaceAll("-","_")
-    		.toUpperCase();
-    }
-    
-    public static DataInputAssociation getAssociation(DataInput input) {
-    	ModelInstance model = input.getModelInstance();
-    	return model.getModelElementsByType(DataInputAssociation.class).stream()
-    		.filter(assoc -> input.equals(getTarget(assoc)))
-    		.findAny()
-    		.get();
-    }
-    
-    public static DataOutputAssociation getAssociation(DataOutput output) {
-    	ModelInstance model = output.getModelInstance();
-    	return model.getModelElementsByType(DataOutputAssociation.class).stream()
-    		.filter(assoc -> output.equals(getSource(assoc)))
-    		.findAny()
-    		.get();
-    }
-    
-    public static BaseElement getTarget(DataAssociation assoc) {
-    	ModelInstance model = assoc.getModelInstance();
-    	return (BaseElement) assoc.getChildElementsByType(TargetRef.class).stream()
-    		.map(ref -> ref.getTextContent())
-    		.map(model::getModelElementById)
-    		.findAny().orElse(null);  		
-    }
-    
-    public static BaseElement getSource(DataAssociation assoc) {
-    	ModelInstance model = assoc.getModelInstance();
-    	return (BaseElement) assoc.getChildElementsByType(SourceRef.class).stream()
-    		.map(ref -> ref.getTextContent())
-    		.map(model::getModelElementById)
-    		.findAny().orElse(null);  		
-    }
-    
-	public static <T> List<List<T>> allCombinationsOf(Collection<List<T>> sets) {
-        int numberOfCombinations = sets.stream()
-                .mapToInt(Collection::size)
-                .reduce(1, (a,b) -> a*b);
-        
-        List<List<T>> combinations = new ArrayList<>(numberOfCombinations);
-        for(int i = 0; i < numberOfCombinations; i++) {
-            int j = 1;
-            List<T> combination = new ArrayList<>();
-            for(List<T> objectVariants : sets) {
-            	combination.add(objectVariants.get((i/j)%objectVariants.size()));
-                j *= objectVariants.size();
-            }
-            combinations.add(combination);
-        }
-        return combinations;
 	}
 
 }
