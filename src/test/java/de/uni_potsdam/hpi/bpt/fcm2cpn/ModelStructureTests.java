@@ -1,7 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.normalizeElementName;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
 import java.lang.annotation.Retention;
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;

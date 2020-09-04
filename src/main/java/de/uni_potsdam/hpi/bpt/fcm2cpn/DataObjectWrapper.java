@@ -1,11 +1,9 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.camunda.bpm.model.bpmn.instance.DataAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.cpntools.accesscpn.model.Page;
@@ -13,9 +11,6 @@ import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.PlaceNode;
 
 public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObjectReference> {
-	
-	private List<String> states;
-	private List<StatefulDataAssociation<DataAssociation>> references;
 
 	private final Map<Page, PlaceNode> creationCounterPlaces = new HashMap<>();
 	
