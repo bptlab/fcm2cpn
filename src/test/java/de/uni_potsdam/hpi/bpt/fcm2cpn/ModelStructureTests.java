@@ -54,6 +54,7 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.platform.commons.annotation.Testable;
 import org.junit.platform.commons.util.ReflectionUtils;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ArgumentTreeTests;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 
@@ -63,7 +64,7 @@ public abstract class ModelStructureTests {
 	public BpmnModelInstance bpmn;
 	public PetriNet petrinet;
 	
-	public DataModel dataModel = new DataModel();//TODO
+	public DataModel dataModel = new DataModel(Collections.emptySet(), Collections.emptySet());//TODO
 	
 	public List<ModelElementInstance> readingElements(ItemAwareElement dataElementReference) {
 		return bpmn.getModelElementsByType(DataInputAssociation.class).stream()

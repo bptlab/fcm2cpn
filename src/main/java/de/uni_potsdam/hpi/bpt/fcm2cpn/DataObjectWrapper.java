@@ -30,7 +30,7 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 
 
 	public PlaceNode creationCounterForPage(Page page) {
-		return creationCounterPlaces.computeIfAbsent(page, _page -> compilerApp.createFusionPlace(_page, namePrefix()+" Count", "INT", "1`0", dataElementCount()));
+		return creationCounterPlaces.computeIfAbsent(page, _page -> compilerApp.createFusionPlace(_page, dataElementCount(), "INT", "1`0"));
 	}
 
 

@@ -85,6 +85,7 @@ import org.cpntools.accesscpn.model.util.BuildCPNUtil;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.InputSetWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.OutputSetWrapper;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 
 
 public class CompilerApp {
@@ -96,7 +97,7 @@ public class CompilerApp {
     /** The bpmn model to be parsed*/
 	private BpmnModelInstance bpmn;
     /** Parsed data model of the bpmn model*/
-	private DataModel dataModel = new DataModel();
+	private DataModel dataModel;
 	
 	/** Helper for constructing the resulting net*/
 	public final BuildCPNUtil builder;
@@ -188,7 +189,7 @@ public class CompilerApp {
         this.subpages = new HashMap<>();
         this.nodeMap = new HashMap<>();
         this.deferred = new ArrayList<>();
-        this.dataModel = new DataModel();
+        this.dataModel = new DataModel(Collections.emptySet(), Collections.emptySet());//TODO
         
         this.associationReaders = new HashSet<>();
         this.associationWriters = new HashSet<>();
@@ -787,8 +788,8 @@ public class CompilerApp {
     	return builder.addPlace(page, name, type, initialMarking);
     }
     
-    public RefPlace createFusionPlace(Page page, String name, String type, String initialMarking, String fusionGroupName) {
-    	return builder.addFusionPlace(page, name, type, initialMarking, fusionGroupName);
+    public RefPlace createFusionPlace(Page page, String name, String type, String initialMarking) {
+    	return builder.addFusionPlace(page, name, type, initialMarking, name);
     }
     
     public Instance createSubpageTransition(String name, Page page) {
