@@ -14,6 +14,24 @@ public class DataModel {
 		this.dataObjects = new HashSet<>(dataObjects);
 		this.associations = new HashSet<>(associations);
 	}
+	
+	public static DataModel none() {
+		return new DataModel(null, null) {
+			@Override
+			public boolean hasDataObject(String dataObject) {
+				return true;
+			}
+			@Override
+			public boolean isAssociated(String dataObjectA, String dataObjectB) {
+				return false;
+			}
+		};
+	}
+	
+	
+	public boolean hasDataObject(String dataObject) {
+		return getDataObjects().contains(dataObject);
+	}
 
 	/**
 	 * 

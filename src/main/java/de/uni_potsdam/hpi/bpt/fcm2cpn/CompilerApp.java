@@ -86,6 +86,7 @@ import org.cpntools.accesscpn.model.util.BuildCPNUtil;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.InputSetWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.OutputSetWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
 
 
 public class CompilerApp {
@@ -148,27 +149,43 @@ public class CompilerApp {
 	/** Wrapper for data stores, see {@link DataStoreWrapper}*/
 	private Collection<DataStoreWrapper> dataStoreWrappers;
 
-    public static void main(final String[] args) throws Exception {
+    public static void main(final String[] _args) throws Exception {
         System.out.println(licenseInfo);
+        List<String> args = new ArrayList<>(Arrays.asList(_args));
+        boolean useDataModel = args.remove("-d");
+        
         File bpmnFile;
-        if(args.length > 0) {
-        	bpmnFile = new File(args[0]);
+        if(!args.isEmpty()) {
+        	bpmnFile = new File(args.get(0));
+        	args.remove(0);
         } else {
         	bpmnFile = getFile();
-        }
+        }        
         if (null == bpmnFile) {
             System.exit(0);
         }
+        
+        Optional<File> dataModelFile = Optional.empty();
+        if(useDataModel) {
+            if(!args.isEmpty()) {
+            	dataModelFile = Optional.of(new File(args.get(0)));
+            	args.remove(0);
+            } else {
+            	dataModelFile = Optional.ofNullable(getFile());//TODO adapt file filter
+            }       
+        } 
+        
+        Optional<DataModel> dataModel = dataModelFile.map(DataModelParser::parse);
         BpmnModelInstance bpmn = loadBPMNFile(bpmnFile);
-        PetriNet petriNet = translateBPMN2CPN(bpmn);
+        PetriNet petriNet = translateBPMN2CPN(bpmn, dataModel);
 		ModelPrinter.printModel(petriNet);
         System.out.print("Writing CPN file... ");
         DOMGenerator.export(petriNet, "./"+bpmnFile.getName().replaceAll("\\.bpmn", "")+".cpn");
         System.out.println("DONE");
     }
     
-    public static PetriNet translateBPMN2CPN(BpmnModelInstance bpmn) {
-    	return new CompilerApp(bpmn).translateBPMN2CPN();
+    public static PetriNet translateBPMN2CPN(BpmnModelInstance bpmn, Optional<DataModel> dataModel) {
+    	return new CompilerApp(bpmn, dataModel).translateBPMN2CPN();
     }
 
     private static File getFile() {
@@ -183,13 +200,13 @@ public class CompilerApp {
         return  null;
     }
 
-    private CompilerApp(BpmnModelInstance bpmn) {
+    private CompilerApp(BpmnModelInstance bpmn, Optional<DataModel> dataModel) {
     	this.bpmn = bpmn;
         this.builder = new BuildCPNUtil();
         this.subpages = new HashMap<>();
         this.nodeMap = new HashMap<>();
         this.deferred = new ArrayList<>();
-        this.dataModel = new DataModel(Collections.emptySet(), Collections.emptySet());//TODO
+        this.dataModel = dataModel.orElse(DataModel.none());
         
         this.associationReaders = new HashSet<>();
         this.associationWriters = new HashSet<>();

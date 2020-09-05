@@ -2,6 +2,7 @@ package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.File;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -14,7 +15,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
 
 public class DataModelParserTests {
 	
-	public final DataModel dataModel = DataModelParser.parse("./src/test/resources/testDiagram.uml");
+	public final DataModel dataModel = DataModelParser.parse(new File("./src/test/resources/testDiagram.uml"));
 	public static final Set<String> expectedDataObjects = Stream.of("A", "B", "C", "D").collect(Collectors.toSet());
 	public static final Set<Pair<String, String>> expectedAssociations = Stream.of(new Pair<>("A", "B"), new Pair<>("D", "B")).collect(Collectors.toSet());
 	

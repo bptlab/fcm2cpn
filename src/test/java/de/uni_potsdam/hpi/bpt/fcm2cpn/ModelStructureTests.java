@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -423,7 +424,7 @@ public abstract class ModelStructureTests {
 	protected void compileModel(String modelName) {
 		model = modelName;
 		bpmn = Bpmn.readModelFromFile(new File("./src/test/resources/"+model+".bpmn"));
-        petrinet = CompilerApp.translateBPMN2CPN(bpmn);
+        petrinet = CompilerApp.translateBPMN2CPN(bpmn, Optional.empty());//TODO add data model into tests
 	}
 	
 	@Retention(RetentionPolicy.RUNTIME)
