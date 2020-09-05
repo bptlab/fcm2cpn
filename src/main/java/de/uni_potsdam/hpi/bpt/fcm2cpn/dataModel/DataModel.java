@@ -1,6 +1,7 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -16,7 +17,7 @@ public class DataModel {
 	}
 	
 	public static DataModel none() {
-		return new DataModel(null, null) {
+		return new DataModel(Collections.emptySet(), Collections.emptySet()) {
 			@Override
 			public boolean hasDataObject(String dataObject) {
 				return true;
