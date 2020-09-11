@@ -246,6 +246,7 @@ public class CompilerApp {
         	.map(each -> normalizeElementName(each.getName()))
         	.distinct()
             .forEach(typeEnum::addValue);
+        if(dataTypes.isEmpty()) typeEnum.addValue("NO_TYPES");
         builder.declareColorSet(petriNet, "TYPE", typeEnum);
         
         // ID 
@@ -266,7 +267,7 @@ public class CompilerApp {
         CPNRecord dataObject = CpntypesFactory.INSTANCE.createCPNRecord();
         dataObject.addValue("id", "ID");
         dataObject.addValue(caseId(), "STRING");
-        if(!dataTypes.isEmpty())dataObject.addValue("state", "STATE");
+        if(!dataStates.isEmpty())dataObject.addValue("state", "STATE");
         builder.declareColorSet(petriNet, "DATA_OBJECT", dataObject);
         
         //Association & ListOfAssociation
@@ -507,7 +508,7 @@ public class CompilerApp {
              * Then they should both use the same counter, one for the data object, and not the case counter
              */            
             String idVariables = "caseId, "+createdDataElements.stream().map(DataElementWrapper::dataElementId).collect(Collectors.joining(", "));
-            String idGeneration = "String.concat[\"case\", Int.toString(count)], "+createdDataElements.stream().map(n -> "("+n.namePrefix() + ", count)").collect(Collectors.joining(",\n"));
+            String idGeneration = "String.concat[\"case\", Int.toString(count)]"+createdDataElements.stream().map(n -> ",\n("+n.namePrefix() + ", count)").collect(Collectors.joining(""));
             subpageTransition.getCode().setText(String.format(
             	"input (count);\n"
 	            +"output (%s);\n"
