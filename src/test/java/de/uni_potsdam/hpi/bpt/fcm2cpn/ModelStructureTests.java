@@ -258,8 +258,10 @@ public abstract class ModelStructureTests {
 	
 	public static boolean hasGuardForAssociation(Transition transition, String first, String second) {
 		String guard = transition.getCondition().getText();
-		String list = guard.replace("contains assoc ", "").trim();
-		return guard.contains("contains assoc") && toSet(list).stream().anyMatch(assoc -> isAssocInscriptionFor(assoc, first, second));
+		return Arrays.stream(guard.split("andalso")).anyMatch(singleCondition -> {
+			String list = singleCondition.replace("contains assoc ", "").trim();
+			return singleCondition.contains("contains assoc") && toSet(list).stream().anyMatch(assoc -> isAssocInscriptionFor(assoc, first, second));
+		});
 	}
 	
 	public static boolean isAssocInscriptionFor(String inscription, String... elements) {

@@ -3,8 +3,6 @@ package de.uni_potsdam.hpi.bpt.fcm2cpn;
 import java.util.Arrays;
 import java.util.Objects;
 
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
-
 public class Pair<S,T> {
 	
 	public final S first;
