@@ -369,7 +369,7 @@ public abstract class ModelStructureTests {
 	}
 	
 	public Stream<Arc> arcsFromNodeNamed(Node target, String sourceName) {
-		return target.getTargetArc().stream().filter(arc -> arc.getOtherEnd(target).getName().asString().equals(sourceName));
+		return target.getTargetArc().stream().filter(arc -> sourceName.equals(arc.getOtherEnd(target).getName().asString()));
 	}
 	
 	public Stream<Transition> activityTransitionsNamed(Page page, String activityName) {

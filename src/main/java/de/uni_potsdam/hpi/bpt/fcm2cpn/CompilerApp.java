@@ -78,6 +78,7 @@ import org.cpntools.accesscpn.model.RefPlace;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.accesscpn.model.cpntypes.CPNEnum;
 import org.cpntools.accesscpn.model.cpntypes.CPNList;
+import org.cpntools.accesscpn.model.cpntypes.CPNProduct;
 import org.cpntools.accesscpn.model.cpntypes.CPNRecord;
 import org.cpntools.accesscpn.model.cpntypes.CpntypesFactory;
 import org.cpntools.accesscpn.model.exporter.DOMGenerator;
@@ -121,27 +122,7 @@ public class CompilerApp {
 	/** Steps that run after (most of) the net is created; used e.g. in {@link #translateBoundaryEvents()} to access all control flow places of an interrupted activity*/
 	private List<Runnable> deferred;
 	
-	private final DataElementWrapper<ItemAwareElement, Object> caseWrapper = new DataElementWrapper<ItemAwareElement, Object>(this, "case") {
-		@Override
-		protected Place createPlace() {
-			return null;
-		}
 
-		@Override
-		public String annotationForDataFlow(Optional<String> stateName) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public boolean isDataObjectWrapper() {
-			return false;
-		}
-
-		@Override
-		public boolean isDataStoreWrapper() {
-			return false;
-		}
-	};
 	
 	/** Wrapper for data objects, see {@link DataObjectWrapper}*/
 	private Collection<DataObjectWrapper> dataObjectWrappers;
@@ -241,29 +222,56 @@ public class CompilerApp {
         mainPage = createPage("Main Page");
         initializeDefaultColorSets();
         initializeDefaultVariables();
+        
+        builder.declareMLFunction(petriNet, 
+        		"fun filter pred [] = []\n" + 
+        		"| filter pred (x::xs) = if pred(x)\n" + 
+        		"then x::(filter pred xs)\n" + 
+        		"else filter pred xs;");
+        
+        
         System.out.println("DONE");
     }
     
     private void initializeDefaultColorSets() {
         builder.declareStandardColors(petriNet);
+        
         builder.declareColorSet(petriNet, "CaseID", CpntypesFactory.INSTANCE.createCPNString());
         builder.declareColorSet(petriNet, "DATA_STORE", CpntypesFactory.INSTANCE.createCPNString());
         
-        CPNEnum cpnEnum = CpntypesFactory.INSTANCE.createCPNEnum();
+        // Type
+        CPNEnum typeEnum = CpntypesFactory.INSTANCE.createCPNEnum();
+        Collection<DataObject> dataTypes = bpmn.getModelElementsByType(DataObject.class);
+        dataTypes.stream()
+        	.map(each -> normalizeElementName(each.getName()))
+        	.distinct()
+            .forEach(typeEnum::addValue);
+        builder.declareColorSet(petriNet, "TYPE", typeEnum);
+        
+        // ID 
+        CPNProduct id = CpntypesFactory.INSTANCE.createCPNProduct();
+        id.addSort("TYPE");
+        id.addSort("INT");
+        builder.declareColorSet(petriNet, "ID", id);
+        
+        // State
+        CPNEnum stateEnum = CpntypesFactory.INSTANCE.createCPNEnum();
         Collection<DataState> dataStates = bpmn.getModelElementsByType(DataState.class);
         dataStates.stream()
         	.flatMap(state -> dataObjectStateToNetColors(state.getName()))
-            .forEach(cpnEnum::addValue);
-        if(!dataStates.isEmpty())builder.declareColorSet(petriNet, "STATE", cpnEnum);
+            .forEach(stateEnum::addValue);
+        if(!dataStates.isEmpty())builder.declareColorSet(petriNet, "STATE", stateEnum);
         
+        // DataObject
         CPNRecord dataObject = CpntypesFactory.INSTANCE.createCPNRecord();
-        dataObject.addValue("id", "STRING");
+        dataObject.addValue("id", "ID");
         dataObject.addValue(caseId(), "STRING");
-        if(!dataStates.isEmpty())dataObject.addValue("state", "STATE");
+        if(!dataTypes.isEmpty())dataObject.addValue("state", "STATE");
         builder.declareColorSet(petriNet, "DATA_OBJECT", dataObject);
         
+        //Association & ListOfAssociation
         CPNList association = CpntypesFactory.INSTANCE.createCPNList();
-        association.setSort("STRING");
+        association.setSort("ID");
         builder.declareColorSet(petriNet, "ASSOCIATION", association);
 
         CPNList listOfAssociation = CpntypesFactory.INSTANCE.createCPNList();
@@ -446,7 +454,7 @@ public class CompilerApp {
 		if(createObjects.isEmpty()) return;
         String countVariables = createObjects.stream().map(DataObjectWrapper::dataElementCount).collect(Collectors.joining(",\n"));
         String idVariables = createObjects.stream().map(DataObjectWrapper::dataElementId).collect(Collectors.joining(",\n"));
-        String idGeneration = createObjects.stream().map(object -> "String.concat[\"" + object.namePrefix() + "\", Int.toString(" + object.dataElementCount() +")]").collect(Collectors.joining(",\n"));
+        String idGeneration = createObjects.stream().map(object -> "("+object.namePrefix() + ", " + object.dataElementCount() +")").collect(Collectors.joining(",\n"));
         Page page = transition.getPage();
         transition.getCode().setText(String.format(
                 "input (%s);\n"
@@ -493,15 +501,13 @@ public class CompilerApp {
                     .distinct()
             		.collect(Collectors.toList());
             
-            createdDataElements.add(0, caseWrapper);
-            
             /* 
              * TODO all data outputs of event are using case count, should dedicated counters be created
              * Use Case: When the input event creates a data object that can also be created by a task
              * Then they should both use the same counter, one for the data object, and not the case counter
              */            
-            String idVariables = createdDataElements.stream().map(DataElementWrapper::dataElementId).collect(Collectors.joining(", "));
-            String idGeneration = createdDataElements.stream().map(n -> "String.concat[\"" + n.namePrefix() + "\", Int.toString(count)]").collect(Collectors.joining(",\n"));
+            String idVariables = "caseId, "+createdDataElements.stream().map(DataElementWrapper::dataElementId).collect(Collectors.joining(", "));
+            String idGeneration = "String.concat[\"case\", Int.toString(count)], "+createdDataElements.stream().map(n -> "("+n.namePrefix() + ", count)").collect(Collectors.joining(",\n"));
             subpageTransition.getCode().setText(String.format(
             	"input (count);\n"
 	            +"output (%s);\n"
@@ -619,24 +625,24 @@ public class CompilerApp {
     
     private void associateDataObjects(Activity activity, Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects) {
     	SubpageElement activityWrapper = subpages.get(activity);
-		Set<Set<DataObjectWrapper>> associationsToWrite = new HashSet<>();
+		Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = new HashSet<>();
 		
 		
 		for(DataObjectWrapper writtenObject : writtenDataObjects) {
 			for(DataObjectWrapper readObject : readDataObjects) {
 				if(!writtenObject.equals(readObject) && dataModel.isAssociated(writtenObject.getNormalizedName(), readObject.getNormalizedName())) {
-					associationsToWrite.add(new HashSet<>(Arrays.asList(writtenObject, readObject)));
+					associationsToWrite.add(new Pair<>(writtenObject, readObject));
 				}
 			}
 			for(DataObjectWrapper otherWrittenObject : writtenDataObjects) {
 				if(!writtenObject.equals(otherWrittenObject) && dataModel.isAssociated(writtenObject.getNormalizedName(), otherWrittenObject.getNormalizedName())) {
-					associationsToWrite.add(new HashSet<>(Arrays.asList(writtenObject, otherWrittenObject)));
+					associationsToWrite.add(new Pair<>(writtenObject, otherWrittenObject));
 				}
 			}
 		}
-		Set<Set<DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(transition, readDataObjects);
+		Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(transition, readDataObjects);
 		//Write all read associations back (they are not consumed), but check for duplicates with created associations (therefore use set of assoc)
-		Set<Set<DataObjectWrapper>> allAssocations = new HashSet<>();
+		Set<Pair<DataObjectWrapper, DataObjectWrapper>> allAssocations = new HashSet<>();
 		allAssocations.addAll(checkedAssociations);
 		allAssocations.addAll(associationsToWrite);
 		
@@ -654,8 +660,9 @@ public class CompilerApp {
 			String writeAnnotation = "assoc";
 			associationsToWrite.removeAll(checkedAssociations);
 			if(!associationsToWrite.isEmpty()) {
+				
 				writeAnnotation = "union assoc "+associationsToWrite.stream()
-					.map(assoc -> assoc.stream().map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
+					.map(assoc -> Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
 					.collect(Collectors.toList())
 					.toString();
 			}
@@ -667,13 +674,13 @@ public class CompilerApp {
 		}
     }
     
-    private Set<Set<DataObjectWrapper>> checkAssociationsOfReadDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects) {
-    	Set<Set<DataObjectWrapper>> associationsToCheck = new HashSet<>();
+    private Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkAssociationsOfReadDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects) {
+    	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToCheck = new HashSet<>();
 		
 		for(DataObjectWrapper readObject : readDataObjects) {
 			for(DataObjectWrapper otherReadObject : readDataObjects) {
 				if(!readObject.equals(otherReadObject) && dataModel.isAssociated(readObject.getNormalizedName(), otherReadObject.getNormalizedName())) {
-					associationsToCheck.add(new HashSet<>(Arrays.asList(readObject, otherReadObject)));
+					associationsToCheck.add(new Pair<>(readObject, otherReadObject));
 				}
 			}
 		}
@@ -689,7 +696,7 @@ public class CompilerApp {
 //				.map(assoc -> "1`"+assoc.stream().map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
 //				.collect(Collectors.joining("++\n"));
 			String guard = "contains assoc "+ associationsToCheck.stream()
-				.map(assoc -> assoc.stream().map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
+				.map(assoc -> Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
 				.collect(Collectors.toList())
 				.toString();
 			transition.getCondition().setText(guard);
@@ -844,7 +851,7 @@ public class CompilerApp {
 	}
 	
 	public String caseId() {
-		return caseWrapper.dataElementId();
+		return "caseId";
 	}
 
 }
