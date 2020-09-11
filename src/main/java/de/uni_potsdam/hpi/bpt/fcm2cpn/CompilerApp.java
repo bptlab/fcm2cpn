@@ -835,6 +835,10 @@ public class CompilerApp {
 		return bpmn;
 	}
 	
+	public DataModel getDataModel() {
+		return dataModel;
+	}
+
 	public Node nodeFor(BaseElement element) {
 		return nodeMap.get(element);
 	}

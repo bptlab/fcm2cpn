@@ -333,7 +333,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	
 	
 	@TestWithAllModels
-	public void associationPlaceIsCreated() {
+	public void testAssociationPlaceIsCreated() {
 		assertEquals(1, placesNamed("associations").count(),
 				"There is not exactly one place for associations");
 	}
@@ -346,7 +346,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
 		transitionsFor(activity).forEach(transition -> {
 			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
-				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
+				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
 		});
 	}
 	
@@ -358,7 +358,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
 		transitionsFor(activity).forEach(transition -> {
 			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
-				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
+				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
 		});
 	}
 	
@@ -369,7 +369,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		assumeTrue(reads(activity, first) && reads(activity, second), "Activity does not read both data objects.");
 		transitionsFor(activity).forEach(transition -> {
 			assertTrue(hasGuardForAssociation(transition, first+"Id", second+"Id"),
-				"There is no guard for association when reading objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
+				"There is no guard for association when reading objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
 		});
 	}
 	
@@ -380,7 +380,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		assumeTrue(reads(activity, first) && reads(activity, second), "Activity does not read both data objects.");
 		transitionsFor(activity).forEach(transition -> {
 			assertEquals(0, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
-				"There is a writing association arc for objects "+first+" and "+second+" (which should already be associated) at activity "+normalizeElementName(activity.getName()));
+				"There is a writing association arc for objects "+first+" and "+second+" (which should already be associated) at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
 		});
 	}
 	

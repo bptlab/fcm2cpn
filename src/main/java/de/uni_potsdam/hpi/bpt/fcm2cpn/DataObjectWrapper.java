@@ -18,6 +18,8 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 	public DataObjectWrapper(CompilerApp compilerApp, String trimmedName) {
 		super(compilerApp, trimmedName);
 		
+		assert compilerApp.getDataModel().hasDataObject(getNormalizedName());
+		
         compilerApp.createVariable(dataElementId(), "STRING");
         compilerApp.createVariable(dataElementCount(), "INT");
 	}

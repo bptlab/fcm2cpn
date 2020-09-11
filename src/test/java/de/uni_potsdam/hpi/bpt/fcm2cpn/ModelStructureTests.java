@@ -56,6 +56,7 @@ import org.junit.platform.commons.annotation.Testable;
 import org.junit.platform.commons.util.ReflectionUtils;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ArgumentTreeTests;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 
@@ -65,7 +66,7 @@ public abstract class ModelStructureTests {
 	public BpmnModelInstance bpmn;
 	public PetriNet petrinet;
 	
-	public DataModel dataModel = new DataModel(Collections.emptySet(), Collections.emptySet());//TODO
+	public DataModel dataModel;
 	
 	public List<ModelElementInstance> readingElements(ItemAwareElement dataElementReference) {
 		return bpmn.getModelElementsByType(DataInputAssociation.class).stream()
@@ -247,30 +248,30 @@ public abstract class ModelStructureTests {
 		}).collect(Collectors.toList());
 	}
 	
-	public Predicate<Arc> writesAssociation(String first, String second) {
+	public static Predicate<Arc> writesAssociation(String first, String second) {
 		return arc -> {
 			String inscription = arc.getHlinscription().getText();
 			String list = inscription.replace("union assoc", "").trim();
-			return inscription.contains("union assoc") && toList(list).stream().anyMatch(assoc -> isListInscriptionFor(assoc, first, second));
+			return inscription.contains("union assoc") && toSet(list).stream().anyMatch(assoc -> isAssocInscriptionFor(assoc, first, second));
 		};
 	}
 	
-	public boolean hasGuardForAssociation(Transition transition, String first, String second) {
+	public static boolean hasGuardForAssociation(Transition transition, String first, String second) {
 		String guard = transition.getCondition().getText();
 		String list = guard.replace("contains assoc ", "").trim();
-		return guard.contains("contains assoc") && toList(list).stream().anyMatch(assoc -> isListInscriptionFor(assoc, first, second));
+		return guard.contains("contains assoc") && toSet(list).stream().anyMatch(assoc -> isAssocInscriptionFor(assoc, first, second));
 	}
 	
-	public boolean isListInscriptionFor(String inscription, String... elements) {
+	public static boolean isAssocInscriptionFor(String inscription, String... elements) {
 		if(!(inscription.startsWith("[") && inscription.endsWith("]"))) return false;
-		List<String> listElements = toList(inscription);
-		return listElements.containsAll(Arrays.asList(elements));
+		Set<String> listElements = toSet(inscription);
+		return listElements.equals(new HashSet<>(Arrays.asList(elements)));
 	}
 	
-	public List<String> toList(String inscription) {
-		if(!(inscription.startsWith("[") && inscription.endsWith("]"))) return Collections.emptyList();
+	public static Set<String> toSet(String inscription) {
+		if(!(inscription.startsWith("[") && inscription.endsWith("]"))) return Collections.emptySet();
 		String body = inscription.substring(1, inscription.length() - 1);
-		List<String> list = new ArrayList<>();
+		Set<String> set = new HashSet<>();
 		String currentElement = "";
 		int currentDepth = 0;
 		for(char c : body.toCharArray()) {
@@ -278,12 +279,12 @@ public abstract class ModelStructureTests {
 			else if(c == ']') currentDepth--;
 			
 			if(c == ',' && currentDepth == 0) {
-				list.add(currentElement.trim());
+				set.add(currentElement.trim());
 				currentElement = "";
 			} else currentElement += c;
 		}
-		list.add(currentElement.trim());
-		return list;
+		set.add(currentElement.trim());
+		return set;
 	}
 	
 	public <T extends ModelElementInstance> void forEach(Class<T> elementClass, Consumer<? super T> testBody) {
@@ -296,7 +297,7 @@ public abstract class ModelStructureTests {
         	
         	//Suppress error for places that have no name
         	petrinet.getPage().stream()
-        		.flatMap(page -> StreamSupport.stream(page.getObject().spliterator(), true))
+        		.flatMap(page -> StreamSupport.stream(page.getObject().spliterator(), false))
         		.filter(each -> Objects.nonNull(each.getName()) && Objects.isNull(each.getName().getText()))
         		.forEach(each -> each.getName().setText("XXX"+new Random().nextInt()));
         	
@@ -312,7 +313,7 @@ public abstract class ModelStructureTests {
 	
 	public Stream<Instance> instancesNamed(String name) {
 		Page mainPage = petrinet.getPage().get(0);
-		return StreamSupport.stream(mainPage.instance().spliterator(), true).filter(instance -> instance.getName().asString().equals(name));
+		return StreamSupport.stream(mainPage.instance().spliterator(), false).filter(instance -> instance.getName().asString().equals(name));
 	}
 	
 	public Stream<Page> pagesNamed(String name) {
@@ -325,7 +326,7 @@ public abstract class ModelStructureTests {
 	
 	public Stream<Place> placesNamed(String name) {
 		Page mainPage = petrinet.getPage().get(0);
-		return StreamSupport.stream(mainPage.place().spliterator(), true)
+		return StreamSupport.stream(mainPage.place().spliterator(), false)
 				.filter(place -> Objects.toString(place.getName().asString()).equals(name));
 	}
 
@@ -347,7 +348,7 @@ public abstract class ModelStructureTests {
 	 */
 	public Stream<Place> controlFlowPlacesBetween(String nodeA, String nodeB) {
 		Page mainPage = petrinet.getPage().get(0);
-		return StreamSupport.stream(mainPage.place().spliterator(), true).filter(place -> {
+		return StreamSupport.stream(mainPage.place().spliterator(), false).filter(place -> {
 			return isControlFlowPlace(place) 
 					&& (
 						!place.getTargetArc().isEmpty() && place.getTargetArc().stream().anyMatch(any -> any.getOtherEnd(place).getName().asString().equals(nodeA))
@@ -372,7 +373,7 @@ public abstract class ModelStructureTests {
 	}
 	
 	public Stream<Transition> activityTransitionsNamed(Page page, String activityName) {
-		return StreamSupport.stream(page.transition().spliterator(), true).filter(transition -> transition.getName().asString().startsWith(activityName));  
+		return StreamSupport.stream(page.transition().spliterator(), false).filter(transition -> transition.getName().asString().startsWith(activityName));  
 	}
 	
 	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, String inputState, String outputState) {
@@ -397,7 +398,7 @@ public abstract class ModelStructureTests {
 	
 	public Stream<Transition> transitionsFor(FlowElement activity) {
 		Page activityPage = pagesNamed(normalizeElementName(activity.getName())).findAny().get();
-		return StreamSupport.stream(activityPage.transition().spliterator(), true);
+		return StreamSupport.stream(activityPage.transition().spliterator(), false);
 	}
 	
 	
@@ -424,7 +425,16 @@ public abstract class ModelStructureTests {
 	protected void compileModel(String modelName) {
 		model = modelName;
 		bpmn = Bpmn.readModelFromFile(new File("./src/test/resources/"+model+".bpmn"));
-        petrinet = CompilerApp.translateBPMN2CPN(bpmn, Optional.empty());//TODO add data model into tests
+
+        File dataModelFile = new File("./src/test/resources/"+model+".uml");
+        if(dataModelFile.exists()) {
+        	dataModel = DataModelParser.parse(dataModelFile);
+        } else {
+            dataModel = DataModel.none();
+        }
+        
+        petrinet = CompilerApp.translateBPMN2CPN(bpmn, Optional.of(dataModel)); 
+
 	}
 	
 	@Retention(RetentionPolicy.RUNTIME)
