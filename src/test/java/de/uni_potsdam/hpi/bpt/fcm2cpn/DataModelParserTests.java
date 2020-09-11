@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
 
@@ -45,7 +46,7 @@ public class DataModelParserTests {
 		
 		Association dbAssoc = dataModel.getAssociation("D", "B").get();
 		assertEquals(3, dbAssoc.getEnd("D").getLowerBound());
-		assertEquals(Integer.MAX_VALUE, dbAssoc.getEnd("D").getUpperBound());
+		assertEquals(AssociationEnd.UNLIMITED, dbAssoc.getEnd("D").getUpperBound());
 		assertEquals(1, dbAssoc.getEnd("B").getLowerBound());
 		assertEquals(42, dbAssoc.getEnd("B").getUpperBound());
 	}

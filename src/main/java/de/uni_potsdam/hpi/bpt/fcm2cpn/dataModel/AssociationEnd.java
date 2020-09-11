@@ -1,6 +1,9 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel;
 
 public class AssociationEnd {
+	
+	public static int UNLIMITED = Integer.MAX_VALUE;
+	
 	private String dataObject;
 	private int lowerBound = 1;
 	private int upperBound = 1;
@@ -31,6 +34,6 @@ public class AssociationEnd {
 	
 	@Override
 	public String toString() {
-		return "("+lowerBound+".."+(upperBound == Integer.MAX_VALUE ? "*" : upperBound)+" "+dataObject+")";
+		return "("+lowerBound+".."+(upperBound == UNLIMITED ? "*" : upperBound)+" "+dataObject+")";
 	}
 }

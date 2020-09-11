@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<uml:Model xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" xmlns:uml="http://www.eclipse.org/uml2/5.0.0/UML" xmi:id="_k4q9MPQiEeqVKKdW8MDxkA" name="TranslationJob">
+  <packageImport xmi:type="uml:PackageImport" xmi:id="_k5y-kPQiEeqVKKdW8MDxkA">
+    <importedPackage xmi:type="uml:Model" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#_0"/>
+  </packageImport>
+  <packagedElement xmi:type="uml:Class" xmi:id="_myFV4PQiEeqVKKdW8MDxkA" name="job"/>
+  <packagedElement xmi:type="uml:Class" xmi:id="_nW4FAPQiEeqVKKdW8MDxkA" name="translation"/>
+  <packagedElement xmi:type="uml:Class" xmi:id="_prMRAPQiEeqVKKdW8MDxkA" name="alignment"/>
+  <packagedElement xmi:type="uml:Association" xmi:id="_3km34PQiEeqVKKdW8MDxkA" memberEnd="_3kne8vQiEeqVKKdW8MDxkA _3koGAPQiEeqVKKdW8MDxkA">
+    <eAnnotations xmi:type="ecore:EAnnotation" xmi:id="_3kne8PQiEeqVKKdW8MDxkA" source="org.eclipse.papyrus">
+      <details xmi:type="ecore:EStringToStringMapEntry" xmi:id="_3kne8fQiEeqVKKdW8MDxkA" key="nature" value="UML_Nature"/>
+    </eAnnotations>
+    <ownedEnd xmi:type="uml:Property" xmi:id="_3kne8vQiEeqVKKdW8MDxkA" name="translation" type="_nW4FAPQiEeqVKKdW8MDxkA" association="_3km34PQiEeqVKKdW8MDxkA">
+      <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_d_88cPQjEeqVKKdW8MDxkA" value="*"/>
+    </ownedEnd>
+    <ownedEnd xmi:type="uml:Property" xmi:id="_3koGAPQiEeqVKKdW8MDxkA" name="job" type="_myFV4PQiEeqVKKdW8MDxkA" association="_3km34PQiEeqVKKdW8MDxkA"/>
+  </packagedElement>
+  <packagedElement xmi:type="uml:Association" xmi:id="_4L79oPQiEeqVKKdW8MDxkA" memberEnd="_4L8ksfQiEeqVKKdW8MDxkA _4L8ksvQiEeqVKKdW8MDxkA">
+    <eAnnotations xmi:type="ecore:EAnnotation" xmi:id="_4L79ofQiEeqVKKdW8MDxkA" source="org.eclipse.papyrus">
+      <details xmi:type="ecore:EStringToStringMapEntry" xmi:id="_4L8ksPQiEeqVKKdW8MDxkA" key="nature" value="UML_Nature"/>
+    </eAnnotations>
+    <ownedEnd xmi:type="uml:Property" xmi:id="_4L8ksfQiEeqVKKdW8MDxkA" name="alignment" type="_prMRAPQiEeqVKKdW8MDxkA" association="_4L79oPQiEeqVKKdW8MDxkA">
+      <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_fViPUPQjEeqVKKdW8MDxkA" value="3"/>
+    </ownedEnd>
+    <ownedEnd xmi:type="uml:Property" xmi:id="_4L8ksvQiEeqVKKdW8MDxkA" name="job" type="_myFV4PQiEeqVKKdW8MDxkA" association="_4L79oPQiEeqVKKdW8MDxkA"/>
+  </packagedElement>
+</uml:Model>

@@ -74,7 +74,7 @@ public class DataModelParser {
 	
 	private int parseMultiplicity(Element threshold) {
 		String multiplicity = threshold.getAttributeValue("value");
-		return multiplicity.equals("*") ? Integer.MAX_VALUE : Integer.parseInt(multiplicity);
+		return multiplicity.equals("*") ? AssociationEnd.UNLIMITED : Integer.parseInt(multiplicity);
 	}
 
 }

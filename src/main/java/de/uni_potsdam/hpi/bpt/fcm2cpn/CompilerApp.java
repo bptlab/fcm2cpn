@@ -86,6 +86,8 @@ import org.cpntools.accesscpn.model.util.BuildCPNUtil;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.InputSetWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.OutputSetWrapper;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
 
@@ -239,7 +241,7 @@ public class CompilerApp {
         builder.declareColorSet(petriNet, "CaseID", CpntypesFactory.INSTANCE.createCPNString());
         builder.declareColorSet(petriNet, "DATA_STORE", CpntypesFactory.INSTANCE.createCPNString());
         
-        // Type
+        // Type //TODO move to data object wrapper and use prefix instead of normalized name
         CPNEnum typeEnum = CpntypesFactory.INSTANCE.createCPNEnum();
         Collection<DataObject> dataTypes = bpmn.getModelElementsByType(DataObject.class);
         dataTypes.stream()
@@ -666,6 +668,24 @@ public class CompilerApp {
 					.map(assoc -> Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
 					.collect(Collectors.toList())
 					.toString();
+				associationsToWrite.forEach(pair -> {
+					Association assoc = dataModel.getAssociation(pair.first.getNormalizedName(), pair.second.getNormalizedName()).get();
+					Stream.of(pair.first, pair.second).forEach(dataObject -> {
+						AssociationEnd end = assoc.getEnd(dataObject.getNormalizedName());
+						int limit = end.getUpperBound();
+						if(limit > 1 && limit != AssociationEnd.UNLIMITED) {
+							String existingGuard = transition.getCondition().asString();
+							if(!existingGuard.isEmpty()) existingGuard += "\nandalso ";
+							DataObjectWrapper otherObject = (DataObjectWrapper) pair.otherElement(dataObject);
+							int currentIndex = pair.indexOf(dataObject);
+							int otherIndex = pair.indexOf(otherObject);
+							String newGuard = "(length (filter (fn(el) => (List.nth(el,"+otherIndex+")="+otherObject.dataElementId()+") andalso #1(List.nth(el,"+currentIndex+"))="+dataObject.namePrefix()+") assoc) < "+limit+")";
+							transition.getCondition().setText(existingGuard+newGuard);
+						}
+					});
+				});
+				
+				
 			}
 			activityWrapper.createArcTo(associationsPlace, transition, writeAnnotation);
 			if(!associationWriters.contains(activity)) {
