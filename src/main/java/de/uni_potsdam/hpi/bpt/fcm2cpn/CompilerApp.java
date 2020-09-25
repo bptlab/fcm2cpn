@@ -666,6 +666,7 @@ public class CompilerApp {
 				
 				writeAnnotation = "union assoc "+associationsToWrite.stream()
 					.map(assoc -> Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
+					.distinct()
 					.collect(Collectors.toList())
 					.toString();
 				associationsToWrite.forEach(pair -> {
@@ -718,6 +719,7 @@ public class CompilerApp {
 //				.collect(Collectors.joining("++\n"));
 			String guard = "contains assoc "+ associationsToCheck.stream()
 				.map(assoc -> Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
+				.distinct()
 				.collect(Collectors.toList())
 				.toString();
 			transition.getCondition().setText(guard);
