@@ -231,6 +231,13 @@ public class CompilerApp {
         		"then x::(filter pred xs)\n" + 
         		"else filter pred xs;");
         
+        builder.declareMLFunction(petriNet, 
+        		"fun listAssocs sourceId targetClass assoc = \n" + 
+        		"filter (fn([(a1, a2), (b1, b2)]) => (\n" + 
+        		"(a1,a2)=sourceId andalso b1 = targetClass) \n" + 
+        		"orelse ((b1,b2)=sourceId andalso a1 = targetClass)\n" + 
+        		") assoc;");
+        
         
         System.out.println("DONE");
     }
@@ -678,9 +685,7 @@ public class CompilerApp {
 							String existingGuard = transition.getCondition().asString();
 							if(!existingGuard.isEmpty()) existingGuard += "\nandalso ";
 							DataObjectWrapper otherObject = (DataObjectWrapper) pair.otherElement(dataObject);
-							int currentIndex = pair.indexOf(dataObject);
-							int otherIndex = pair.indexOf(otherObject);
-							String newGuard = "(length (filter (fn(el) => (List.nth(el,"+otherIndex+")="+otherObject.dataElementId()+") andalso #1(List.nth(el,"+currentIndex+"))="+dataObject.namePrefix()+") assoc) < "+limit+")";
+							String newGuard = "(length (listAssocs "+otherObject.dataElementId()+" "+dataObject.namePrefix()+" assoc) < "+limit+")";
 							transition.getCondition().setText(existingGuard+newGuard);
 						}
 					});
