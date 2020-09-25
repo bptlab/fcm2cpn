@@ -252,7 +252,7 @@ public abstract class ModelStructureTests {
 		return arc -> {
 			String inscription = arc.getHlinscription().getText();
 			String list = inscription.replace("union assoc", "").trim();
-			return inscription.contains("union assoc") && toSet(list).stream().anyMatch(assoc -> isAssocInscriptionFor(assoc, first, second));
+			return inscription.contains("union assoc") && toSet(list).stream().filter(assoc -> isAssocInscriptionFor(assoc, first, second)).count() == 1;
 		};
 	}
 	
@@ -260,7 +260,7 @@ public abstract class ModelStructureTests {
 		String guard = transition.getCondition().getText();
 		return Arrays.stream(guard.split("andalso")).anyMatch(singleCondition -> {
 			String list = singleCondition.replace("contains assoc ", "").trim();
-			return singleCondition.contains("contains assoc") && toSet(list).stream().anyMatch(assoc -> isAssocInscriptionFor(assoc, first, second));
+			return singleCondition.contains("contains assoc") && toSet(list).stream().filter(assoc -> isAssocInscriptionFor(assoc, first, second)).count() == 1;
 		});
 	}
 	
