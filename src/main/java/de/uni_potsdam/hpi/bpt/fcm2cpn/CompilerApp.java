@@ -678,6 +678,7 @@ public class CompilerApp {
 					.toString();
 				associationsToWrite.forEach(pair -> {
 					Association assoc = dataModel.getAssociation(pair.first.getNormalizedName(), pair.second.getNormalizedName()).get();
+					//Create guards for: Cannot create data object if this would violate upper bounds
 					Stream.of(pair.first, pair.second).forEach(dataObject -> {
 						AssociationEnd end = assoc.getEnd(dataObject.getNormalizedName());
 						int limit = end.getUpperBound();
@@ -686,6 +687,33 @@ public class CompilerApp {
 							if(!existingGuard.isEmpty()) existingGuard += "\nandalso ";
 							DataObjectWrapper otherObject = (DataObjectWrapper) pair.otherElement(dataObject);
 							String newGuard = "(length (listAssocs "+otherObject.dataElementId()+" "+dataObject.namePrefix()+" assoc) < "+limit+")";
+							transition.getCondition().setText(existingGuard+newGuard);
+						}
+					});
+					
+					//Create guards for: Cannot create data object if lower bounds of read list data object are not given
+					//TODO duplicate
+					Stream.of(pair.first, pair.second).forEach(dataObject -> {
+						DataObjectWrapper otherObject = (DataObjectWrapper) pair.otherElement(dataObject);
+						AssociationEnd end = assoc.getEnd(otherObject.getNormalizedName());
+						int limit = end.getLowerBound();
+						if(limit > 1) {
+							Set<DataObjectWrapper> potentialIdentifiers = associationsToWrite.stream()
+								.filter(otherAssoc -> otherAssoc.contains(dataObject) && !otherAssoc.contains(otherObject))
+								.flatMap(otherAssoc -> {
+									DataObjectWrapper potentialIdentifier = (DataObjectWrapper) otherAssoc.otherElement(dataObject);
+									return dataModel.getAssociation(potentialIdentifier.getNormalizedName(), otherObject.getNormalizedName())
+										.filter(identifyingAssoc -> identifyingAssoc.getEnd(potentialIdentifier.normalizedName).getUpperBound() <= 1)
+										.map(identifyingAssoc -> potentialIdentifier)
+										.stream();
+					
+								}).collect(Collectors.toSet());
+							assert potentialIdentifiers.size() == 1;
+							DataObjectWrapper identifier = potentialIdentifiers.stream().findAny().get();
+							
+							String existingGuard = transition.getCondition().asString();
+							if(!existingGuard.isEmpty()) existingGuard += "\nandalso ";
+							String newGuard = "(length (listAssocs "+identifier.dataElementId()+" "+otherObject.namePrefix()+" assoc) >= "+limit+")";
 							transition.getCondition().setText(existingGuard+newGuard);
 						}
 					});
