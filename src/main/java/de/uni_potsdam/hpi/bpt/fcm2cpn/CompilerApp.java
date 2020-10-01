@@ -238,6 +238,11 @@ public class CompilerApp {
         		"orelse ((b1,b2)=sourceId andalso a1 = targetClass)\n" + 
         		") assoc;");
         
+        builder.declareMLFunction(petriNet, 
+        		"fun unpack [(a1, a2), (b1, b2)] class = \n" + 
+        		"if a1 = class then (a1, a2)\n" + 
+        		"else (b1, b2);");
+        
         
         System.out.println("DONE");
     }
@@ -577,7 +582,8 @@ public class CompilerApp {
         		.map(DataState::getName)
         		.map(stateName -> dataObjectStateToNetColors(stateName))
         		.orElse(Stream.of((String)null));
-        return possibleStates.map(state -> new StatefulDataAssociation<>(assoc, state, dataElement));
+    	boolean isCollection = Optional.ofNullable(Utils.getReferencedElement(dataElement).getAttributeValue("isCollection")).map(Boolean::parseBoolean).orElse(false);
+    	return possibleStates.map(state -> new StatefulDataAssociation<>(assoc, state, dataElement, isCollection));
     }
     
     /**
@@ -593,7 +599,7 @@ public class CompilerApp {
     	
         outputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = wrapperFor(assoc);
-        	String annotation = dataElement.annotationForDataFlow(assoc.getStateName());
+        	String annotation = dataElement.annotationForDataFlow(assoc);
         	linkWritingTransitions(element, dataElement, annotation, transitions);
     		/**Assert that when writing a data store and not reading, the token read before*/
         	if(!readElements.contains(dataElement) && dataElement.isDataStoreWrapper()) {
@@ -604,7 +610,7 @@ public class CompilerApp {
         
         inputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = wrapperFor(assoc);
-            String annotation = dataElement.annotationForDataFlow(assoc.getStateName());
+            String annotation = dataElement.annotationForDataFlow(assoc);
     		linkReadingTransitions(element, dataElement, annotation, transitions);
 
     		/**Assert that when reading and not writing, the unchanged token is put back*/
@@ -671,7 +677,7 @@ public class CompilerApp {
 			associationsToWrite.removeAll(checkedAssociations);
 			if(!associationsToWrite.isEmpty()) {
 				
-				writeAnnotation = "union assoc "+associationsToWrite.stream()
+				writeAnnotation += "^^"+associationsToWrite.stream()
 					.map(assoc -> Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
 					.distinct()
 					.collect(Collectors.toList())

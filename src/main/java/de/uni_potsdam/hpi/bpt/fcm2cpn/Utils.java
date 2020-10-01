@@ -12,9 +12,12 @@ import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.DataAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataInput;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
+import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutput;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
+import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.FlowElement;
+import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.xml.ModelInstance;
 
 public class Utils {
@@ -98,6 +101,15 @@ public class Utils {
     		.filter(assoc -> output.equals(getSource(assoc)))
     		.findAny()
     		.get();
+    }
+    
+    public static ItemAwareElement getReferencedElement(ItemAwareElement reference) {
+    	assert reference instanceof DataObjectReference || reference instanceof DataStoreReference;
+    	if(reference instanceof DataObjectReference) {
+    		return ((DataObjectReference) reference).getDataObject();
+    	} else {
+    		return ((DataStoreReference) reference).getDataStore();
+    	}
     }
     
     /***

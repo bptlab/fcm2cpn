@@ -12,12 +12,14 @@ public class StatefulDataAssociation<T extends DataAssociation> {
 	private final Optional<String> stateName;
 	private final ItemAwareElement dataElement;//DataObjectReference or DataStoreReference
 	private final T bpmnAssociation;//DataInputAssociation or DataOutputAssociation
-	public StatefulDataAssociation(T bpmnAssociation, String stateName, ItemAwareElement dataElement) {
+	private final boolean isCollection;
+	public StatefulDataAssociation(T bpmnAssociation, String stateName, ItemAwareElement dataElement, boolean isCollection) {
 		this.bpmnAssociation = bpmnAssociation;
 		this.stateName = Optional.ofNullable(stateName);
 		
 		assert dataElement instanceof DataObjectReference || dataElement instanceof DataStoreReference;
 		this.dataElement = dataElement;
+		this.isCollection = isCollection;
 	}
 	
 	public Optional<String> getStateName() {
@@ -30,6 +32,10 @@ public class StatefulDataAssociation<T extends DataAssociation> {
 
 	public T getBpmnAssociation() {
 		return bpmnAssociation;
+	}
+
+	public boolean isCollection() {
+		return isCollection;
 	}
 
 	@Override

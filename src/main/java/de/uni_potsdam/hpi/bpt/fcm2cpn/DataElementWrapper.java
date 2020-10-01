@@ -22,9 +22,9 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 	protected final Map<BaseElement, Arc> outgoingArcs;
 	protected final Map<BaseElement, Arc> incomingArcs;
 
-	public DataElementWrapper(CompilerApp compilerApp, String trimmedName) {
+	public DataElementWrapper(CompilerApp compilerApp, String normalizedName) {
 		this.compilerApp = compilerApp;
-		this.normalizedName = trimmedName;
+		this.normalizedName = normalizedName;
 		this.place = createPlace();
 		
 		outgoingArcs = new HashMap<>();
@@ -49,7 +49,7 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 		return namePrefix() + "Count";
 	}
 	
-    public abstract String annotationForDataFlow(Optional<String> stateName);
+    public abstract String annotationForDataFlow(StatefulDataAssociation<?> assoc);
 
 
 	public void addMappedElement(Element dataElement) {

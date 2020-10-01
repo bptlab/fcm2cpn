@@ -15,8 +15,8 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 	private final Map<Page, PlaceNode> creationCounterPlaces = new HashMap<>();
 	
 
-	public DataObjectWrapper(CompilerApp compilerApp, String trimmedName) {
-		super(compilerApp, trimmedName);
+	public DataObjectWrapper(CompilerApp compilerApp, String normalizedName) {
+		super(compilerApp, normalizedName);
 		
 		assert compilerApp.getDataModel().hasDataObject(getNormalizedName());
 		
@@ -37,10 +37,17 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 
 
 	@Override
-	public String annotationForDataFlow(Optional<String> stateName) {
-        String stateString = stateName.map(x -> ", state = "+x).orElse("");
+	public String annotationForDataFlow(StatefulDataAssociation<?> assoc) {
+        String stateString = assoc.getStateName().map(x -> ", state = "+x).orElse("");
         String caseId = compilerApp.caseId();
-        return "{id = "+dataElementId()+" , "+caseId+" = "+caseId+stateString+"}";
+        if(!assoc.isCollection()) {
+            return "{id = "+dataElementId()+" , "+caseId+" = "+caseId+stateString+"}";
+        } else {
+        	String className = normalizedName;
+        	String identifyingObjectId = "PaperId";
+        	return "map (fn(el) => {id = unpack el "+className+" , "+caseId+" = "+caseId+stateString+"}) (listAssocs "+identifyingObjectId+" "+className+" assoc)";
+        }
+        
 	}
 
 
