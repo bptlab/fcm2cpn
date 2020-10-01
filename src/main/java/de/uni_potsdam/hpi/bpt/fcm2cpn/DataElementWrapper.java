@@ -49,7 +49,7 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 		return namePrefix() + "Count";
 	}
 	
-    public abstract String annotationForDataFlow(StatefulDataAssociation<?> assoc);
+    public abstract String annotationForDataFlow(BaseElement otherEnd, StatefulDataAssociation<?> assoc);
 
 
 	public void addMappedElement(Element dataElement) {

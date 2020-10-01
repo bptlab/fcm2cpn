@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import org.camunda.bpm.model.bpmn.instance.Activity;
+import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.cpntools.accesscpn.model.Page;
@@ -37,14 +39,14 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 
 
 	@Override
-	public String annotationForDataFlow(StatefulDataAssociation<?> assoc) {
+	public String annotationForDataFlow(BaseElement otherEnd, StatefulDataAssociation<?> assoc) {
         String stateString = assoc.getStateName().map(x -> ", state = "+x).orElse("");
         String caseId = compilerApp.caseId();
         if(!assoc.isCollection()) {
             return "{id = "+dataElementId()+" , "+caseId+" = "+caseId+stateString+"}";
         } else {
         	String className = normalizedName;
-        	String identifyingObjectId = "PaperId";
+        	String identifyingObjectId = compilerApp.getDataObjectCollectionIdentifier((Activity) otherEnd, this).dataElementId();
         	return "map (fn(el) => {id = unpack el "+className+" , "+caseId+" = "+caseId+stateString+"}) (listAssocs "+identifyingObjectId+" "+className+" assoc)";
         }
         

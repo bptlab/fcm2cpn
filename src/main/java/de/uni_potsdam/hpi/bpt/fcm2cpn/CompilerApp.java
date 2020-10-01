@@ -599,7 +599,7 @@ public class CompilerApp {
     	
         outputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = wrapperFor(assoc);
-        	String annotation = dataElement.annotationForDataFlow(assoc);
+        	String annotation = dataElement.annotationForDataFlow(element, assoc);
         	linkWritingTransitions(element, dataElement, annotation, transitions);
     		/**Assert that when writing a data store and not reading, the token read before*/
         	if(!readElements.contains(dataElement) && dataElement.isDataStoreWrapper()) {
@@ -610,7 +610,7 @@ public class CompilerApp {
         
         inputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = wrapperFor(assoc);
-            String annotation = dataElement.annotationForDataFlow(assoc);
+            String annotation = dataElement.annotationForDataFlow(element, assoc);
     		linkReadingTransitions(element, dataElement, annotation, transitions);
 
     		/**Assert that when reading and not writing, the unchanged token is put back*/
@@ -699,29 +699,21 @@ public class CompilerApp {
 					
 					//Create guards for: Cannot create data object if lower bounds of read list data object are not given
 					//TODO duplicate
-					Stream.of(pair.first, pair.second).forEach(dataObject -> {
-						DataObjectWrapper otherObject = (DataObjectWrapper) pair.otherElement(dataObject);
-						AssociationEnd end = assoc.getEnd(otherObject.getNormalizedName());
-						int limit = end.getLowerBound();
-						if(limit > 1) {
-							Set<DataObjectWrapper> potentialIdentifiers = associationsToWrite.stream()
-								.filter(otherAssoc -> otherAssoc.contains(dataObject) && !otherAssoc.contains(otherObject))
-								.flatMap(otherAssoc -> {
-									DataObjectWrapper potentialIdentifier = (DataObjectWrapper) otherAssoc.otherElement(dataObject);
-									return dataModel.getAssociation(potentialIdentifier.getNormalizedName(), otherObject.getNormalizedName())
-										.filter(identifyingAssoc -> identifyingAssoc.getEnd(potentialIdentifier.normalizedName).getUpperBound() <= 1)
-										.map(identifyingAssoc -> potentialIdentifier)
-										.stream();
-					
-								}).collect(Collectors.toSet());
-							assert potentialIdentifiers.size() == 1;
-							DataObjectWrapper identifier = potentialIdentifiers.stream().findAny().get();
-							
+					Stream.of(pair.first, pair.second)
+						.filter(dataObject -> assoc.getEnd(dataObject.getNormalizedName()).getLowerBound() > 1)
+						.forEach(collectionDataObject -> {
+							DataObjectWrapper singleObject = (DataObjectWrapper) pair.otherElement(collectionDataObject);
+							/*Try to use the same identifier that is used for the list*/
+							DataObjectWrapper identifier = getDataObjectCollectionIdentifier(activity, collectionDataObject);
+							if(!dataModel.getAssociation(identifier.getNormalizedName(), singleObject.getNormalizedName())
+									.map(linkingAssoc -> linkingAssoc.first.getUpperBound() <= 1 && linkingAssoc.second.getUpperBound() <= 1)
+									.orElse(false)) throw new ModelValidationException("Identifier data object "+identifier.getNormalizedName()+" for list data object "+collectionDataObject.getNormalizedName()+" is not associated 1 to 1 with "+singleObject.getNormalizedName()+" in activity "+normalizeElementName(elementName(activity)));
+
+							int lowerBound = assoc.getEnd(collectionDataObject.getNormalizedName()).getLowerBound();
 							String existingGuard = transition.getCondition().asString();
 							if(!existingGuard.isEmpty()) existingGuard += "\nandalso ";
-							String newGuard = "(length (listAssocs "+identifier.dataElementId()+" "+otherObject.namePrefix()+" assoc) >= "+limit+")";
+							String newGuard = "(length (listAssocs "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc) >= "+lowerBound+")";
 							transition.getCondition().setText(existingGuard+newGuard);
-						}
 					});
 				});
 				
@@ -734,6 +726,22 @@ public class CompilerApp {
 			}
 		}
     }
+    
+    
+    public DataObjectWrapper getDataObjectCollectionIdentifier(Activity activity, DataObjectWrapper object) {
+    	Set<DataObjectWrapper> potentialIdentifiers = activity.getDataInputAssociations().stream()
+    		.flatMap(this::splitDataAssociationByState)
+    		.map(this::wrapperFor)
+    		.filter(DataElementWrapper::isDataObjectWrapper)
+    		.map(DataObjectWrapper.class::cast)
+			.filter(potentialIdentifier -> {
+				return dataModel.getAssociation(potentialIdentifier.getNormalizedName(), object.getNormalizedName())
+					.filter(identifyingAssoc -> identifyingAssoc.getEnd(potentialIdentifier.normalizedName).getUpperBound() <= 1)
+					.isPresent();
+			}).collect(Collectors.toSet());
+		assert potentialIdentifiers.size() == 1;
+		return potentialIdentifiers.stream().findAny().get();
+    } 
     
     private Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkAssociationsOfReadDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects) {
     	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToCheck = new HashSet<>();
