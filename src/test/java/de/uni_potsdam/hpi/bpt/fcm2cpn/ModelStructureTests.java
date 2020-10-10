@@ -315,7 +315,7 @@ public abstract class ModelStructureTests {
         	Checker checker = new Checker(petrinet, null, simu);
         	checker.checkEntireModel();
         } catch (LocalCheckFailed e) {
-        	boolean allowedFailure = e.getMessage().contains("illegal name (name is `null')");
+        	boolean allowedFailure = e.getMessage().contains("illegal name (name is `null')") || e.getMessage().contains("is not unique");
         	if(!allowedFailure) throw e;
 		} catch(NoSuchElementException e) {
 			// From Packet:170, weird bug, but catching this error seems to work
