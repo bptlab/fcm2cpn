@@ -251,8 +251,13 @@ public abstract class ModelStructureTests {
 	public static Predicate<Arc> writesAssociation(String first, String second) {
 		return arc -> {
 			String inscription = arc.getHlinscription().getText();
-			String list = inscription.replace("union assoc", "").trim();
-			return inscription.contains("union assoc") && toSet(list).stream().filter(assoc -> isAssocInscriptionFor(assoc, first, second)).count() == 1;
+			String list = inscription.replace("assoc", "").trim();
+			System.out.println(Arrays.toString(list.split("\\^\\^")));
+			Set<String> allWrittenAssocs = Arrays.stream(list.split("\\^\\^"))
+					.map(ModelStructureTests::toSet)
+					.flatMap(Set::stream)
+					.collect(Collectors.toSet());
+			return inscription.contains("assoc") && allWrittenAssocs.stream().filter(assoc -> isAssocInscriptionFor(assoc, first, second)).count() == 1;
 		};
 	}
 	
