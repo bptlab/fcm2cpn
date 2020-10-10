@@ -8,12 +8,12 @@ import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 
-public class StatefulDataAssociation<T extends DataAssociation> {
+public class StatefulDataAssociation<AssociationType extends DataAssociation, DataElement extends ItemAwareElement> {
 	private final Optional<String> stateName;
-	private final ItemAwareElement dataElement;//DataObjectReference or DataStoreReference
-	private final T bpmnAssociation;//DataInputAssociation or DataOutputAssociation
+	private final DataElement dataElement;//DataObjectReference or DataStoreReference
+	private final AssociationType bpmnAssociation;//DataInputAssociation or DataOutputAssociation
 	private final boolean isCollection;
-	public StatefulDataAssociation(T bpmnAssociation, String stateName, ItemAwareElement dataElement, boolean isCollection) {
+	public StatefulDataAssociation(AssociationType bpmnAssociation, String stateName, DataElement dataElement, boolean isCollection) {
 		this.bpmnAssociation = bpmnAssociation;
 		this.stateName = Optional.ofNullable(stateName);
 		
@@ -26,16 +26,24 @@ public class StatefulDataAssociation<T extends DataAssociation> {
 		return stateName;
 	}
 
-	public ItemAwareElement getDataElement() {
+	public DataElement getDataElement() {
 		return dataElement;
 	}
 
-	public T getBpmnAssociation() {
+	public AssociationType getBpmnAssociation() {
 		return bpmnAssociation;
 	}
 
 	public boolean isCollection() {
 		return isCollection;
+	}
+	
+	public boolean isDataObjectReference() {
+		return dataElement instanceof DataObjectReference;
+	}
+	
+	public boolean isDataStoreReference() {
+		return dataElement instanceof DataStoreReference;
 	}
 
 	@Override
@@ -50,7 +58,7 @@ public class StatefulDataAssociation<T extends DataAssociation> {
 		if (this == obj) return true;
 		if (obj == null) return false;
 		if (getClass() != obj.getClass()) return false;
-		StatefulDataAssociation<?> other = (StatefulDataAssociation<?>) obj;
+		StatefulDataAssociation<?,?> other = (StatefulDataAssociation<?,?>) obj;
 		return Objects.equals(bpmnAssociation, other.bpmnAssociation) && Objects.equals(stateName, other.stateName);
 	}
 	

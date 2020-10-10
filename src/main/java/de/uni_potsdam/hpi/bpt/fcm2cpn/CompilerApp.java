@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -359,12 +360,12 @@ public class CompilerApp {
             
             if(transputSets.isEmpty()) {
                 // All read data elements with all states in that they are read
-                Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataInputAssociation>>> inputsPerObject = activity.getDataInputAssociations().stream()
+                Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataInputAssociation, ?>>> inputsPerObject = activity.getDataInputAssociations().stream()
                 		.flatMap(this::splitDataAssociationByState)
                 		.collect(Collectors.groupingBy(this::wrapperFor));
 
                 // All written data elements with all states in that they are written
-                Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataOutputAssociation>>> outputsPerObject = activity.getDataOutputAssociations().stream()
+                Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataOutputAssociation, ?>>> outputsPerObject = activity.getDataOutputAssociations().stream()
                 		.flatMap(this::splitDataAssociationByState)
                 		.collect(Collectors.groupingBy(this::wrapperFor));
                 List<InputSetWrapper> inputSets = allCombinationsOf(inputsPerObject.values()).stream().map(InputSetWrapper::new).collect(Collectors.toList());
@@ -376,10 +377,10 @@ public class CompilerApp {
                 }
             }
 
-            Map<StatefulDataAssociation<DataOutputAssociation>, List<Transition>> outputtingTransitions = activity.getDataOutputAssociations().stream()
+            Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputtingTransitions = activity.getDataOutputAssociations().stream()
             		.flatMap(this::splitDataAssociationByState)
             		.collect(Collectors.toMap(Function.identity(), x -> new ArrayList<>()));
-            Map<StatefulDataAssociation<DataInputAssociation>, List<Transition>> inputtingTransitions = activity.getDataInputAssociations().stream()
+            Map<StatefulDataAssociation<DataInputAssociation, ?>, List<Transition>> inputtingTransitions = activity.getDataInputAssociations().stream()
             		.flatMap(this::splitDataAssociationByState)
             		.collect(Collectors.toMap(Function.identity(), x -> new ArrayList<>()));
             
@@ -387,17 +388,21 @@ public class CompilerApp {
             for (Pair<InputSetWrapper, OutputSetWrapper> transputSet : transputSets) {
                 InputSetWrapper inputSet = transputSet.first;
                 OutputSetWrapper outputSet = transputSet.second;
-
-                Set<DataObjectWrapper> readObjects = inputSet.stream()
-                		.map(this::wrapperFor)
-                        .filter(DataElementWrapper::isDataObjectWrapper)
-                        .map(DataObjectWrapper.class::cast)
-                        .collect(Collectors.toSet());
-                Set<DataObjectWrapper> writtenObjects = outputSet.stream()
-                		.map(this::wrapperFor)
-                        .filter(DataElementWrapper::isDataObjectWrapper)
-                        .map(DataObjectWrapper.class::cast)
-                        .collect(Collectors.toSet());
+                
+                Map<DataObjectWrapper, StatefulDataAssociation<DataInputAssociation, DataObjectReference>> readContext = inputSet.stream()
+                	.filter(StatefulDataAssociation::isDataObjectReference)
+                	.collect(Collectors.toMap(
+                			reference -> DataObjectWrapper.class.cast(this.wrapperFor(reference)), 
+                			reference -> (StatefulDataAssociation<DataInputAssociation, DataObjectReference>) reference));
+                Set<DataObjectWrapper> readObjects = readContext.keySet();
+                
+                Map<DataObjectWrapper, StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> writeContext = outputSet.stream()
+                    	.filter(StatefulDataAssociation::isDataObjectReference)
+                    	.collect(Collectors.toMap(
+                    			reference -> DataObjectWrapper.class.cast(this.wrapperFor(reference)), 
+                    			reference -> (StatefulDataAssociation<DataOutputAssociation, DataObjectReference>) reference));
+                Set<DataObjectWrapper> writtenObjects = writeContext.keySet();
+                    
                 Set<DataObjectWrapper> createdObjects = writtenObjects.stream()
                         .filter(object -> !readObjects.contains(object))
                         .collect(Collectors.toSet());
@@ -406,7 +411,7 @@ public class CompilerApp {
                 subpageTransitions.add(subpageTransition);
                 attachObjectCreationCounters(subpageTransition, createdObjects);
                 
-                associateDataObjects(activity, subpageTransition, readObjects, writtenObjects);
+                associateDataObjects(activity, subpageTransition, readObjects, writtenObjects, readContext, writeContext);
             	
                 inputSet.forEach(input -> inputtingTransitions.get(input).add(subpageTransition));
                 outputSet.forEach(output -> outputtingTransitions.get(output).add(subpageTransition));
@@ -424,7 +429,7 @@ public class CompilerApp {
         
         // Output sets mapped to data assocs and split by "|" state shortcuts
     	Map<OutputSet, List<OutputSetWrapper>> translatedOutputSets = activity.getIoSpecification().getOutputSets().stream().collect(Collectors.toMap(Function.identity(), outputSet -> {
-            Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataOutputAssociation>>> outputsPerObject = outputSet.getDataOutputRefs().stream()
+            Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataOutputAssociation, ?>>> outputsPerObject = outputSet.getDataOutputRefs().stream()
             		.map(Utils::getAssociation)
             		.flatMap(this::splitDataAssociationByState)
             		.collect(Collectors.groupingBy(this::wrapperFor));
@@ -432,7 +437,7 @@ public class CompilerApp {
         }));
     	
         activity.getIoSpecification().getInputSets().forEach(inputSet -> {
-            Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataInputAssociation>>> inputsPerObject = inputSet.getDataInputs().stream()
+            Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataInputAssociation, ?>>> inputsPerObject = inputSet.getDataInputs().stream()
             		.map(Utils::getAssociation)
             		.flatMap(this::splitDataAssociationByState)
             		.collect(Collectors.groupingBy(this::wrapperFor));
@@ -447,12 +452,12 @@ public class CompilerApp {
         });
         
         //Data Stores are (at least in Signavio) not part of input or output sets
-        List<StatefulDataAssociation<DataInputAssociation>> dataStoreInputs = activity.getDataInputAssociations().stream()
+        List<StatefulDataAssociation<DataInputAssociation, ?>> dataStoreInputs = activity.getDataInputAssociations().stream()
 			   .filter(assoc -> getSource(assoc) instanceof DataStoreReference)
 			   .flatMap(this::splitDataAssociationByState)
 			   .collect(Collectors.toList());
 
-        List<StatefulDataAssociation<DataOutputAssociation>> dataStoreOutputs = activity.getDataOutputAssociations().stream()
+        List<StatefulDataAssociation<DataOutputAssociation, ?>> dataStoreOutputs = activity.getDataOutputAssociations().stream()
  			   .filter(assoc -> getTarget(assoc) instanceof DataStoreReference)
  			   .flatMap(this::splitDataAssociationByState)
  			   .collect(Collectors.toList());
@@ -507,7 +512,7 @@ public class CompilerApp {
             builder.addArc(eventPage, subpageTransition, caseTokenPlace, "count + 1");
 
             
-            List<StatefulDataAssociation<DataOutputAssociation>> outputs = each.getDataOutputAssociations().stream()
+            List<StatefulDataAssociation<DataOutputAssociation, ?>> outputs = each.getDataOutputAssociations().stream()
             		.flatMap(this::splitDataAssociationByState)
             		.collect(Collectors.toList());
 
@@ -530,7 +535,7 @@ public class CompilerApp {
                 idVariables,
                 idGeneration));
             
-            Map<StatefulDataAssociation<DataOutputAssociation>, List<Transition>> outputTransitions = new HashMap<>();
+            Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputTransitions = new HashMap<>();
             outputs.forEach(assoc -> outputTransitions.put(assoc, Arrays.asList(subpageTransition)));
         	createDataAssociationArcs(each, outputTransitions, Collections.emptyMap());
         });
@@ -573,7 +578,7 @@ public class CompilerApp {
         });
 	}
     
-    private <T extends DataAssociation> Stream<StatefulDataAssociation<T>> splitDataAssociationByState(T assoc) {
+    private <T extends DataAssociation> Stream<StatefulDataAssociation<T, ?>> splitDataAssociationByState(T assoc) {
     	BaseElement source = getSource(assoc);
     	BaseElement target = getTarget(assoc);
         ItemAwareElement dataElement = (ItemAwareElement) (source instanceof DataObjectReference || source instanceof DataStoreReference ? source : target);
@@ -592,7 +597,7 @@ public class CompilerApp {
      * @param outputs: For each stateful data assoc: Which (inputset x outputset)-Transitions write this data object in this state
      * @param inputs: For each stateful data assoc: Which (inputset x outputset)-Transitions read this data object in this state
      */
-    private void createDataAssociationArcs(BaseElement element, Map<StatefulDataAssociation<DataOutputAssociation>, List<Transition>> outputs, Map<StatefulDataAssociation<DataInputAssociation>, List<Transition>> inputs) {
+    private void createDataAssociationArcs(BaseElement element, Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputs, Map<StatefulDataAssociation<DataInputAssociation, ?>, List<Transition>> inputs) {
     	Set<DataElementWrapper<?,?>> readElements = inputs.keySet().stream().map(this::wrapperFor).collect(Collectors.toSet());
     	Set<DataElementWrapper<?,?>> writtenElements = outputs.keySet().stream().map(this::wrapperFor).collect(Collectors.toSet());
     	
@@ -639,9 +644,21 @@ public class CompilerApp {
     
 
     
-    private void associateDataObjects(Activity activity, Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects) {
+    private void associateDataObjects(Activity activity, Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, StatefulDataAssociation<DataInputAssociation, DataObjectReference>> readContext, Map<DataObjectWrapper, StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> writeContext) {
     	SubpageElement activityWrapper = subpages.get(activity);
-		Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = new HashSet<>();
+		Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = new HashSet<>() {
+			
+			@Override
+			public boolean add(Pair<DataObjectWrapper, DataObjectWrapper> e) {
+				if(!contains(e) && !contains(e.reversed())) return super.add(e);
+				else return false;
+			};
+			
+			@Override
+			public boolean remove(Object e) {
+				return super.remove(e) || super.remove(((Pair<?,?>)e).reversed());
+			};
+		};
 		
 		
 		for(DataObjectWrapper writtenObject : writtenDataObjects) {
@@ -656,14 +673,10 @@ public class CompilerApp {
 				}
 			}
 		}
-		Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(transition, readDataObjects);
-		//Write all read associations back (they are not consumed), but check for duplicates with created associations (therefore use set of assoc)
-		Set<Pair<DataObjectWrapper, DataObjectWrapper>> allAssocations = new HashSet<>();
-		allAssocations.addAll(checkedAssociations);
-		allAssocations.addAll(associationsToWrite);
+		Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(transition, readDataObjects, readContext);
 		
 		//If either new assocs are created or old assocs are checked, we need arcs from and to the assoc place
-		if(!allAssocations.isEmpty()) {
+		if(!checkedAssociations.isEmpty() || !associationsToWrite.isEmpty()) {
 			// Create reading arcs
 			String readAnnotation = "assoc";
 			activityWrapper.createArcFrom(associationsPlace, transition, readAnnotation);
@@ -674,14 +687,29 @@ public class CompilerApp {
 			
 			//Create write back arcs; if new assocs are create, write the union back; if assocs are checked, they already exist
 			String writeAnnotation = "assoc";
-			associationsToWrite.removeAll(checkedAssociations);
+			checkedAssociations.forEach(associationsToWrite::remove);
+			
 			if(!associationsToWrite.isEmpty()) {
 				
-				writeAnnotation += "^^"+associationsToWrite.stream()
-					.map(assoc -> Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
+				writeAnnotation += associationsToWrite.stream()
+					.map(pair -> {
+						Optional<DataObjectWrapper> collectionDataObject = Stream.of(pair.first, pair.second)
+								.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).isCollection())
+								.findAny();
+						if(!collectionDataObject.isPresent()) {
+							return "^^["+Stream.of(pair.first, pair.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString()+"]";
+						} else {
+							DataObjectWrapper identifier = getDataObjectCollectionIdentifier(activity, collectionDataObject.get());
+							
+							String assocString = Stream.of(pair.first, pair.second)
+								.sorted(Comparator.comparing(DataObjectWrapper::dataElementId))
+								.map(element -> element == collectionDataObject.get() ? "unpack el "+element.getNormalizedName() : element.dataElementId())
+								.collect(Collectors.toList()).toString();
+							return "^^(map (fn(el) => "+assocString+") (listAssocs "+identifier.dataElementId()+" "+collectionDataObject.get().namePrefix()+" assoc))";
+						}
+					})
 					.distinct()
-					.collect(Collectors.toList())
-					.toString();
+					.collect(Collectors.joining());
 				associationsToWrite.forEach(pair -> {
 					Association assoc = dataModel.getAssociation(pair.first.getNormalizedName(), pair.second.getNormalizedName()).get();
 					//Create guards for: Cannot create data object if this would violate upper bounds
@@ -698,9 +726,8 @@ public class CompilerApp {
 					});
 					
 					//Create guards for: Cannot create data object if lower bounds of read list data object are not given
-					//TODO duplicate
 					Stream.of(pair.first, pair.second)
-						.filter(dataObject -> assoc.getEnd(dataObject.getNormalizedName()).getLowerBound() > 1)
+						.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).isCollection())
 						.forEach(collectionDataObject -> {
 							DataObjectWrapper singleObject = (DataObjectWrapper) pair.otherElement(collectionDataObject);
 							/*Try to use the same identifier that is used for the list*/
@@ -743,34 +770,30 @@ public class CompilerApp {
 		return potentialIdentifiers.stream().findAny().get();
     } 
     
-    private Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkAssociationsOfReadDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects) {
+    private Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkAssociationsOfReadDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects, Map<DataObjectWrapper, StatefulDataAssociation<DataInputAssociation, DataObjectReference>> readContext) {
     	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToCheck = new HashSet<>();
 		
 		for(DataObjectWrapper readObject : readDataObjects) {
 			for(DataObjectWrapper otherReadObject : readDataObjects) {
-				if(!readObject.equals(otherReadObject) && dataModel.isAssociated(readObject.getNormalizedName(), otherReadObject.getNormalizedName())) {
+				if(readObject.compareTo(otherReadObject) < 0 && dataModel.isAssociated(readObject.getNormalizedName(), otherReadObject.getNormalizedName())) {
 					associationsToCheck.add(new Pair<>(readObject, otherReadObject));
 				}
 			}
 		}
 		
-//		associationsToCheck.forEach(assoc -> {
-//			String annotation = assoc.stream().map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString();
-//			for(Transition transition : transitions) {
-//	    		createArc(subPage.getPage(), subPage.refPlaceFor(associationsPlace), transition, annotation);
-//			}
-//		});
-		if(!associationsToCheck.isEmpty()) {
-//			String annotation = associationsToCheck.stream()
-//				.map(assoc -> "1`"+assoc.stream().map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
-//				.collect(Collectors.joining("++\n"));
-			String guard = "contains assoc "+ associationsToCheck.stream()
+		//TODO checking of assocs of collections is done elswhere, could be brought together
+		Set<Pair<DataObjectWrapper, DataObjectWrapper>> nonCollectionAssocs = associationsToCheck.stream()
+				.filter(assoc -> Stream.of(assoc.first, assoc.second).allMatch(dataObject -> !readContext.get(dataObject).isCollection()))
+				.collect(Collectors.toSet());
+		if(!nonCollectionAssocs.isEmpty()) {
+			String guard = "contains assoc "+ nonCollectionAssocs.stream()
 				.map(assoc -> Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
 				.distinct()
 				.collect(Collectors.toList())
 				.toString();
 			transition.getCondition().setText(guard);
 		}
+		
 		return associationsToCheck;
     }
     
@@ -859,7 +882,7 @@ public class CompilerApp {
     	//TODO
     }
     
-    private DataElementWrapper<?,?> wrapperFor(StatefulDataAssociation<?> assoc) {
+    private DataElementWrapper<?,?> wrapperFor(StatefulDataAssociation<?, ?> assoc) {
     	return Stream.concat(dataObjectWrappers.stream(), dataStoreWrappers.stream())
     			.filter(any -> any.isForReference(assoc.getDataElement())).findAny().get();
     }    

@@ -17,7 +17,11 @@ public class Association extends Pair<AssociationEnd, AssociationEnd> {
 	}
 	
 	public AssociationEnd getEnd(String dataObject) {
-		return Stream.of(first, second).filter(end -> end.getDataObject().equals(dataObject)).findAny().get();
+		return stream().filter(end -> end.getDataObject().equals(dataObject)).findAny().get();
+	}
+	
+	public Stream<AssociationEnd> stream() {
+		return Stream.of(first, second);
 	}
 
 }

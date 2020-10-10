@@ -2,7 +2,6 @@ package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
@@ -39,7 +38,7 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 
 
 	@Override
-	public String annotationForDataFlow(BaseElement otherEnd, StatefulDataAssociation<?> assoc) {
+	public String annotationForDataFlow(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc) {
         String stateString = assoc.getStateName().map(x -> ", state = "+x).orElse("");
         String caseId = compilerApp.caseId();
         if(!assoc.isCollection()) {

@@ -7,14 +7,14 @@ import org.camunda.bpm.model.bpmn.instance.DataAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 
-public class TransputSetWrapper<T extends DataAssociation> extends ArrayList<StatefulDataAssociation<T>> {
+public class TransputSetWrapper<T extends DataAssociation> extends ArrayList<StatefulDataAssociation<T, ?>> {
 	
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -7098156477899969498L;
 
-	public TransputSetWrapper(Collection<StatefulDataAssociation<T>> elements) {
+	public TransputSetWrapper(Collection<StatefulDataAssociation<T, ?>> elements) {
 		super(elements);
 	}
 	
@@ -25,7 +25,7 @@ public class TransputSetWrapper<T extends DataAssociation> extends ArrayList<Sta
 		 */
 		private static final long serialVersionUID = 6777130743519630012L;
 
-		public InputSetWrapper(Collection<StatefulDataAssociation<DataInputAssociation>> elements) {
+		public InputSetWrapper(Collection<StatefulDataAssociation<DataInputAssociation, ?>> elements) {
 			super(elements);
 		}
 		
@@ -38,7 +38,7 @@ public class TransputSetWrapper<T extends DataAssociation> extends ArrayList<Sta
 		 */
 		private static final long serialVersionUID = -8021935134458147013L;
 
-		public OutputSetWrapper(Collection<StatefulDataAssociation<DataOutputAssociation>> elements) {
+		public OutputSetWrapper(Collection<StatefulDataAssociation<DataOutputAssociation, ?>> elements) {
 			super(elements);
 		}
 		

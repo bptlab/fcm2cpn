@@ -452,7 +452,8 @@ public abstract class ModelStructureTests {
 			"SimpleWithDataStore", 
 			"TranslationJob",
 			"Associations",
-			"TransputSets"
+			"TransputSets",
+			"ConferenceSimplified"
 		);
 	}
 	
