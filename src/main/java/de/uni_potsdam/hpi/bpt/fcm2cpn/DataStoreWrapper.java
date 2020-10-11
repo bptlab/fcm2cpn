@@ -1,7 +1,5 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import java.util.Optional;
-
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
@@ -22,7 +20,7 @@ public class DataStoreWrapper extends DataElementWrapper<DataStore, DataStoreRef
 	}
 
 	@Override
-	public String annotationForDataFlow(BaseElement otherEnd, StatefulDataAssociation<?> assoc) {
+	public String annotationForDataFlow(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc) {
         return dataElementId();
 	}
 

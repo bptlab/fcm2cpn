@@ -117,6 +117,11 @@ public abstract class ModelStructureTests {
 				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
 	}
 	
+	public boolean readsAsCollection(Activity activity, String dataObject) {
+		return readDataObjectRefs(activity)
+				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject) && each.getDataObject().isCollection());
+	}
+	
 	public boolean writes(Activity activity, String dataObject) {
 		return writtenDataObjectRefs(activity)
 				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
@@ -198,39 +203,39 @@ public abstract class ModelStructureTests {
 		transitionsFor(activity).forEach(transition -> {
 			Map<String, String> inputs = new HashMap<>();
 			Map<String, String> outputs = new HashMap<>();
-			transition.getTargetArc().stream().forEach(inputArc -> {
-				String dataId = null;
-				String state = null;
-				List<String[]> statements = Arrays.stream(inputArc.getHlinscription().asString().replaceAll("[\\{\\}]", "").split(","))
+			transition.getTargetArc().stream()
+				.map(inputArc -> inputArc.getHlinscription().asString())
+				.forEach(inscription -> parseCreatedTokenIdAndState(inscription).ifPresent(idAndState -> inputs.put(idAndState.first, idAndState.second)));
+
+			transition.getSourceArc().stream()
+				.map(outputArc -> outputArc.getHlinscription().asString())
+				.forEach(inscription -> parseCreatedTokenIdAndState(inscription).ifPresent(idAndState -> outputs.put(idAndState.first, idAndState.second)));
+			ioCombinations.add(new Pair<Map<String,String>, Map<String,String>>(inputs, outputs));
+		});
+		
+		return ioCombinations;
+	}
+	
+	public static Optional<Pair<String, String>> parseCreatedTokenIdAndState(String inscription) {
+		String dataId = null;
+		String state = null;
+
+		int startIndex = inscription.indexOf("{");
+		int endIndex = inscription.indexOf("}");
+		if(startIndex != -1 && endIndex != -1) {
+			String potentialCreation = inscription.substring(startIndex+1, endIndex);
+			List<String[]> statements = Arrays.stream(potentialCreation.split(","))
 					.map(String::trim)
 					.map(statement -> statement.split("="))
 					.filter(statement -> statement.length == 2)
 					.collect(Collectors.toList());
 				for(String[] statement : statements) {
-					if(statement[0].trim().equals("id")) dataId = statement[1].trim().replaceAll("Id$", "");
+					if(statement[0].trim().equals("id")) dataId = !statement[1].contains("unpack") ? statement[1].trim().replaceAll("Id$", "") : statement[1].trim().replaceAll("unpack el ", "");
 					if(statement[0].trim().equals("state")) state = statement[1].trim();
 				}
-				if(dataId != null && state != null) inputs.put(dataId, state);
-			});
-			
-			transition.getSourceArc().stream().forEach(outputArc -> {
-				String dataId = null;
-				String state = null;
-				List<String[]> statements = Arrays.stream(outputArc.getHlinscription().asString().replaceAll("[\\{\\}]", "").split(","))
-					.map(String::trim)
-					.map(statement -> statement.split("="))
-					.collect(Collectors.toList());
-				for(String[] statement : statements) {
-					if(statement.length != 2) continue;
-					if(statement[0].trim().equals("id")) dataId = statement[1].trim().replaceAll("Id$", "");
-					if(statement[0].trim().equals("state")) state = statement[1].trim();
-				}
-				if(dataId != null && state != null) outputs.put(dataId, state);
-			});
-			ioCombinations.add(new Pair<Map<String,String>, Map<String,String>>(inputs, outputs));
-		});
-		
-		return ioCombinations;
+			if(dataId != null && state != null) return Optional.of(new Pair<>(dataId, state));
+		}
+		return Optional.empty();
 	}
 	
 	public static List<Map<String, String>> indexedCombinationsOf(Map<String, List<String>> groups) {
@@ -251,8 +256,12 @@ public abstract class ModelStructureTests {
 	public static Predicate<Arc> writesAssociation(String first, String second) {
 		return arc -> {
 			String inscription = arc.getHlinscription().getText();
-			String list = inscription.replace("union assoc", "").trim();
-			return inscription.contains("union assoc") && toSet(list).stream().filter(assoc -> isAssocInscriptionFor(assoc, first, second)).count() == 1;
+			String list = inscription.replace("assoc", "").trim();
+			Set<String> allWrittenAssocs = Arrays.stream(list.split("\\^\\^"))
+					.map(ModelStructureTests::toSet)
+					.flatMap(Set::stream)
+					.collect(Collectors.toSet());
+			return inscription.contains("assoc") && allWrittenAssocs.stream().filter(assoc -> isAssocInscriptionFor(assoc, first, second)).count() == 1;
 		};
 	}
 	
@@ -306,7 +315,7 @@ public abstract class ModelStructureTests {
         	Checker checker = new Checker(petrinet, null, simu);
         	checker.checkEntireModel();
         } catch (LocalCheckFailed e) {
-        	boolean allowedFailure = e.getMessage().contains("illegal name (name is `null')");
+        	boolean allowedFailure = e.getMessage().contains("illegal name (name is `null')") || e.getMessage().contains("is not unique");
         	if(!allowedFailure) throw e;
 		} catch(NoSuchElementException e) {
 			// From Packet:170, weird bug, but catching this error seems to work
@@ -452,7 +461,8 @@ public abstract class ModelStructureTests {
 			"SimpleWithDataStore", 
 			"TranslationJob",
 			"Associations",
-			"TransputSets"
+			"TransputSets",
+			"ConferenceSimplified"
 		);
 	}
 	

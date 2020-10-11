@@ -4,14 +4,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Place;
 
-public abstract class DataElementWrapper<Element extends ItemAwareElement, Reference> {
+public abstract class DataElementWrapper<Element extends ItemAwareElement, Reference> implements Comparable<DataElementWrapper<?,?>> {
 
 	protected final CompilerApp compilerApp;
 	protected final String normalizedName;
@@ -49,7 +48,7 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 		return namePrefix() + "Count";
 	}
 	
-    public abstract String annotationForDataFlow(BaseElement otherEnd, StatefulDataAssociation<?> assoc);
+    public abstract String annotationForDataFlow(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc);
 
 
 	public void addMappedElement(Element dataElement) {
@@ -78,6 +77,11 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 	
 	public Arc assertMainPageArcFrom(BaseElement element) {
 		return incomingArcs.computeIfAbsent(element, _element -> compilerApp.createArc(compilerApp.nodeFor(_element), place));
+	}
+	
+	@Override
+	public int compareTo(DataElementWrapper<?, ?> o) {
+		return getNormalizedName().compareTo(o.getNormalizedName());
 	}
 	
 	@Override
