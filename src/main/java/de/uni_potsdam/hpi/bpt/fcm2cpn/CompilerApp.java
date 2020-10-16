@@ -244,6 +244,14 @@ public class CompilerApp {
         		"if a1 = class then (a1, a2)\n" + 
         		"else (b1, b2);");
         
+        builder.declareMLFunction(petriNet, 
+        		"fun enforceLowerBound id class assoc bound =\n" + 
+        		"(length (listAssocs id class assoc) >= bound);");
+        
+        builder.declareMLFunction(petriNet, 
+        		"fun enforceUpperBound id class assoc bound =\n" + 
+        		"(length (listAssocs id class assoc) < bound);");
+        
         
         System.out.println("DONE");
     }
@@ -720,7 +728,7 @@ public class CompilerApp {
 							String existingGuard = transition.getCondition().asString();
 							if(!existingGuard.isEmpty()) existingGuard += "\nandalso ";
 							DataObjectWrapper otherObject = (DataObjectWrapper) pair.otherElement(dataObject);
-							String newGuard = "(length (listAssocs "+otherObject.dataElementId()+" "+dataObject.namePrefix()+" assoc) < "+limit+")";
+							String newGuard = "(enforceUpperBound "+otherObject.dataElementId()+" "+dataObject.namePrefix()+" assoc "+limit+")";
 							transition.getCondition().setText(existingGuard+newGuard);
 						}
 					});
@@ -739,7 +747,7 @@ public class CompilerApp {
 							int lowerBound = assoc.getEnd(collectionDataObject.getNormalizedName()).getLowerBound();
 							String existingGuard = transition.getCondition().asString();
 							if(!existingGuard.isEmpty()) existingGuard += "\nandalso ";
-							String newGuard = "(length (listAssocs "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc) >= "+lowerBound+")";
+							String newGuard = "(enforceLowerBound "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc "+lowerBound+")";
 							transition.getCondition().setText(existingGuard+newGuard);
 					});
 				});

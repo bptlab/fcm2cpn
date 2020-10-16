@@ -127,6 +127,10 @@ public abstract class ModelStructureTests {
 				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
 	}
 	
+	public boolean creates(Activity activity, String dataObject) {
+		return writes(activity, dataObject) && !reads(activity, dataObject);
+	}
+	
 	public static Map<String, List<String>> dataObjectToStateMap(Stream<DataObjectReference> dataObjectReferences) {
 		return dataObjectReferences
 			.filter(each -> Objects.nonNull(each.getDataState()))
@@ -265,9 +269,14 @@ public abstract class ModelStructureTests {
 		};
 	}
 	
-	public static boolean hasGuardForAssociation(Transition transition, String first, String second) {
+	public static Stream<String> guardsOf(Transition transition) {
 		String guard = transition.getCondition().getText();
-		return Arrays.stream(guard.split("andalso")).anyMatch(singleCondition -> {
+		return Arrays.stream(guard.split("andalso"))
+				.map(String::trim);
+	}
+	
+	public static boolean hasGuardForAssociation(Transition transition, String first, String second) {
+		return guardsOf(transition).anyMatch(singleCondition -> {
 			String list = singleCondition.replace("contains assoc ", "").trim();
 			return singleCondition.contains("contains assoc") && toSet(list).stream().filter(assoc -> isAssocInscriptionFor(assoc, first, second)).count() == 1;
 		});
