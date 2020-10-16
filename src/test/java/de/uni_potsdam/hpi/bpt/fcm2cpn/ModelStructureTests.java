@@ -260,12 +260,18 @@ public abstract class ModelStructureTests {
 	public static Predicate<Arc> writesAssociation(String first, String second) {
 		return arc -> {
 			String inscription = arc.getHlinscription().getText();
-			String list = inscription.replace("assoc", "").trim();
-			Set<String> allWrittenAssocs = Arrays.stream(list.split("\\^\\^"))
+			String list = inscription.replaceFirst("assoc", "").trim();
+			Stream<?> matchingAssocWrites = Arrays.stream(list.split("\\^\\^"))
 					.map(ModelStructureTests::toSet)
 					.flatMap(Set::stream)
-					.collect(Collectors.toSet());
-			return inscription.contains("assoc") && allWrittenAssocs.stream().filter(assoc -> isAssocInscriptionFor(assoc, first, second)).count() == 1;
+					.filter(assoc -> isAssocInscriptionFor(assoc, first, second));
+			Stream<?> matchingListAssocWrites = Arrays.stream(list.split("\\^\\^"))
+					.filter(expr -> expr.startsWith("(associateWithList"))
+					.map(expr -> expr.substring(1, expr.length()-1).split(" "))
+					.map(tokens -> Stream.of(tokens[1], tokens[2]+"Id").sorted().toArray())
+					.filter(pair -> Arrays.equals(pair, Stream.of(second, first).sorted().toArray()));
+			
+			return inscription.startsWith("assoc") && matchingAssocWrites.count() + matchingListAssocWrites.count() == 1;
 		};
 	}
 	
@@ -278,7 +284,9 @@ public abstract class ModelStructureTests {
 	public static boolean hasGuardForAssociation(Transition transition, String first, String second) {
 		return guardsOf(transition).anyMatch(singleCondition -> {
 			String list = singleCondition.replace("contains assoc ", "").trim();
-			return singleCondition.contains("contains assoc") && toSet(list).stream().filter(assoc -> isAssocInscriptionFor(assoc, first, second)).count() == 1;
+			return (singleCondition.contains("contains assoc") && toSet(list).stream().filter(assoc -> isAssocInscriptionFor(assoc, first+"Id", second+"Id")).count() == 1)
+					|| singleCondition.matches("\\(enforceLowerBound "+first+"Id "+second+" assoc (.*)\\)")
+					|| singleCondition.matches("\\(enforceLowerBound "+second+"Id "+first+" assoc (.*)\\)");
 		});
 	}
 	

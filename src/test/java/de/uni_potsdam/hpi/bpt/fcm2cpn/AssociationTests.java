@@ -30,7 +30,6 @@ public class AssociationTests extends ModelStructureTests {
 	public void testDataAssociationsBetweenReadAndWriteAreCreated(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && writes(activity, second), "Activity does not read the first and write the second data object.");
 		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
-		assumeFalse(readsAsCollection(activity, first));//TODO add dedicated test for collections
 		
 		transitionsFor(activity).forEach(transition -> {
 			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
@@ -44,7 +43,6 @@ public class AssociationTests extends ModelStructureTests {
 	public void testDataAssociationsBetweenParallelWritesAreCreated(String first, String second, Activity activity) {
 		assumeTrue(writes(activity, first) && writes(activity, second), "Activity does not write both data objects.");
 		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
-		assumeFalse(readsAsCollection(activity, first) || readsAsCollection(activity, second));//TODO add dedicated test for collections
 		
 		transitionsFor(activity).forEach(transition -> {
 			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
@@ -57,10 +55,9 @@ public class AssociationTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	public void testAssociationsAreCheckedWhenReading(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && reads(activity, second), "Activity does not read both data objects.");
-		assumeFalse(readsAsCollection(activity, first) || readsAsCollection(activity, second));//TODO add dedicated test for collections
 		
 		transitionsFor(activity).forEach(transition -> {
-			assertTrue(hasGuardForAssociation(transition, first+"Id", second+"Id"),
+			assertTrue(hasGuardForAssociation(transition, first, second),
 				"There is no guard for association when reading objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
 		});
 	}

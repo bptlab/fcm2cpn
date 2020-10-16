@@ -251,7 +251,10 @@ public class CompilerApp {
         builder.declareMLFunction(petriNet, 
         		"fun enforceUpperBound id class assoc bound =\n" + 
         		"(length (listAssocs id class assoc) < bound);");
-        
+        builder.declareMLFunction(petriNet, 
+        		"fun associateWithList singleObject listObject identifier assoc =\n" + 
+        		"(map (fn(el) => [singleObject, unpack el listObject]) (listAssocs identifier listObject assoc));");
+        //TODO rename to associateWithCollection?
         
         System.out.println("DONE");
     }
@@ -708,12 +711,9 @@ public class CompilerApp {
 							return "^^["+Stream.of(pair.first, pair.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString()+"]";
 						} else {
 							DataObjectWrapper identifier = getDataObjectCollectionIdentifier(activity, collectionDataObject.get());
-							
-							String assocString = Stream.of(pair.first, pair.second)
-								.sorted(Comparator.comparing(DataObjectWrapper::dataElementId))
-								.map(element -> element == collectionDataObject.get() ? "unpack el "+element.getNormalizedName() : element.dataElementId())
-								.collect(Collectors.toList()).toString();
-							return "^^(map (fn(el) => "+assocString+") (listAssocs "+identifier.dataElementId()+" "+collectionDataObject.get().namePrefix()+" assoc))";
+							DataObjectWrapper other = (DataObjectWrapper) pair.otherElement(collectionDataObject.get());
+							//TODO does not sort alphabetically
+							return "^^(associateWithList "+other.dataElementId()+" "+collectionDataObject.get().getNormalizedName()+" "+identifier.dataElementId()+" assoc)";
 						}
 					})
 					.distinct()
