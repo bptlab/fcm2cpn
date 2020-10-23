@@ -94,7 +94,7 @@ public class AssociationTests extends ModelStructureTests {
 		Association assoc = dataModel.getAssociation(first, second).get();
 		int upperBound = assoc.getEnd(second).getUpperBound();
 		assumeTrue(upperBound > 1 && upperBound != AssociationEnd.UNLIMITED, "No upper limit that has to be checked");//TODO will 1:1 need to be checked?
-		assumeTrue(creates(activity, second) && (writes(activity, first) || reads(activity, first)), "Association is not created in this activity");
+		assumeTrue(creates(activity, second) && (writes(activity, first)), "Association is not created in this activity or "+first+" is not read, just created");
 		transitionsFor(activity).forEach(transition -> {
 			assertEquals(1, guardsOf(transition).filter(guard -> guard.equals("(enforceUpperBound "+first+"Id "+second+" assoc "+upperBound+")")).count(),
 					"There is not exactly one guard for upper limit of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");

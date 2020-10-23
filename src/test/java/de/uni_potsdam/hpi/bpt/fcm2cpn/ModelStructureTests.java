@@ -479,7 +479,8 @@ public abstract class ModelStructureTests {
 			"TranslationJob",
 			"Associations",
 			"TransputSets",
-			"ConferenceSimplified"
+			"ConferenceSimplified",
+			"conference_fragments_knowledge_intensive"
 		);
 	}
 	

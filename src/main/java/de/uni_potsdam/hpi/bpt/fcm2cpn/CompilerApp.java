@@ -724,10 +724,11 @@ public class CompilerApp {
 					Stream.of(pair.first, pair.second).forEach(dataObject -> {
 						AssociationEnd end = assoc.getEnd(dataObject.getNormalizedName());
 						int limit = end.getUpperBound();
-						if(limit > 1 && limit != AssociationEnd.UNLIMITED) {
+						DataObjectWrapper otherObject = (DataObjectWrapper) pair.otherElement(dataObject);
+						
+						if(limit > 1 && limit != AssociationEnd.UNLIMITED && readDataObjects.contains(otherObject)) {//If the other object is not read, it is just created - and then no bound that is 1 or higher will be violated
 							String existingGuard = transition.getCondition().asString();
 							if(!existingGuard.isEmpty()) existingGuard += "\nandalso ";
-							DataObjectWrapper otherObject = (DataObjectWrapper) pair.otherElement(dataObject);
 							String newGuard = "(enforceUpperBound "+otherObject.dataElementId()+" "+dataObject.namePrefix()+" assoc "+limit+")";
 							transition.getCondition().setText(existingGuard+newGuard);
 						}
