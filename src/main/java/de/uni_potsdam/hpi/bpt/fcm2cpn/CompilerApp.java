@@ -817,7 +817,7 @@ public class CompilerApp {
         Collection<ParallelGateway> parallelGateways = bpmn.getModelElementsByType(ParallelGateway.class);
         parallelGateways.forEach(each -> {        	
         	String name = elementName(each);
-	    	Page gatewayPage = createPage(name);
+	    	Page gatewayPage = createPage(normalizeElementName(name));
 	    	Transition subpageTransition = builder.addTransition(gatewayPage, name);
 	        Instance mainPageTransition = createSubpageTransition(name, gatewayPage);
 	        SubpageElement subPage = new SubpageElement(this, each.getId(), gatewayPage, mainPageTransition, Arrays.asList(subpageTransition));

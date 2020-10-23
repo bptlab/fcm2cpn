@@ -35,7 +35,7 @@ public class Utils {
 	 * Makes element names usable as page ids, but also allows to equalize names with excess whitespaces
 	 */
     public static String normalizeElementName(String name) {
-    	return name.replace('\n', ' ').trim();
+    	return name.replace('\n', ' ').trim().toLowerCase();
     }
     
     /**
