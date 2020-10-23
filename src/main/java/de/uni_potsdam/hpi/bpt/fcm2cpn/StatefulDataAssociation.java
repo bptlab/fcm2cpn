@@ -50,7 +50,7 @@ public class StatefulDataAssociation<AssociationType extends DataAssociation, Da
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + Objects.hash(bpmnAssociation, stateName);
+		result = prime * result + Objects.hash(bpmnAssociation, stateName, isCollection);
 		return result;
 	}
 	@Override
@@ -59,7 +59,7 @@ public class StatefulDataAssociation<AssociationType extends DataAssociation, Da
 		if (obj == null) return false;
 		if (getClass() != obj.getClass()) return false;
 		StatefulDataAssociation<?,?> other = (StatefulDataAssociation<?,?>) obj;
-		return Objects.equals(bpmnAssociation, other.bpmnAssociation) && Objects.equals(stateName, other.stateName);
+		return Objects.equals(bpmnAssociation, other.bpmnAssociation) && Objects.equals(stateName, other.stateName) && Objects.equals(isCollection, other.isCollection);
 	}
 	
 	@Override
