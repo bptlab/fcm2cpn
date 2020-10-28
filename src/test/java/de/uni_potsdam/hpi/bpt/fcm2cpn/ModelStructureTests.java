@@ -114,17 +114,17 @@ public abstract class ModelStructureTests {
 	
 	public boolean reads(Activity activity, String dataObject) {
 		return readDataObjectRefs(activity)
-				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
+				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject));
 	}
 	
 	public boolean readsAsCollection(Activity activity, String dataObject) {
 		return readDataObjectRefs(activity)
-				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject) && each.getDataObject().isCollection());
+				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject) && each.getDataObject().isCollection());
 	}
 	
 	public boolean writes(Activity activity, String dataObject) {
 		return writtenDataObjectRefs(activity)
-				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
+				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject));
 	}
 	
 	public boolean creates(Activity activity, String dataObject) {
@@ -276,8 +276,8 @@ public abstract class ModelStructureTests {
 	}
 	
 	public static Stream<String> guardsOf(Transition transition) {
-		String guard = transition.getCondition().getText();
-		return Arrays.stream(guard.split("andalso"))
+		String guard = transition.getCondition().getText().replaceFirst("^\\[", "").replaceFirst("]$", "");
+		return Arrays.stream(guard.split(",\n"))
 				.map(String::trim);
 	}
 	

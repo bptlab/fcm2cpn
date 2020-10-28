@@ -12,12 +12,12 @@ public class Association extends Pair<AssociationEnd, AssociationEnd> {
 	}
 	
 	public boolean associates(String dataObjectA, String dataObjectB) {
-		return Stream.of(dataObjectA, dataObjectB).collect(Collectors.toSet()).equals(
-				Stream.of(first.getDataObject(), second.getDataObject()).collect(Collectors.toSet()));
+		return (dataObjectA.equalsIgnoreCase(first.getDataObject()) && dataObjectB.equalsIgnoreCase(second.getDataObject())) ||
+		(dataObjectA.equalsIgnoreCase(second.getDataObject()) && dataObjectB.equalsIgnoreCase(first.getDataObject()));
 	}
 	
 	public AssociationEnd getEnd(String dataObject) {
-		return stream().filter(end -> end.getDataObject().equals(dataObject)).findAny().get();
+		return stream().filter(end -> end.getDataObject().equalsIgnoreCase(dataObject)).findAny().get();
 	}
 	
 	public Stream<AssociationEnd> stream() {

@@ -726,10 +726,11 @@ public class CompilerApp {
 						int limit = end.getUpperBound();
 						if(limit > 1 && limit != AssociationEnd.UNLIMITED) {
 							String existingGuard = transition.getCondition().asString();
-							if(!existingGuard.isEmpty()) existingGuard += "\nandalso ";
+							existingGuard = existingGuard.replaceFirst("^\\[", "").replaceFirst("]$", "");
+							if(!existingGuard.isEmpty()) existingGuard += ",\n";
 							DataObjectWrapper otherObject = (DataObjectWrapper) pair.otherElement(dataObject);
 							String newGuard = "(enforceUpperBound "+otherObject.dataElementId()+" "+dataObject.namePrefix()+" assoc "+limit+")";
-							transition.getCondition().setText(existingGuard+newGuard);
+							transition.getCondition().setText("[" + existingGuard + newGuard + "]");
 						}
 					});
 					
@@ -745,10 +746,11 @@ public class CompilerApp {
 									.orElse(false)) throw new ModelValidationException("Identifier data object "+identifier.getNormalizedName()+" for list data object "+collectionDataObject.getNormalizedName()+" is not associated 1 to 1 with "+singleObject.getNormalizedName()+" in activity "+normalizeElementName(elementName(activity)));
 
 							int lowerBound = assoc.getEnd(collectionDataObject.getNormalizedName()).getLowerBound();
-							String existingGuard = transition.getCondition().asString();
-							if(!existingGuard.isEmpty()) existingGuard += "\nandalso ";
+                            String existingGuard = transition.getCondition().asString();
+                            existingGuard = existingGuard.replaceFirst("^\\[", "").replaceFirst("]$", "");
+							if(!existingGuard.isEmpty()) existingGuard += ",\n ";
 							String newGuard = "(enforceLowerBound "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc "+lowerBound+")";
-							transition.getCondition().setText(existingGuard+newGuard);
+							transition.getCondition().setText("[" + existingGuard + newGuard + "]");
 					});
 				});
 				
@@ -791,7 +793,7 @@ public class CompilerApp {
 		
 		//TODO checking of assocs of collections is done elswhere, could be brought together
 		Set<Pair<DataObjectWrapper, DataObjectWrapper>> nonCollectionAssocs = associationsToCheck.stream()
-				.filter(assoc -> Stream.of(assoc.first, assoc.second).allMatch(dataObject -> !readContext.get(dataObject).isCollection()))
+				.filter(assoc -> Stream.of(assoc.first, assoc.second).noneMatch(dataObject -> readContext.get(dataObject).isCollection()))
 				.collect(Collectors.toSet());
 		if(!nonCollectionAssocs.isEmpty()) {
 			String guard = "contains assoc "+ nonCollectionAssocs.stream()
@@ -799,7 +801,7 @@ public class CompilerApp {
 				.distinct()
 				.collect(Collectors.toList())
 				.toString();
-			transition.getCondition().setText(guard);
+			transition.getCondition().setText("[" + guard + "]");
 		}
 		
 		return associationsToCheck;
