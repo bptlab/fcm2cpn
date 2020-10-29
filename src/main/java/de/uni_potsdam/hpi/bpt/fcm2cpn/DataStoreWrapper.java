@@ -34,4 +34,9 @@ public class DataStoreWrapper extends DataElementWrapper<DataStore, DataStoreRef
 		return true;
 	}
 
+	@Override
+	public String guardForList(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc) {
+		return null;
+	}
+
 }

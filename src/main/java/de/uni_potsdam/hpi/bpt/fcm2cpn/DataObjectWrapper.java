@@ -23,6 +23,7 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 		
         compilerApp.createVariable(dataElementId(), "ID");
         compilerApp.createVariable(dataElementCount(), "INT");
+        compilerApp.createVariable(dataElementList(), "LIST_OF_DATA_OBJECT");
 	}
 
 
@@ -51,6 +52,18 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
         
 	}
 
+	@Override
+	public String guardForList(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc) {
+		String stateString = assoc.getStateName().map(x -> ", state = "+x).orElse("");
+		String caseId = compilerApp.caseId();
+		if(!assoc.isCollection()) {
+			return null;
+		} else {
+			String className = normalizedName;
+			String identifyingObjectId = compilerApp.getDataObjectCollectionIdentifier((Activity) otherEnd, this).dataElementId();
+			return dataElementList() + " = (map (fn(el) => {id = unpack el "+className+" , "+caseId+" = "+caseId+stateString+"}) (listAssocs "+identifyingObjectId+" "+className+" assoc))";
+		}
+	}
 
 	@Override
 	public boolean isDataObjectWrapper() {
