@@ -44,6 +44,10 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 		return namePrefix() + "Id";
 	}
 
+	public String dataElementList() {
+		return namePrefix() + "s";
+	}
+
 	public String dataElementCount() {
 		return namePrefix() + "Count";
 	}
@@ -69,8 +73,10 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 
 	public abstract boolean isDataObjectWrapper();
 	public abstract boolean isDataStoreWrapper();
-	
-	
+
+
+	public abstract String guardForList(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc);
+
 	public Arc assertMainPageArcTo(BaseElement element) {
 		return outgoingArcs.computeIfAbsent(element, _element -> compilerApp.createArc(place, compilerApp.nodeFor(_element)));
 	}

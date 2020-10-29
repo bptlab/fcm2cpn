@@ -289,12 +289,16 @@ public class CompilerApp {
             .forEach(stateEnum::addValue);
         if(!dataStates.isEmpty())builder.declareColorSet(petriNet, "STATE", stateEnum);
         
-        // DataObject
+        // DataObject & ListOfDataObjects
         CPNRecord dataObject = CpntypesFactory.INSTANCE.createCPNRecord();
         dataObject.addValue("id", "ID");
         dataObject.addValue(caseId(), "STRING");
         if(!dataStates.isEmpty())dataObject.addValue("state", "STATE");
         builder.declareColorSet(petriNet, "DATA_OBJECT", dataObject);
+
+        CPNList listOfDataObject = CpntypesFactory.INSTANCE.createCPNList();
+        listOfDataObject.setSort("DATA_OBJECT");
+        builder.declareColorSet(petriNet, "LIST_OF_DATA_OBJECT", listOfDataObject);
         
         //Association & ListOfAssociation
         CPNList association = CpntypesFactory.INSTANCE.createCPNList();
@@ -617,7 +621,7 @@ public class CompilerApp {
         	DataElementWrapper<?,?> dataElement = wrapperFor(assoc);
         	String annotation = dataElement.annotationForDataFlow(element, assoc);
         	linkWritingTransitions(element, dataElement, annotation, transitions);
-    		/**Assert that when writing a data store and not reading, the token read before*/
+    		/*Assert that when writing a data store and not reading, the token read before*/
         	if(!readElements.contains(dataElement) && dataElement.isDataStoreWrapper()) {
         		linkReadingTransitions(element, dataElement, annotation, transitions);
             	readElements.add(dataElement);
@@ -627,16 +631,25 @@ public class CompilerApp {
         inputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = wrapperFor(assoc);
             String annotation = dataElement.annotationForDataFlow(element, assoc);
+            String guard = dataElement.guardForList(element, assoc);
+            if (null != guard) transitions.stream().forEach(transition -> addGuardCondition(transition, guard));
     		linkReadingTransitions(element, dataElement, annotation, transitions);
 
-    		/**Assert that when reading and not writing, the unchanged token is put back*/
+    		/*Assert that when reading and not writing, the unchanged token is put back*/
     		List<Transition> readOnlyTransitions = transitions.stream()
     				.filter(transition -> outputs.entrySet().stream().noneMatch(entry -> wrapperFor(entry.getKey()).equals(dataElement) && entry.getValue().contains(transition)))
     				.collect(Collectors.toList());
     		linkWritingTransitions(element, dataElement, annotation, readOnlyTransitions);
         });
     }
-    
+
+    private void addGuardCondition(Transition transition, String newGuard) {
+        String existingGuard = transition.getCondition().asString();
+        existingGuard = existingGuard.replaceFirst("^\\[", "").replaceFirst("]$", "");
+        if(!existingGuard.isEmpty()) existingGuard += ",\n";
+        transition.getCondition().setText("[" + existingGuard + newGuard + "]");
+    }
+
     private void linkWritingTransitions(BaseElement element, DataElementWrapper<?,?> dataElement, String annotation, List<Transition> transitions) {
     	SubpageElement subPage = subpages.get(element);
     	dataElement.assertMainPageArcFrom(element);
@@ -727,10 +740,8 @@ public class CompilerApp {
 						DataObjectWrapper otherObject = (DataObjectWrapper) pair.otherElement(dataObject);
 						
 						if(limit > 1 && limit != AssociationEnd.UNLIMITED && readDataObjects.contains(otherObject)) {//If the other object is not read, it is just created - and then no bound that is 1 or higher will be violated
-							String existingGuard = transition.getCondition().asString();
-							if(!existingGuard.isEmpty()) existingGuard += "\nandalso ";
 							String newGuard = "(enforceUpperBound "+otherObject.dataElementId()+" "+dataObject.namePrefix()+" assoc "+limit+")";
-							transition.getCondition().setText(existingGuard+newGuard);
+							addGuardCondition(transition, newGuard);
 						}
 					});
 					
@@ -746,10 +757,8 @@ public class CompilerApp {
 									.orElse(false)) throw new ModelValidationException("Identifier data object "+identifier.getNormalizedName()+" for list data object "+collectionDataObject.getNormalizedName()+" is not associated 1 to 1 with "+singleObject.getNormalizedName()+" in activity "+normalizeElementName(elementName(activity)));
 
 							int lowerBound = assoc.getEnd(collectionDataObject.getNormalizedName()).getLowerBound();
-							String existingGuard = transition.getCondition().asString();
-							if(!existingGuard.isEmpty()) existingGuard += "\nandalso ";
 							String newGuard = "(enforceLowerBound "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc "+lowerBound+")";
-							transition.getCondition().setText(existingGuard+newGuard);
+							addGuardCondition(transition, newGuard);
 					});
 				});
 				
@@ -792,7 +801,7 @@ public class CompilerApp {
 		
 		//TODO checking of assocs of collections is done elswhere, could be brought together
 		Set<Pair<DataObjectWrapper, DataObjectWrapper>> nonCollectionAssocs = associationsToCheck.stream()
-				.filter(assoc -> Stream.of(assoc.first, assoc.second).allMatch(dataObject -> !readContext.get(dataObject).isCollection()))
+				.filter(assoc -> Stream.of(assoc.first, assoc.second).noneMatch(dataObject -> readContext.get(dataObject).isCollection()))
 				.collect(Collectors.toSet());
 		if(!nonCollectionAssocs.isEmpty()) {
 			String guard = "contains assoc "+ nonCollectionAssocs.stream()
@@ -800,7 +809,7 @@ public class CompilerApp {
 				.distinct()
 				.collect(Collectors.toList())
 				.toString();
-			transition.getCondition().setText(guard);
+			transition.getCondition().setText("[" + guard + "]");
 		}
 		
 		return associationsToCheck;
