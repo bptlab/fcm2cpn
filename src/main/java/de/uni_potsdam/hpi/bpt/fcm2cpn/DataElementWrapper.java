@@ -45,7 +45,7 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 	}
 
 	public String dataElementList() {
-		return namePrefix() + "_s";//The "_" is needed to not collide with reserved identifiers such as "as" and "ms"
+		return namePrefix() + "_list";//The "_" is needed to not collide with reserved identifiers such as "as" and "ms"
 	}
 
 	public String dataElementCount() {
@@ -75,7 +75,7 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 	public abstract boolean isDataStoreWrapper();
 
 
-	public abstract String guardForList(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc);
+	public abstract String collectionCreationGuard(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc);
 
 	public Arc assertMainPageArcTo(BaseElement element) {
 		return outgoingArcs.computeIfAbsent(element, _element -> compilerApp.createArc(place, compilerApp.nodeFor(_element)));

@@ -4,7 +4,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.camunda.bpm.model.bpmn.instance.DataAssociation;
+import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
+import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 
@@ -16,10 +18,11 @@ public class StatefulDataAssociation<AssociationType extends DataAssociation, Da
 	public StatefulDataAssociation(AssociationType bpmnAssociation, String stateName, DataElement dataElement, boolean isCollection) {
 		this.bpmnAssociation = bpmnAssociation;
 		this.stateName = Optional.ofNullable(stateName);
-		
-		assert dataElement instanceof DataObjectReference || dataElement instanceof DataStoreReference;
 		this.dataElement = dataElement;
 		this.isCollection = isCollection;
+		
+		assert isDataObjectReference() ^ isDataStoreReference();
+		assert isInput() ^ isOutput();
 	}
 	
 	public Optional<String> getStateName() {
@@ -44,6 +47,14 @@ public class StatefulDataAssociation<AssociationType extends DataAssociation, Da
 	
 	public boolean isDataStoreReference() {
 		return dataElement instanceof DataStoreReference;
+	}
+	
+	public boolean isInput() {
+		return bpmnAssociation instanceof DataInputAssociation;
+	}
+	
+	public boolean isOutput() {
+		return bpmnAssociation instanceof DataOutputAssociation;
 	}
 
 	@Override

@@ -225,41 +225,12 @@ public class CompilerApp {
         mainPage = createPage("Main Page");
         initializeDefaultColorSets();
         initializeDefaultVariables();
-        
-        builder.declareMLFunction(petriNet, 
-        		"fun filter pred [] = []\n" + 
-        		"| filter pred (x::xs) = if pred(x)\n" + 
-        		"then x::(filter pred xs)\n" + 
-        		"else filter pred xs;");
-        
-        builder.declareMLFunction(petriNet, 
-        		"fun listAssocs sourceId targetClass assoc = \n" + 
-        		"filter (fn([(a1, a2), (b1, b2)]) => (\n" + 
-        		"(a1,a2)=sourceId andalso b1 = targetClass) \n" + 
-        		"orelse ((b1,b2)=sourceId andalso a1 = targetClass)\n" + 
-        		") assoc;");
-        
-        builder.declareMLFunction(petriNet, 
-        		"fun unpack [(a1, a2), (b1, b2)] class = \n" + 
-        		"if a1 = class then (a1, a2)\n" + 
-        		"else (b1, b2);");
-        
-        builder.declareMLFunction(petriNet, 
-        		"fun enforceLowerBound id class assoc bound =\n" + 
-        		"(length (listAssocs id class assoc) >= bound);");
-        
-        builder.declareMLFunction(petriNet, 
-        		"fun enforceUpperBound id class assoc bound =\n" + 
-        		"(length (listAssocs id class assoc) < bound);");
-        builder.declareMLFunction(petriNet, 
-        		"fun associateWithList singleObject listObject identifier assoc =\n" + 
-        		"(map (fn(el) => [singleObject, unpack el listObject]) (listAssocs identifier listObject assoc));");
-        //TODO rename to associateWithCollection?
+        initializeUtilityFunctions();
         
         System.out.println("DONE");
     }
     
-    private void initializeDefaultColorSets() {
+	private void initializeDefaultColorSets() {
         builder.declareStandardColors(petriNet);
         
         builder.declareColorSet(petriNet, "CaseID", CpntypesFactory.INSTANCE.createCPNString());
@@ -287,14 +258,18 @@ public class CompilerApp {
         dataStates.stream()
         	.flatMap(state -> dataObjectStateToNetColors(state.getName()))
             .forEach(stateEnum::addValue);
-        if(!dataStates.isEmpty())builder.declareColorSet(petriNet, "STATE", stateEnum);
+        if(!dataStates.isEmpty()) builder.declareColorSet(petriNet, "STATE", stateEnum);
         
         // DataObject & ListOfDataObjects
         CPNRecord dataObject = CpntypesFactory.INSTANCE.createCPNRecord();
         dataObject.addValue("id", "ID");
         dataObject.addValue(caseId(), "STRING");
-        if(!dataStates.isEmpty())dataObject.addValue("state", "STATE");
+        if(!dataStates.isEmpty()) dataObject.addValue("state", "STATE");
         builder.declareColorSet(petriNet, "DATA_OBJECT", dataObject);
+        
+        if(!dataStates.isEmpty()) builder.declareMLFunction(petriNet, 
+        		"fun mapState collection state =\n" + 
+        		"(map (fn(el) => DATA_OBJECT.set_state el state) collection);");
 
         CPNList listOfDataObject = CpntypesFactory.INSTANCE.createCPNList();
         listOfDataObject.setSort("DATA_OBJECT");
@@ -315,6 +290,41 @@ public class CompilerApp {
     	createVariable(caseId(), "CaseID");
     	createVariable("assoc", "LIST_OF_ASSOCIATION");
     }
+    
+    private void initializeUtilityFunctions() {
+        builder.declareMLFunction(petriNet, 
+        		"fun filter pred [] = []\n" + 
+        		"| filter pred (x::xs) = if pred(x)\n" + 
+        		"then x::(filter pred xs)\n" + 
+        		"else filter pred xs;");
+        
+        builder.declareMLFunction(petriNet, 
+        		"fun listAssocs sourceId targetClass assoc = \n" + 
+        		"filter (fn([(a1, a2), (b1, b2)]) => (\n" + 
+        		"(a1,a2)=sourceId andalso b1 = targetClass) \n" + 
+        		"orelse ((b1,b2)=sourceId andalso a1 = targetClass)\n" + 
+        		") assoc;");
+        
+        builder.declareMLFunction(petriNet, 
+        		"fun unpack [(a1, a2), (b1, b2)] class = \n" + 
+        		"if a1 = class then (a1, a2)\n" + 
+        		"else (b1, b2);");
+        
+        builder.declareMLFunction(petriNet, 
+        		"fun enforceLowerBound id class assoc bound =\n" + 
+        		"(length (listAssocs id class assoc) >= bound);");
+        
+        builder.declareMLFunction(petriNet, 
+        		"fun enforceUpperBound id class assoc bound =\n" + 
+        		"(length (listAssocs id class assoc) < bound);");
+        
+        builder.declareMLFunction(petriNet, 
+        		"fun associateWithList singleObject listObject identifier assoc =\n" + 
+        		"(map (fn(el) => [singleObject, unpack el listObject]) (listAssocs identifier listObject assoc));");
+        //TODO rename to associateWithCollection?
+	}
+
+
     
     private void translateData() {
         translateDataObjects();        
@@ -629,8 +639,10 @@ public class CompilerApp {
         inputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = wrapperFor(assoc);
             String annotation = dataElement.annotationForDataFlow(element, assoc);
-            String guard = dataElement.guardForList(element, assoc);
-            if (null != guard) transitions.stream().forEach(transition -> addGuardCondition(transition, guard));
+            if(assoc.isCollection()) {
+                String guard = dataElement.collectionCreationGuard(element, assoc);
+                transitions.stream().forEach(transition -> addGuardCondition(transition, guard));
+            }
     		linkReadingTransitions(element, dataElement, annotation, transitions);
 
     		/*Assert that when reading and not writing, the unchanged token is put back*/

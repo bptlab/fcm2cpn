@@ -35,8 +35,8 @@ public class DataStoreWrapper extends DataElementWrapper<DataStore, DataStoreRef
 	}
 
 	@Override
-	public String guardForList(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc) {
-		return null;
+	public String collectionCreationGuard(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc) {
+		throw new UnsupportedOperationException("Data stores cannot be created as lists");
 	}
 
 }
