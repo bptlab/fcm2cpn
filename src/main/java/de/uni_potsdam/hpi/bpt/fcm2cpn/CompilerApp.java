@@ -404,22 +404,20 @@ public class CompilerApp {
                 InputSetWrapper inputSet = transputSet.first;
                 OutputSetWrapper outputSet = transputSet.second;
                 
-                Map<DataObjectWrapper, StatefulDataAssociation<DataInputAssociation, DataObjectReference>> readContext = inputSet.stream()
+                Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext = inputSet.stream()
                 	.filter(StatefulDataAssociation::isDataObjectReference)
-                	.collect(Collectors.toMap(
-                			reference -> DataObjectWrapper.class.cast(this.wrapperFor(reference)), 
-                			reference -> (StatefulDataAssociation<DataInputAssociation, DataObjectReference>) reference));
+                	.map(reference -> (StatefulDataAssociation<DataInputAssociation, DataObjectReference>) reference)
+                	.collect(Collectors.groupingBy(reference -> (DataObjectWrapper) this.wrapperFor(reference)));
                 Set<DataObjectWrapper> readObjects = readContext.keySet();
                 
-                Map<DataObjectWrapper, StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> writeContext = outputSet.stream()
+                Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext = outputSet.stream()
                     	.filter(StatefulDataAssociation::isDataObjectReference)
-                    	.collect(Collectors.toMap(
-                    			reference -> DataObjectWrapper.class.cast(this.wrapperFor(reference)), 
-                    			reference -> (StatefulDataAssociation<DataOutputAssociation, DataObjectReference>) reference));
+                    	.map(reference -> (StatefulDataAssociation<DataOutputAssociation, DataObjectReference>) reference)
+                    	.collect(Collectors.groupingBy(reference -> (DataObjectWrapper) this.wrapperFor(reference)));
                 Set<DataObjectWrapper> writtenObjects = writeContext.keySet();
                     
                 Set<DataObjectWrapper> createdObjects = writtenObjects.stream()
-                        .filter(object -> !readObjects.contains(object))
+                        .filter(object -> !readObjects.contains(object) || readContext.get(object).stream().allMatch(StatefulDataAssociation::isCollection))
                         .collect(Collectors.toSet());
 
                 Transition subpageTransition = builder.addTransition(activityPage, name + "_" + transputSetIndex);
@@ -668,7 +666,7 @@ public class CompilerApp {
     
 
     
-    private void associateDataObjects(Activity activity, Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, StatefulDataAssociation<DataInputAssociation, DataObjectReference>> readContext, Map<DataObjectWrapper, StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> writeContext) {
+    private void associateDataObjects(Activity activity, Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
     	SubpageElement activityWrapper = subpages.get(activity);
 		Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = new HashSet<>() {
 			
@@ -718,7 +716,7 @@ public class CompilerApp {
 				writeAnnotation += associationsToWrite.stream()
 					.map(pair -> {
 						Optional<DataObjectWrapper> collectionDataObject = Stream.of(pair.first, pair.second)
-								.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).isCollection())
+								.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
 								.findAny();
 						if(!collectionDataObject.isPresent()) {
 							return "^^["+Stream.of(pair.first, pair.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString()+"]";
@@ -747,7 +745,7 @@ public class CompilerApp {
 					
 					//Create guards for: Cannot create data object if lower bounds of read list data object are not given
 					Stream.of(pair.first, pair.second)
-						.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).isCollection())
+						.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
 						.forEach(collectionDataObject -> {
 							DataObjectWrapper singleObject = (DataObjectWrapper) pair.otherElement(collectionDataObject);
 							/*Try to use the same identifier that is used for the list*/
@@ -788,7 +786,7 @@ public class CompilerApp {
 		return potentialIdentifiers.stream().findAny().get();
     } 
     
-    private Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkAssociationsOfReadDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects, Map<DataObjectWrapper, StatefulDataAssociation<DataInputAssociation, DataObjectReference>> readContext) {
+    private Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkAssociationsOfReadDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext) {
     	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToCheck = new HashSet<>();
 		
 		for(DataObjectWrapper readObject : readDataObjects) {
@@ -801,7 +799,7 @@ public class CompilerApp {
 		
 		//TODO checking of assocs of collections is done elswhere, could be brought together
 		Set<Pair<DataObjectWrapper, DataObjectWrapper>> nonCollectionAssocs = associationsToCheck.stream()
-				.filter(assoc -> Stream.of(assoc.first, assoc.second).noneMatch(dataObject -> readContext.get(dataObject).isCollection()))
+				.filter(assoc -> Stream.of(assoc.first, assoc.second).allMatch(dataObject -> !readContext.get(dataObject).stream().allMatch(StatefulDataAssociation::isCollection)))
 				.collect(Collectors.toSet());
 		if(!nonCollectionAssocs.isEmpty()) {
 			String guard = "contains assoc "+ nonCollectionAssocs.stream()
