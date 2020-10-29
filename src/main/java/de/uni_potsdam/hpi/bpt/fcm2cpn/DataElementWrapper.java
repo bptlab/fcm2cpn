@@ -45,7 +45,7 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 	}
 
 	public String dataElementList() {
-		return namePrefix() + "s";
+		return namePrefix() + "_s";//The "_" is needed to not collide with reserved identifiers such as "as" and "ms"
 	}
 
 	public String dataElementCount() {
