@@ -286,7 +286,9 @@ public abstract class ModelStructureTests {
 			String list = singleCondition.replace("contains assoc ", "").trim();
 			return (singleCondition.contains("contains assoc") && toSet(list).stream().filter(assoc -> isAssocInscriptionFor(assoc, first+"Id", second+"Id")).count() == 1)
 					|| singleCondition.matches("\\(enforceLowerBound "+first+"Id "+second+" assoc (.*)\\)")
-					|| singleCondition.matches("\\(enforceLowerBound "+second+"Id "+first+" assoc (.*)\\)");
+					|| singleCondition.matches("\\(enforceLowerBound "+second+"Id "+first+" assoc (.*)\\)")
+					//TODO when there is a distinct function for getting all associated objects, this can serve as more precise condition
+					|| singleCondition.endsWith("(listAssocs "+first+"Id "+second+" assoc))") || singleCondition.endsWith("(listAssocs "+second+"Id "+first+" assoc))");
 		});
 	}
 	

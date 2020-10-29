@@ -417,7 +417,7 @@ public class CompilerApp {
                 Set<DataObjectWrapper> writtenObjects = writeContext.keySet();
                     
                 Set<DataObjectWrapper> createdObjects = writtenObjects.stream()
-                        .filter(object -> !readObjects.contains(object) || readContext.get(object).stream().allMatch(StatefulDataAssociation::isCollection))
+                        .filter(object -> !readObjects.contains(object) || (readContext.get(object).stream().allMatch(StatefulDataAssociation::isCollection) && !writeContext.get(object).stream().allMatch(StatefulDataAssociation::isCollection)))
                         .collect(Collectors.toSet());
 
                 Transition subpageTransition = builder.addTransition(activityPage, name + "_" + transputSetIndex);

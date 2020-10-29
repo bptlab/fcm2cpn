@@ -32,8 +32,10 @@ public class AssociationTests extends ModelStructureTests {
 		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
 		
 		transitionsFor(activity).forEach(transition -> {
-			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
+			if(arcsFromNodeNamed(transition, first).count() != 0 && arcsToNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
+				assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
 				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
+			}
 		});
 	}
 	
@@ -45,8 +47,10 @@ public class AssociationTests extends ModelStructureTests {
 		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
 		
 		transitionsFor(activity).forEach(transition -> {
-			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
+			if(arcsToNodeNamed(transition, first).count() != 0 && arcsToNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
+					assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
 				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
+			}
 		});
 	}
 	
@@ -57,8 +61,10 @@ public class AssociationTests extends ModelStructureTests {
 		assumeTrue(reads(activity, first) && reads(activity, second), "Activity does not read both data objects.");
 		
 		transitionsFor(activity).forEach(transition -> {
-			assertTrue(hasGuardForAssociation(transition, first, second),
-				"There is no guard for association when reading objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
+			if(arcsFromNodeNamed(transition, first).count() != 0 && arcsFromNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
+				assertTrue(hasGuardForAssociation(transition, first, second),
+						"There is no guard for association when reading objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
+			}	
 		});
 	}
 	
@@ -112,14 +118,16 @@ public class AssociationTests extends ModelStructureTests {
 		assumeTrue(lowerBound > 1, "No lower bound that has to be checked");
 		assumeTrue(reads(activity, second) && (writes(activity, first) || reads(activity, first)), "Association is not created in this activity");
 		transitionsFor(activity).forEach(transition -> {
-			assertEquals(1, guardsOf(transition).filter(guard -> {
-				String beforeIdentifier = "(enforceLowerBound ";
-				String afterIdentifier = "Id "+second+" assoc "+lowerBound+")";
-				if(!(guard.startsWith(beforeIdentifier) && guard.endsWith(afterIdentifier))) return false;
-				String identifier = guard.replace(beforeIdentifier, "").replace(afterIdentifier, "");
-				return reads(activity, identifier) && dataModel.getAssociation(identifier, second).map(idAssoc -> idAssoc.getEnd(identifier).getUpperBound() == 1).orElse(false);
-			}).count(),
-					"There is not exactly one guard for lower limit of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");
+			if(arcsFromNodeNamed(transition, first).count() != 0 || arcsToNodeNamed(transition, first).count() != 0) {//Object might not be part of transition i/o set
+				assertEquals(1, guardsOf(transition).filter(guard -> {
+					String beforeIdentifier = "(enforceLowerBound ";
+					String afterIdentifier = "Id "+second+" assoc "+lowerBound+")";
+					if(!(guard.startsWith(beforeIdentifier) && guard.endsWith(afterIdentifier))) return false;
+					String identifier = guard.replace(beforeIdentifier, "").replace(afterIdentifier, "");
+					return reads(activity, identifier) && dataModel.getAssociation(identifier, second).map(idAssoc -> idAssoc.getEnd(identifier).getUpperBound() == 1).orElse(false);
+				}).count(),
+						"There is not exactly one guard for lower limit of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");
+			}
 		});
 	}
 	
