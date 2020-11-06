@@ -117,11 +117,11 @@ public class CompilerApp {
 	private Map<BaseElement, SubpageElement> subpages;
 	
 	/** Global place for all associations*/
-	private Place associationsPlace;
+	Place associationsPlace;
 	/** Set of activities that read from {@link #associationsPlace}, to avoid duplicate arcs on main page*/
-	private final Set<Activity> associationReaders;
+	final Set<Activity> associationReaders;
 	/** Set of activities that write to {@link #associationsPlace}, to avoid duplicate arcs on main page*/
-	private final Set<Activity> associationWriters;
+	final Set<Activity> associationWriters;
 	
 	/** Global place that registers all tokens*/
 	private Place registryPlace;
@@ -388,155 +388,12 @@ public class CompilerApp {
         	String name = activity.getName();
         	Page activityPage = createPage(normalizeElementName(name));
             Instance mainPageTransition = createSubpageTransition(name, activityPage);
-            SubpageElement subPage = new SubpageElement(this, activity.getId(), activityPage, mainPageTransition, new ArrayList<>());
-            List<Transition> subpageTransitions = subPage.getSubpageTransitions();
+            SubpageElement subPage = new SubpageElement(this, activity.getId(), activityPage, mainPageTransition);
             subpages.putIfAbsent(activity, subPage);
             nodeMap.put(activity, mainPageTransition);
-            
-            // All possible combinations of input and output sets, either defined by io-specification or *all* possible combinations are used
-            List<Pair<InputSetWrapper, OutputSetWrapper>> transputSets = transputSets(activity);
-            
-            
-            if(transputSets.isEmpty()) {
-                // All read data elements with all states in that they are read
-                Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataInputAssociation, ?>>> inputsPerObject = activity.getDataInputAssociations().stream()
-                		.flatMap(this::splitDataAssociationByState)
-                		.collect(Collectors.groupingBy(this::wrapperFor));
-
-                // All written data elements with all states in that they are written
-                Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataOutputAssociation, ?>>> outputsPerObject = activity.getDataOutputAssociations().stream()
-                		.flatMap(this::splitDataAssociationByState)
-                		.collect(Collectors.groupingBy(this::wrapperFor));
-                List<InputSetWrapper> inputSets = allCombinationsOf(inputsPerObject.values()).stream().map(InputSetWrapper::new).collect(Collectors.toList());
-                List<OutputSetWrapper> outputSets = allCombinationsOf(outputsPerObject.values()).stream().map(OutputSetWrapper::new).collect(Collectors.toList());
-            	for (InputSetWrapper inputSet : inputSets) {
-                	for (OutputSetWrapper outputSet : outputSets) {
-                		transputSets.add(new Pair<>(inputSet, outputSet));
-                	}
-                }
-            }
-
-            Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputtingTransitions = activity.getDataOutputAssociations().stream()
-            		.flatMap(this::splitDataAssociationByState)
-            		.collect(Collectors.toMap(Function.identity(), x -> new ArrayList<>()));
-            Map<StatefulDataAssociation<DataInputAssociation, ?>, List<Transition>> inputtingTransitions = activity.getDataInputAssociations().stream()
-            		.flatMap(this::splitDataAssociationByState)
-            		.collect(Collectors.toMap(Function.identity(), x -> new ArrayList<>()));
-            
-            int transputSetIndex = 0;
-            for (Pair<InputSetWrapper, OutputSetWrapper> transputSet : transputSets) {
-                InputSetWrapper inputSet = transputSet.first;
-                OutputSetWrapper outputSet = transputSet.second;
-                
-                Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext = inputSet.stream()
-                	.filter(StatefulDataAssociation::isDataObjectReference)
-                	.map(reference -> (StatefulDataAssociation<DataInputAssociation, DataObjectReference>) reference)
-                	.collect(Collectors.groupingBy(reference -> (DataObjectWrapper) this.wrapperFor(reference)));
-                Set<DataObjectWrapper> readObjects = readContext.keySet();
-                
-                Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext = outputSet.stream()
-                    	.filter(StatefulDataAssociation::isDataObjectReference)
-                    	.map(reference -> (StatefulDataAssociation<DataOutputAssociation, DataObjectReference>) reference)
-                    	.collect(Collectors.groupingBy(reference -> (DataObjectWrapper) this.wrapperFor(reference)));
-                Set<DataObjectWrapper> writtenObjects = writeContext.keySet();
-                    
-                Set<DataObjectWrapper> createdObjects = writtenObjects.stream()
-                        .filter(object -> !readObjects.contains(object) || (readContext.get(object).stream().allMatch(StatefulDataAssociation::isCollection) && !writeContext.get(object).stream().allMatch(StatefulDataAssociation::isCollection)))
-                        .collect(Collectors.toSet());
-
-                Transition subpageTransition = builder.addTransition(activityPage, name + "_" + transputSetIndex);
-                subpageTransitions.add(subpageTransition);
-                attachObjectCreationCounters(subpageTransition, createdObjects);
-                createCreationRegistrationArcs(activity, subpageTransition, createdObjects);
-                
-                associateDataObjects(activity, subpageTransition, readObjects, writtenObjects, readContext, writeContext);
-            	
-                inputSet.forEach(input -> inputtingTransitions.get(input).add(subpageTransition));
-                outputSet.forEach(output -> outputtingTransitions.get(output).add(subpageTransition));
-                
-                transputSetIndex++;
-            }
-            createDataAssociationArcs(activity, outputtingTransitions, inputtingTransitions);
-            
+        	new ActivityCompiler(this, activity, subPage).compile();
         });
     }
-    
-    private List<Pair<InputSetWrapper, OutputSetWrapper>> transputSets(Activity activity) {
-        List<Pair<InputSetWrapper, OutputSetWrapper>> transputSets = new ArrayList<>();
-        if(activity.getIoSpecification() == null) return transputSets;
-        
-        // Output sets mapped to data assocs and split by "|" state shortcuts
-    	Map<OutputSet, List<OutputSetWrapper>> translatedOutputSets = activity.getIoSpecification().getOutputSets().stream().collect(Collectors.toMap(Function.identity(), outputSet -> {
-            Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataOutputAssociation, ?>>> outputsPerObject = outputSet.getDataOutputRefs().stream()
-            		.map(Utils::getAssociation)
-            		.flatMap(this::splitDataAssociationByState)
-            		.collect(Collectors.groupingBy(this::wrapperFor));
-            return allCombinationsOf(outputsPerObject.values()).stream().map(OutputSetWrapper::new).collect(Collectors.toList());
-        }));
-    	
-        activity.getIoSpecification().getInputSets().forEach(inputSet -> {
-            Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataInputAssociation, ?>>> inputsPerObject = inputSet.getDataInputs().stream()
-            		.map(Utils::getAssociation)
-            		.flatMap(this::splitDataAssociationByState)
-            		.collect(Collectors.groupingBy(this::wrapperFor));
-            List<InputSetWrapper> translatedInputSets = allCombinationsOf(inputsPerObject.values()).stream().map(InputSetWrapper::new).collect(Collectors.toList());
-            for(OutputSet outputSet : inputSet.getOutputSets()) {
-            	for(OutputSetWrapper translatedOutputSet : translatedOutputSets.get(outputSet)) {
-                	for(InputSetWrapper translatedInputSet : translatedInputSets) {
-                		transputSets.add(new Pair<>(translatedInputSet, translatedOutputSet));
-                	}
-            	}
-            }
-        });
-        
-        //Data Stores are (at least in Signavio) not part of input or output sets
-        List<StatefulDataAssociation<DataInputAssociation, ?>> dataStoreInputs = activity.getDataInputAssociations().stream()
-			   .filter(assoc -> getSource(assoc) instanceof DataStoreReference)
-			   .flatMap(this::splitDataAssociationByState)
-			   .collect(Collectors.toList());
-
-        List<StatefulDataAssociation<DataOutputAssociation, ?>> dataStoreOutputs = activity.getDataOutputAssociations().stream()
- 			   .filter(assoc -> getTarget(assoc) instanceof DataStoreReference)
- 			   .flatMap(this::splitDataAssociationByState)
- 			   .collect(Collectors.toList());
-        
-        for(Pair<InputSetWrapper, OutputSetWrapper> transputSet : transputSets) {
-        	transputSet.first.addAll(dataStoreInputs);
-        	transputSet.second.addAll(dataStoreOutputs);
-        }
-    
-    	return transputSets;
-    }
-
-	private void attachObjectCreationCounters(Transition transition, Set<DataObjectWrapper> createObjects) {
-		if(createObjects.isEmpty()) return;
-        String countVariables = createObjects.stream().map(DataObjectWrapper::dataElementCount).collect(Collectors.joining(",\n"));
-        String idVariables = createObjects.stream().map(DataObjectWrapper::dataElementId).collect(Collectors.joining(",\n"));
-        String idGeneration = createObjects.stream().map(object -> "("+object.namePrefix() + ", " + object.dataElementCount() +")").collect(Collectors.joining(",\n"));
-        Page page = transition.getPage();
-        transition.getCode().setText(String.format(
-                "input (%s);\n"
-                        + "output (%s);\n"
-                        + "action (%s);",
-                countVariables,
-                idVariables,
-                idGeneration));
-        createObjects.forEach(object -> {
-            PlaceNode caseTokenPlace = object.creationCounterForPage(page);
-            builder.addArc(page, caseTokenPlace, transition, object.dataElementCount());
-            builder.addArc(page, transition, caseTokenPlace, object.dataElementCount() + "+ 1");
-        });
-    }
-	
-	private void createCreationRegistrationArcs(FlowElement activityOrStartEvent, Transition transition, Set<DataObjectWrapper> createdObjects) {
-		if(!createdObjects.isEmpty()) {
-			SubpageElement elementPage = subpages.get(activityOrStartEvent);
-			elementPage.createArcFrom(registryPlace, transition, "registry");
-			elementPage.createArcTo(registryPlace, transition, 
-					"registry^^"+createdObjects.stream().map(DataObjectWrapper::dataElementId).collect(Collectors.toList()).toString()
-			);
-		}
-	}
     
     private void translateEvents() {
     	translateStartEvents();
@@ -549,49 +406,11 @@ public class CompilerApp {
         events.forEach(startEvent -> {
         	String name = elementName(startEvent);
         	Page eventPage = createPage(normalizeElementName(name));
-        	Transition subpageTransition = builder.addTransition(eventPage, name);
             Instance mainPageTransition = createSubpageTransition(name, eventPage);
         	nodeMap.put(startEvent, mainPageTransition);
-            SubpageElement subPage = new SubpageElement(this, startEvent.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
-            subpages.put(startEvent, subPage);
-            
-            Place caseTokenPlace = createPlace(eventPage, "Case Count", "INT", "1`0");
-            builder.addArc(eventPage, caseTokenPlace, subpageTransition, "count");
-            builder.addArc(eventPage, subpageTransition, caseTokenPlace, "count + 1");
-
-            
-            List<StatefulDataAssociation<DataOutputAssociation, ?>> outputs = startEvent.getDataOutputAssociations().stream()
-            		.flatMap(this::splitDataAssociationByState)
-            		.collect(Collectors.toList());
-
-            List<DataElementWrapper<?,?>> createdDataElements = outputs.stream()
-            		.map(this::wrapperFor)
-                    .distinct()
-            		.collect(Collectors.toList());
-            
-            /* 
-             * TODO all data outputs of event are using case count, should dedicated counters be created
-             * Use Case: When the input event creates a data object that can also be created by a task
-             * Then they should both use the same counter, one for the data object, and not the case counter
-             */            
-            String idVariables = "caseId, "+createdDataElements.stream().map(DataElementWrapper::dataElementId).collect(Collectors.joining(", "));
-            String idGeneration = "String.concat[\"case\", Int.toString(count)]"+createdDataElements.stream().map(n -> ",\n("+n.namePrefix() + ", count)").collect(Collectors.joining(""));
-            subpageTransition.getCode().setText(String.format(
-            	"input (count);\n"
-	            +"output (%s);\n"
-    			+"action (%s);",
-                idVariables,
-                idGeneration));
-            
-            Set<DataObjectWrapper> createdObjects = createdDataElements.stream()
-            		.filter(DataElementWrapper::isDataObjectWrapper)
-            		.map(DataObjectWrapper.class::cast)
-            		.collect(Collectors.toSet());
-            createCreationRegistrationArcs(startEvent, subpageTransition, createdObjects);
-            
-            Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputTransitions = new HashMap<>();
-            outputs.forEach(assoc -> outputTransitions.put(assoc, Arrays.asList(subpageTransition)));
-        	createDataAssociationArcs(startEvent, outputTransitions, Collections.emptyMap());
+            SubpageElement elementPage = new SubpageElement(this, startEvent.getId(), eventPage, mainPageTransition);
+            subpages.put(startEvent, elementPage);
+        	new StartEventCompiler(this, startEvent, elementPage).compile();
         });
     }
     
@@ -632,191 +451,9 @@ public class CompilerApp {
         });
 	}
     
-    private <T extends DataAssociation> Stream<StatefulDataAssociation<T, ?>> splitDataAssociationByState(T assoc) {
-    	BaseElement source = getSource(assoc);
-    	BaseElement target = getTarget(assoc);
-        ItemAwareElement dataElement = (ItemAwareElement) (source instanceof DataObjectReference || source instanceof DataStoreReference ? source : target);
-        assert dataElement != null;
-    	Stream<String> possibleStates = Optional.ofNullable(dataElement.getDataState())
-        		.map(DataState::getName)
-        		.map(stateName -> dataObjectStateToNetColors(stateName))
-        		.orElse(Stream.of((String)null));
-    	boolean isCollection = Optional.ofNullable(Utils.getReferencedElement(dataElement).getAttributeValue("isCollection")).map(Boolean::parseBoolean).orElse(false);
-    	return possibleStates.map(state -> new StatefulDataAssociation<>(assoc, state, dataElement, isCollection));
-    }
-    
-    /**
-     * Creates arcs for all data associations of one element, for all transitions of that element
-     * @param element: The element that writes or reads, usually an activity or event
-     * @param outputs: For each stateful data assoc: Which (inputset x outputset)-Transitions write this data object in this state
-     * @param inputs: For each stateful data assoc: Which (inputset x outputset)-Transitions read this data object in this state
-     */
-    private void createDataAssociationArcs(BaseElement element, Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputs, Map<StatefulDataAssociation<DataInputAssociation, ?>, List<Transition>> inputs) {
-    	Set<DataElementWrapper<?,?>> readElements = inputs.keySet().stream().map(this::wrapperFor).collect(Collectors.toSet());
-    	Set<DataElementWrapper<?,?>> writtenElements = outputs.keySet().stream().map(this::wrapperFor).collect(Collectors.toSet());
-    	
-    	
-        outputs.forEach((assoc, transitions) -> {
-        	DataElementWrapper<?,?> dataElement = wrapperFor(assoc);
-        	String annotation = dataElement.annotationForDataFlow(element, assoc);
-        	linkWritingTransitions(element, dataElement, annotation, transitions);
-    		/*Assert that when writing a data store and not reading, the token read before*/
-        	if(!readElements.contains(dataElement) && dataElement.isDataStoreWrapper()) {
-        		linkReadingTransitions(element, dataElement, annotation, transitions);
-            	readElements.add(dataElement);
-        	}
-        });
-        
-        inputs.forEach((assoc, transitions) -> {
-        	DataElementWrapper<?,?> dataElement = wrapperFor(assoc);
-            String annotation = dataElement.annotationForDataFlow(element, assoc);
-            if(assoc.isCollection()) {
-                String guard = dataElement.collectionCreationGuard(element, assoc);
-                transitions.stream().forEach(transition -> addGuardCondition(transition, guard));
-            }
-    		linkReadingTransitions(element, dataElement, annotation, transitions);
-
-    		/*Assert that when reading and not writing, the unchanged token is put back*/
-    		List<Transition> readOnlyTransitions = transitions.stream()
-    				.filter(transition -> outputs.entrySet().stream().noneMatch(entry -> wrapperFor(entry.getKey()).equals(dataElement) && entry.getValue().contains(transition)))
-    				.collect(Collectors.toList());
-    		linkWritingTransitions(element, dataElement, annotation, readOnlyTransitions);
-        });
-    }
-
-    private void addGuardCondition(Transition transition, String newGuard) {
-        String existingGuard = transition.getCondition().asString();
-        existingGuard = existingGuard.replaceFirst("^\\[", "").replaceFirst("]$", "");
-        if(!existingGuard.isEmpty()) existingGuard += ",\n";
-        transition.getCondition().setText("[" + existingGuard + newGuard + "]");
-    }
-
-    private void linkWritingTransitions(BaseElement element, DataElementWrapper<?,?> dataElement, String annotation, List<Transition> transitions) {
-    	SubpageElement subPage = subpages.get(element);
-    	dataElement.assertMainPageArcFrom(element);
-    	transitions.forEach(subPageTransition -> {
-    		builder.addArc(subPageTransition.getPage(), subPageTransition, subPage.refPlaceFor(dataElement.place), annotation);
-    	});
-    }    
-    
-    private void linkReadingTransitions(BaseElement element, DataElementWrapper<?,?> dataElement, String annotation, List<Transition> transitions) {
-    	SubpageElement subPage = subpages.get(element);
-    	dataElement.assertMainPageArcTo(element);
-    	transitions.forEach(subPageTransition -> {
-    		builder.addArc(subPageTransition.getPage(), subPage.refPlaceFor(dataElement.place), subPageTransition, annotation);
-    	});
-    }
-    
-
-    
-    private void associateDataObjects(Activity activity, Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
-    	SubpageElement activityWrapper = subpages.get(activity);
-		Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = new HashSet<>() {
-			
-			@Override
-			public boolean add(Pair<DataObjectWrapper, DataObjectWrapper> e) {
-				if(!contains(e) && !contains(e.reversed())) return super.add(e);
-				else return false;
-			};
-			
-			@Override
-			public boolean remove(Object e) {
-				return super.remove(e) || super.remove(((Pair<?,?>)e).reversed());
-			};
-		};
-		
-		
-		for(DataObjectWrapper writtenObject : writtenDataObjects) {
-			for(DataObjectWrapper readObject : readDataObjects) {
-				if(!writtenObject.equals(readObject) && dataModel.isAssociated(writtenObject.getNormalizedName(), readObject.getNormalizedName())) {
-					associationsToWrite.add(new Pair<>(writtenObject, readObject));
-				}
-			}
-			for(DataObjectWrapper otherWrittenObject : writtenDataObjects) {
-				if(!writtenObject.equals(otherWrittenObject) && dataModel.isAssociated(writtenObject.getNormalizedName(), otherWrittenObject.getNormalizedName())) {
-					associationsToWrite.add(new Pair<>(writtenObject, otherWrittenObject));
-				}
-			}
-		}
-		Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(transition, readDataObjects, readContext);
-		
-		//If either new assocs are created or old assocs are checked, we need arcs from and to the assoc place
-		if(!checkedAssociations.isEmpty() || !associationsToWrite.isEmpty()) {
-			// Create reading arcs
-			String readAnnotation = "assoc";
-			activityWrapper.createArcFrom(associationsPlace, transition, readAnnotation);
-			if(!associationReaders.contains(activity)) {
-				createArc(associationsPlace, nodeFor(activity));
-				associationReaders.add(activity);
-			}
-			
-			//Create write back arcs; if new assocs are create, write the union back; if assocs are checked, they already exist
-			String writeAnnotation = "assoc";
-			checkedAssociations.forEach(associationsToWrite::remove);
-			
-			if(!associationsToWrite.isEmpty()) {
-				
-				writeAnnotation += associationsToWrite.stream()
-					.map(pair -> {
-						Optional<DataObjectWrapper> collectionDataObject = Stream.of(pair.first, pair.second)
-								.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
-								.findAny();
-						if(!collectionDataObject.isPresent()) {
-							return "^^["+Stream.of(pair.first, pair.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString()+"]";
-						} else {
-							DataObjectWrapper identifier = getDataObjectCollectionIdentifier(activity, collectionDataObject.get());
-							DataObjectWrapper other = (DataObjectWrapper) pair.otherElement(collectionDataObject.get());
-							//TODO does not sort alphabetically
-							return "^^(associateWithList "+other.dataElementId()+" "+collectionDataObject.get().getNormalizedName()+" "+identifier.dataElementId()+" assoc)";
-						}
-					})
-					.distinct()
-					.collect(Collectors.joining());
-				associationsToWrite.forEach(pair -> {
-					Association assoc = dataModel.getAssociation(pair.first.getNormalizedName(), pair.second.getNormalizedName()).get();
-					//Create guards for: Cannot create data object if this would violate upper bounds
-					Stream.of(pair.first, pair.second).forEach(dataObject -> {
-						AssociationEnd end = assoc.getEnd(dataObject.getNormalizedName());
-						int limit = end.getUpperBound();
-						DataObjectWrapper otherObject = (DataObjectWrapper) pair.otherElement(dataObject);
-						
-						if(limit > 1 && limit != AssociationEnd.UNLIMITED && readDataObjects.contains(otherObject)) {//If the other object is not read, it is just created - and then no bound that is 1 or higher will be violated
-							String newGuard = "(enforceUpperBound "+otherObject.dataElementId()+" "+dataObject.namePrefix()+" assoc "+limit+")";
-							addGuardCondition(transition, newGuard);
-						}
-					});
-					
-					//Create guards for: Cannot create data object if lower bounds of read list data object are not given
-					Stream.of(pair.first, pair.second)
-						.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
-						.forEach(collectionDataObject -> {
-							DataObjectWrapper singleObject = (DataObjectWrapper) pair.otherElement(collectionDataObject);
-							/*Try to use the same identifier that is used for the list*/
-							DataObjectWrapper identifier = getDataObjectCollectionIdentifier(activity, collectionDataObject);
-							if(!dataModel.getAssociation(identifier.getNormalizedName(), singleObject.getNormalizedName())
-									.map(linkingAssoc -> linkingAssoc.first.getUpperBound() <= 1 && linkingAssoc.second.getUpperBound() <= 1)
-									.orElse(false)) throw new ModelValidationException("Identifier data object "+identifier.getNormalizedName()+" for list data object "+collectionDataObject.getNormalizedName()+" is not associated 1 to 1 with "+singleObject.getNormalizedName()+" in activity "+normalizeElementName(elementName(activity)));
-
-							int lowerBound = assoc.getEnd(collectionDataObject.getNormalizedName()).getLowerBound();
-							String newGuard = "(enforceLowerBound "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc "+lowerBound+")";
-							addGuardCondition(transition, newGuard);
-					});
-				});
-				
-				
-			}
-			activityWrapper.createArcTo(associationsPlace, transition, writeAnnotation);
-			if(!associationWriters.contains(activity)) {
-				createArc(nodeFor(activity), associationsPlace);
-				associationWriters.add(activity);
-			}
-		}
-    }
-    
-    
     public DataObjectWrapper getDataObjectCollectionIdentifier(Activity activity, DataObjectWrapper object) {
     	Set<DataObjectWrapper> potentialIdentifiers = activity.getDataInputAssociations().stream()
-    		.flatMap(this::splitDataAssociationByState)
+    		.flatMap(Utils::splitDataAssociationByState)
     		.map(this::wrapperFor)
     		.filter(DataElementWrapper::isDataObjectWrapper)
     		.map(DataObjectWrapper.class::cast)
@@ -828,34 +465,7 @@ public class CompilerApp {
 		assert potentialIdentifiers.size() == 1;
 		return potentialIdentifiers.stream().findAny().get();
     } 
-    
-    private Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkAssociationsOfReadDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext) {
-    	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToCheck = new HashSet<>();
-		
-		for(DataObjectWrapper readObject : readDataObjects) {
-			for(DataObjectWrapper otherReadObject : readDataObjects) {
-				if(readObject.compareTo(otherReadObject) < 0 && dataModel.isAssociated(readObject.getNormalizedName(), otherReadObject.getNormalizedName())) {
-					associationsToCheck.add(new Pair<>(readObject, otherReadObject));
-				}
-			}
-		}
-		
-		//TODO checking of assocs of collections is done elswhere, could be brought together
-		Set<Pair<DataObjectWrapper, DataObjectWrapper>> nonCollectionAssocs = associationsToCheck.stream()
-				.filter(assoc -> Stream.of(assoc.first, assoc.second).allMatch(dataObject -> !readContext.get(dataObject).stream().allMatch(StatefulDataAssociation::isCollection)))
-				.collect(Collectors.toSet());
-		if(!nonCollectionAssocs.isEmpty()) {
-			String guard = "contains assoc "+ nonCollectionAssocs.stream()
-				.map(assoc -> Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString())
-				.distinct()
-				.collect(Collectors.toList())
-				.toString();
-			transition.getCondition().setText("[" + guard + "]");
-		}
-		
-		return associationsToCheck;
-    }
-    
+        
     
     private void translateGateways() {
         Collection<ExclusiveGateway> exclusiveGateways = bpmn.getModelElementsByType(ExclusiveGateway.class);
@@ -941,7 +551,7 @@ public class CompilerApp {
     	//TODO
     }
     
-    private DataElementWrapper<?,?> wrapperFor(StatefulDataAssociation<?, ?> assoc) {
+    public DataElementWrapper<?,?> wrapperFor(StatefulDataAssociation<?, ?> assoc) {
     	return Stream.concat(dataObjectWrappers.stream(), dataStoreWrappers.stream())
     			.filter(any -> any.isForReference(assoc.getDataElement())).findAny().get();
     }    
@@ -966,6 +576,10 @@ public class CompilerApp {
     
     public RefPlace createFusionPlace(Page page, String name, String type, String initialMarking) {
     	return builder.addFusionPlace(page, name, type, initialMarking, name);
+    }
+    
+    public Transition createTransition(Page page, String name) {
+    	return builder.addTransition(page, name);
     }
     
     public Instance createSubpageTransition(String name, Page page) {
@@ -996,6 +610,10 @@ public class CompilerApp {
 	
 	public DataModel getDataModel() {
 		return dataModel;
+	}
+
+	public Place getRegistryPlace() {
+		return registryPlace;
 	}
 
 	public Node nodeFor(BaseElement element) {

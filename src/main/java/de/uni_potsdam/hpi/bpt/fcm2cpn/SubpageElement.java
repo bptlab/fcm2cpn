@@ -1,5 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,14 +18,19 @@ public class SubpageElement {
 	private final CompilerApp compilerApp;
 	public final String id;
 	private final Page page;
-	private final Instance mainTransition;
+	private final Instance mainPageTransition;
 	private final List<Transition> subpageTransitions;
 	private final Map<Place, RefPlace> placeReferences;
+	
+	public SubpageElement(CompilerApp compilerApp, String id, Page page, Instance mainTransition) {
+		this(compilerApp, id, page, mainTransition, new ArrayList<>());
+	}
+	
 	public SubpageElement(CompilerApp compilerApp, String id, Page page, Instance mainTransition, List<Transition> subpageTransitions) {
 		this.compilerApp = compilerApp;
 		this.id = id;
 		this.page = page;
-		this.mainTransition = mainTransition;
+		this.mainPageTransition = mainTransition;
 		this.subpageTransitions = subpageTransitions;
 		this.placeReferences = new HashMap<>();
 	}
@@ -37,7 +43,7 @@ public class SubpageElement {
 				sourcePlace.getSort().getText(), 
 				"", 
 				sourcePlace, 
-				mainTransition);
+				mainPageTransition);
 		});
 	}
 	
@@ -71,7 +77,7 @@ public class SubpageElement {
 	}
 
 	public Instance getMainTransition() {
-		return mainTransition;
+		return mainPageTransition;
 	}
 
 	public Page getPage() {

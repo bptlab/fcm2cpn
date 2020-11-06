@@ -1,9 +1,14 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.dataObjectStateToNetColors;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.getSource;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.getTarget;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.camunda.bpm.model.bpmn.impl.instance.SourceRef;
@@ -15,10 +20,12 @@ import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutput;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
+import org.camunda.bpm.model.bpmn.instance.DataState;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.xml.ModelInstance;
+import org.cpntools.accesscpn.model.Transition;
 
 public class Utils {
 	
@@ -132,5 +139,31 @@ public class Utils {
         }
         return combinations;
 	}
+	
+	/**
+	 * Creates distinct result object for each state of one bpmn data object reference, enables the [stateA | stateB] notation
+	 */
+    public static <T extends DataAssociation> Stream<StatefulDataAssociation<T, ?>> splitDataAssociationByState(T assoc) {
+    	BaseElement source = getSource(assoc);
+    	BaseElement target = getTarget(assoc);
+        ItemAwareElement dataElement = (ItemAwareElement) (source instanceof DataObjectReference || source instanceof DataStoreReference ? source : target);
+        assert dataElement != null;
+    	Stream<String> possibleStates = Optional.ofNullable(dataElement.getDataState())
+        		.map(DataState::getName)
+        		.map(stateName -> dataObjectStateToNetColors(stateName))
+        		.orElse(Stream.of((String)null));
+    	boolean isCollection = Optional.ofNullable(Utils.getReferencedElement(dataElement).getAttributeValue("isCollection")).map(Boolean::parseBoolean).orElse(false);
+    	return possibleStates.map(state -> new StatefulDataAssociation<>(assoc, state, dataElement, isCollection));
+    }
+	
+	/**
+	 * Shortcut to append new conditions to cpn transition guards
+	 */
+    public static void addGuardCondition(Transition transition, String newGuard) {
+        String existingGuard = transition.getCondition().asString();
+        existingGuard = existingGuard.replaceFirst("^\\[", "").replaceFirst("]$", "");
+        if(!existingGuard.isEmpty()) existingGuard += ",\n";
+        transition.getCondition().setText("[" + existingGuard + newGuard + "]");
+    }
 
 }
