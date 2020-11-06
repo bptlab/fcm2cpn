@@ -209,18 +209,18 @@ public abstract class ModelStructureTests {
 			Map<String, String> outputs = new HashMap<>();
 			transition.getTargetArc().stream()
 				.map(inputArc -> inputArc.getHlinscription().asString())
-				.forEach(inscription -> parseCreatedTokenIdAndState(inscription).ifPresent(idAndState -> inputs.put(idAndState.first, idAndState.second)));
+				.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> inputs.put(idAndState.first, idAndState.second)));
 
 			transition.getSourceArc().stream()
 				.map(outputArc -> outputArc.getHlinscription().asString())
-				.forEach(inscription -> parseCreatedTokenIdAndState(inscription).ifPresent(idAndState -> outputs.put(idAndState.first, idAndState.second)));
+				.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> outputs.put(idAndState.first, idAndState.second)));
 			ioCombinations.add(new Pair<Map<String,String>, Map<String,String>>(inputs, outputs));
 		});
 		
 		return ioCombinations;
 	}
 	
-	public static Optional<Pair<String, String>> parseCreatedTokenIdAndState(String inscription) {
+	public static Optional<Pair<String, String>> parseCreatedTokenIdAndState(String inscription, Transition transition) {
 		String dataId = null;
 		String state = null;
 
@@ -234,12 +234,24 @@ public abstract class ModelStructureTests {
 					.filter(statement -> statement.length == 2)
 					.collect(Collectors.toList());
 				for(String[] statement : statements) {
-					if(statement[0].trim().equals("id")) dataId = !statement[1].contains("unpack") ? statement[1].trim().replaceAll("Id$", "") : statement[1].trim().replaceAll("unpack el ", "");
+					if(statement[0].trim().equals("id")) dataId = statement[1].trim().replaceAll("Id$", "");
 					if(statement[0].trim().equals("state")) state = statement[1].trim();
 				}
-			if(dataId != null && state != null) return Optional.of(new Pair<>(dataId, state));
+		} else if(inscription.contains("_list")) {
+			String[] tokens = inscription.split(" ");
+			if(tokens.length == 3 && tokens[0].equals("mapState") && tokens[1].endsWith("_list")) {
+				dataId = tokens[1].replaceAll("_list$", "");
+				state = tokens[2];
+			} else if(tokens.length == 1 && tokens[0].endsWith("_list")) {
+				dataId = tokens[0].replaceAll("_list$", "");
+				state = guardsOf(transition)
+					.filter(guard -> guard.startsWith(tokens[0]+" = "))
+					.map(guard -> guard.split("state = ")[1].split("}")[0])
+					.findAny().orElse(null);
+			}
 		}
-		return Optional.empty();
+		if(dataId != null && state != null) return Optional.of(new Pair<>(dataId, state));
+		else return Optional.empty();
 	}
 	
 	public static List<Map<String, String>> indexedCombinationsOf(Map<String, List<String>> groups) {
