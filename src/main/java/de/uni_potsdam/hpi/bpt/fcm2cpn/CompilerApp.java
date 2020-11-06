@@ -59,6 +59,7 @@ import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
+import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.FlowNode;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.OutputSet;
@@ -527,11 +528,11 @@ public class CompilerApp {
         });
     }
 	
-	private void createCreationRegistrationArcs(Activity activity, Transition transition, Set<DataObjectWrapper> createdObjects) {
+	private void createCreationRegistrationArcs(FlowElement activityOrStartEvent, Transition transition, Set<DataObjectWrapper> createdObjects) {
 		if(!createdObjects.isEmpty()) {
-			SubpageElement activityPage = subpages.get(activity);
-			activityPage.createArcFrom(registryPlace, transition, "registry");
-			activityPage.createArcTo(registryPlace, transition, 
+			SubpageElement elementPage = subpages.get(activityOrStartEvent);
+			elementPage.createArcFrom(registryPlace, transition, "registry");
+			elementPage.createArcTo(registryPlace, transition, 
 					"registry^^"+createdObjects.stream().map(DataObjectWrapper::dataElementId).collect(Collectors.toList()).toString()
 			);
 		}
@@ -545,21 +546,21 @@ public class CompilerApp {
 
 	private void translateStartEvents() {
         Collection<StartEvent> events = bpmn.getModelElementsByType(StartEvent.class);
-        events.forEach(each -> {
-        	String name = elementName(each);
+        events.forEach(startEvent -> {
+        	String name = elementName(startEvent);
         	Page eventPage = createPage(normalizeElementName(name));
         	Transition subpageTransition = builder.addTransition(eventPage, name);
             Instance mainPageTransition = createSubpageTransition(name, eventPage);
-        	nodeMap.put(each, mainPageTransition);
-            SubpageElement subPage = new SubpageElement(this, each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
-            subpages.put(each, subPage);
+        	nodeMap.put(startEvent, mainPageTransition);
+            SubpageElement subPage = new SubpageElement(this, startEvent.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
+            subpages.put(startEvent, subPage);
             
             Place caseTokenPlace = createPlace(eventPage, "Case Count", "INT", "1`0");
             builder.addArc(eventPage, caseTokenPlace, subpageTransition, "count");
             builder.addArc(eventPage, subpageTransition, caseTokenPlace, "count + 1");
 
             
-            List<StatefulDataAssociation<DataOutputAssociation, ?>> outputs = each.getDataOutputAssociations().stream()
+            List<StatefulDataAssociation<DataOutputAssociation, ?>> outputs = startEvent.getDataOutputAssociations().stream()
             		.flatMap(this::splitDataAssociationByState)
             		.collect(Collectors.toList());
 
@@ -582,9 +583,15 @@ public class CompilerApp {
                 idVariables,
                 idGeneration));
             
+            Set<DataObjectWrapper> createdObjects = createdDataElements.stream()
+            		.filter(DataElementWrapper::isDataObjectWrapper)
+            		.map(DataObjectWrapper.class::cast)
+            		.collect(Collectors.toSet());
+            createCreationRegistrationArcs(startEvent, subpageTransition, createdObjects);
+            
             Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputTransitions = new HashMap<>();
             outputs.forEach(assoc -> outputTransitions.put(assoc, Arrays.asList(subpageTransition)));
-        	createDataAssociationArcs(each, outputTransitions, Collections.emptyMap());
+        	createDataAssociationArcs(startEvent, outputTransitions, Collections.emptyMap());
         });
     }
     
