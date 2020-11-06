@@ -122,6 +122,9 @@ public class CompilerApp {
 	/** Set of activities that write to {@link #associationsPlace}, to avoid duplicate arcs on main page*/
 	private final Set<Activity> associationWriters;
 	
+	/** Global place that registers all tokens*/
+	private Place registryPlace;
+	
 	/** Steps that run after (most of) the net is created; used e.g. in {@link #translateBoundaryEvents()} to access all control flow places of an interrupted activity*/
 	private List<Runnable> deferred;
 	
@@ -283,12 +286,17 @@ public class CompilerApp {
         CPNList listOfAssociation = CpntypesFactory.INSTANCE.createCPNList();
         listOfAssociation.setSort("ASSOCIATION");
         builder.declareColorSet(petriNet, "LIST_OF_ASSOCIATION", listOfAssociation);
+        
+        CPNList listOfId = CpntypesFactory.INSTANCE.createCPNList();
+        listOfId.setSort("ID");
+        builder.declareColorSet(petriNet, "LIST_OF_ID", listOfId);
     }
     
     private void initializeDefaultVariables() {
     	createVariable("count", "INT");
     	createVariable(caseId(), "CaseID");
     	createVariable("assoc", "LIST_OF_ASSOCIATION");
+    	createVariable("registry", "LIST_OF_ID");
     }
     
     private void initializeUtilityFunctions() {
@@ -330,6 +338,7 @@ public class CompilerApp {
         translateDataObjects();        
         translateDataStores();
         createAssociationPlace();
+        createRegistryPlace();
     }
     
     
@@ -366,6 +375,10 @@ public class CompilerApp {
     
     private void createAssociationPlace() {
     	associationsPlace = createPlace("associations", "LIST_OF_ASSOCIATION", "[]");
+    }
+    
+    private void createRegistryPlace() {
+    	registryPlace = createPlace("objects", "LIST_OF_ID", "[]");
     }
     
     private void translateActivities() {
@@ -433,6 +446,7 @@ public class CompilerApp {
                 Transition subpageTransition = builder.addTransition(activityPage, name + "_" + transputSetIndex);
                 subpageTransitions.add(subpageTransition);
                 attachObjectCreationCounters(subpageTransition, createdObjects);
+                createCreationRegistrationArcs(activity, subpageTransition, createdObjects);
                 
                 associateDataObjects(activity, subpageTransition, readObjects, writtenObjects, readContext, writeContext);
             	
@@ -512,6 +526,16 @@ public class CompilerApp {
             builder.addArc(page, transition, caseTokenPlace, object.dataElementCount() + "+ 1");
         });
     }
+	
+	private void createCreationRegistrationArcs(Activity activity, Transition transition, Set<DataObjectWrapper> createdObjects) {
+		if(!createdObjects.isEmpty()) {
+			SubpageElement activityPage = subpages.get(activity);
+			activityPage.createArcFrom(registryPlace, transition, "registry");
+			activityPage.createArcTo(registryPlace, transition, 
+					"registry^^"+createdObjects.stream().map(DataObjectWrapper::dataElementId).collect(Collectors.toList()).toString()
+			);
+		}
+	}
     
     private void translateEvents() {
     	translateStartEvents();
