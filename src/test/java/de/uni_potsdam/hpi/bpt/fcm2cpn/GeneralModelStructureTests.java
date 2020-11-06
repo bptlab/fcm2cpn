@@ -342,7 +342,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testEachCreateIsRegistered(Activity activity) {
 		expectedIOCombinations(activity).forEach(ioCombination -> {
 			Transition transition = transitionForIoCombination(ioCombination, activity).get();
-			expectedCreatedObjects(ioCombination, activity).forEach(createdObject -> {
+			expectedCreatedObjects(ioCombination).forEach(createdObject -> {
 				assertEquals(1, arcsToNodeNamed(transition, "objects")
 						.map(arc -> arc.getHlinscription().getText())
 						.filter(inscription -> {
@@ -352,6 +352,22 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 						.count(),
 					"There is not exactly one arc that registers creation "+createdObject+" in transition "+transition.getName().getText());
 			});
+		});
+	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(StartEvent.class)
+	public void testEachCreateIsRegisteredForStartEvents(StartEvent startEvent) {
+		Transition transition = transitionsFor(startEvent).findAny().get();
+		dataObjectToStateMap(writtenDataObjectRefs(startEvent)).entrySet().forEach(createdObject -> {
+			assertEquals(1, arcsToNodeNamed(transition, "objects")
+					.map(arc -> arc.getHlinscription().getText())
+					.filter(inscription -> {
+						String[] split = inscription.split("\\^\\^");
+						return split.length == 2 && split[0].equals("registry") && toSet(split[1]).contains(createdObject.getKey()+"Id");
+					})
+					.count(),
+				"There is not exactly one arc that registers creation "+createdObject+" in transition "+transition.getName().getText());
 		});
 	}
 

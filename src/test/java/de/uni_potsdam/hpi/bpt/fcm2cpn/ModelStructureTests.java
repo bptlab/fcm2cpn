@@ -36,6 +36,7 @@ import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.OutputSet;
+import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.LocalCheckFailed;
@@ -108,6 +109,12 @@ public abstract class ModelStructureTests {
 	
 	public static Stream<DataObjectReference> writtenDataObjectRefs(Activity activity) {
 		return activity.getDataOutputAssociations().stream()
+				.map(assoc -> assoc.getTarget())
+				.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
+	}
+	
+	public static Stream<DataObjectReference> writtenDataObjectRefs(StartEvent startEvent) {
+		return startEvent.getDataOutputAssociations().stream()
 				.map(assoc -> assoc.getTarget())
 				.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
 	}
@@ -202,7 +209,7 @@ public abstract class ModelStructureTests {
 		return expectedCombinations;
 	}
 	
-	public static Stream<Pair<String, String>> expectedCreatedObjects(Pair<Map<String, String>, Map<String, String>> ioCombination, Activity activity) {
+	public static Stream<Pair<String, String>> expectedCreatedObjects(Pair<Map<String, String>, Map<String, String>> ioCombination) {
 		return ioCombination.second.entrySet().stream()
 			.filter(idAndState -> !ioCombination.first.containsKey(idAndState.getKey()))
 			.map(entry -> new Pair<>(entry.getKey(), entry.getValue()));
@@ -452,8 +459,8 @@ public abstract class ModelStructureTests {
 		});
 	}
 	
-	public Stream<Transition> transitionsFor(FlowElement activity) {
-		Page activityPage = pagesNamed(normalizeElementName(activity.getName())).findAny().get();
+	public Stream<Transition> transitionsFor(FlowElement activityOrStartEvent) {
+		Page activityPage = pagesNamed(normalizeElementName(elementName(activityOrStartEvent))).findAny().get();
 		return StreamSupport.stream(activityPage.transition().spliterator(), false);
 	}
 	
