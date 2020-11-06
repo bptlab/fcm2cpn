@@ -202,22 +202,36 @@ public abstract class ModelStructureTests {
 		return expectedCombinations;
 	}
 	
+	public static Stream<Pair<String, String>> expectedCreatedObjects(Pair<Map<String, String>, Map<String, String>> ioCombination, Activity activity) {
+		return ioCombination.second.entrySet().stream()
+			.filter(idAndState -> !ioCombination.first.containsKey(idAndState.getKey()))
+			.map(entry -> new Pair<>(entry.getKey(), entry.getValue()));
+	}
+	
 	public Set<Pair<Map<String, String>, Map<String, String>>> ioCombinationsInNet(Activity activity) {
 		Set<Pair<Map<String, String>, Map<String, String>>> ioCombinations = new HashSet<>();
-		transitionsFor(activity).forEach(transition -> {
-			Map<String, String> inputs = new HashMap<>();
-			Map<String, String> outputs = new HashMap<>();
-			transition.getTargetArc().stream()
-				.map(inputArc -> inputArc.getHlinscription().asString())
-				.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> inputs.put(idAndState.first, idAndState.second)));
-
-			transition.getSourceArc().stream()
-				.map(outputArc -> outputArc.getHlinscription().asString())
-				.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> outputs.put(idAndState.first, idAndState.second)));
-			ioCombinations.add(new Pair<Map<String,String>, Map<String,String>>(inputs, outputs));
-		});
-		
+		transitionsFor(activity).forEach(transition -> 
+			ioCombinations.add(ioCombinationOfTransition(transition)));
 		return ioCombinations;
+	}
+	
+	public Optional<Transition> transitionForIoCombination(Pair<Map<String, String>, Map<String, String>> ioCombination, Activity activity) {
+		return transitionsFor(activity)
+			.filter(transition -> ioCombinationOfTransition(transition).equals(ioCombination))
+			.findAny();
+	}
+	
+	public Pair<Map<String, String>, Map<String, String>> ioCombinationOfTransition(Transition transition) {
+		Map<String, String> inputs = new HashMap<>();
+		Map<String, String> outputs = new HashMap<>();
+		transition.getTargetArc().stream()
+			.map(inputArc -> inputArc.getHlinscription().asString())
+			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> inputs.put(idAndState.first, idAndState.second)));
+
+		transition.getSourceArc().stream()
+			.map(outputArc -> outputArc.getHlinscription().asString())
+			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> outputs.put(idAndState.first, idAndState.second)));
+		return new Pair<Map<String,String>, Map<String,String>>(inputs, outputs);
 	}
 	
 	public static Optional<Pair<String, String>> parseCreatedTokenIdAndState(String inscription, Transition transition) {

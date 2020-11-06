@@ -31,6 +31,7 @@ import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.Place;
+import org.cpntools.accesscpn.model.Transition;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 
@@ -327,6 +328,30 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 			String nodeName = node.getAttributeValue("name");
 			assertEquals(1, arcsToNodeNamed(dataStorePlace, nodeName).count(),
 					"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to writing node "+nodeName);
+		});
+	}
+	
+	@TestWithAllModels
+	public void testRegistryIsCreated() {
+		assertEquals(1, placesNamed("objects").filter(place -> place.getSort().getText().equals("LIST_OF_ID")).count(),
+				"There is not exactly one place for object registry");
+	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(Activity.class)
+	public void testEachCreateIsRegistered(Activity activity) {
+		expectedIOCombinations(activity).forEach(ioCombination -> {
+			Transition transition = transitionForIoCombination(ioCombination, activity).get();
+			expectedCreatedObjects(ioCombination, activity).forEach(createdObject -> {
+				assertEquals(1, arcsToNodeNamed(transition, "objects")
+						.map(arc -> arc.getHlinscription().getText())
+						.filter(inscription -> {
+							String[] split = inscription.split("\\^\\^");
+							return split.length == 2 && split[0].equals("registry") && toSet(split[1]).contains(createdObject.first+"Id");
+						})
+						.count(),
+					"There is not exactly one arc that registers creation "+createdObject+" in transition "+transition.getName().getText());
+			});
 		});
 	}
 
