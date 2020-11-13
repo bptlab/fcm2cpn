@@ -67,7 +67,7 @@ public class SubpageElement implements AbstractPageScope {
 		return createArc(transition, refPlaceFor(place), inscription);
 	}
 	
-	public Instance getMainTransition() {
+	public Instance getMainPageTransition() {
 		return mainPageTransition;
 	}
 

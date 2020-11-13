@@ -51,8 +51,8 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 	private boolean hasCreatedArcFromAssocPlace = false;
 	
 
-	public ActivityCompiler(CompilerApp parent, Activity activity, SubpageElement elementPage) {
-		super(parent, activity, elementPage);
+	public ActivityCompiler(CompilerApp parent, Activity activity) {
+		super(parent, activity);
 	}
 
 	public void compile() {

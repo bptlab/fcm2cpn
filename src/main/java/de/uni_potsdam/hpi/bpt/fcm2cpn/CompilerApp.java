@@ -49,6 +49,7 @@ import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
+import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.FlowNode;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
@@ -362,13 +363,7 @@ public class CompilerApp implements AbstractPageScope {
     private void translateActivities() {
         Collection<Activity> activities = bpmn.getModelElementsByType(Activity.class);
         activities.forEach(activity -> {
-        	String name = activity.getName();
-        	Page activityPage = createPage(normalizeElementName(name));
-            Instance mainPageTransition = createSubpageTransition(name, activityPage);
-            SubpageElement subPage = new SubpageElement(this, activityPage, mainPageTransition);
-            subpages.putIfAbsent(activity, subPage);
-            nodeMap.put(activity, mainPageTransition);
-        	new ActivityCompiler(this, activity, subPage).compile();
+        	new ActivityCompiler(this, activity).compile();
         });
     }
     
@@ -381,15 +376,10 @@ public class CompilerApp implements AbstractPageScope {
 	private void translateStartEvents() {
         Collection<StartEvent> events = bpmn.getModelElementsByType(StartEvent.class);
         events.forEach(startEvent -> {
-        	String name = elementName(startEvent);
-        	Page eventPage = createPage(normalizeElementName(name));
-            Instance mainPageTransition = createSubpageTransition(name, eventPage);
-        	nodeMap.put(startEvent, mainPageTransition);
-            SubpageElement elementPage = new SubpageElement(this, eventPage, mainPageTransition);
-            subpages.put(startEvent, elementPage);
-        	new StartEventCompiler(this, startEvent, elementPage).compile();
+        	new StartEventCompiler(this, startEvent).compile();
         });
     }
+
     
     private void translateEndEvents() {
         Collection<EndEvent> events = bpmn.getModelElementsByType(EndEvent.class);
@@ -405,13 +395,8 @@ public class CompilerApp implements AbstractPageScope {
     	Collection<BoundaryEvent> events = bpmn.getModelElementsByType(BoundaryEvent.class);
         events.forEach(each -> {
         	//Must be called before control flow arcs and places are created, because it needs to have the outgoing control flow created
-            String name = elementName(each);
-        	Page eventPage = createPage(normalizeElementName(name));
-            Instance mainPageTransition = createSubpageTransition(name, eventPage);
-            SubpageElement subPage = new SubpageElement(this, eventPage, mainPageTransition);
-        	Transition subpageTransition = subPage.createTransition(name);
-            subpages.put(each, subPage);
-        	nodeMap.put(each, mainPageTransition);
+            SubpageElement subPage = createSubpage(each);
+        	Transition subpageTransition = subPage.createTransition(elementName(each));
 
 		    //Must be called after control flow places are created, to know which will be there and which to consume
         	defer(() -> {
@@ -422,7 +407,7 @@ public class CompilerApp implements AbstractPageScope {
     				.filter(place -> place.getSort().getText().equals("CaseID"))
     				.forEach(place -> {
     					subPage.createArc(subPage.refPlaceFor((Place) place), subpageTransition, caseId());
-    					createArc(place, mainPageTransition, "");
+    					createArc(place, subPage.getMainPageTransition(), "");
     				});
         	});
         });
@@ -454,13 +439,8 @@ public class CompilerApp implements AbstractPageScope {
 
         Collection<ParallelGateway> parallelGateways = bpmn.getModelElementsByType(ParallelGateway.class);
         parallelGateways.forEach(each -> {        	
-        	String name = elementName(each);
-	    	Page gatewayPage = createPage(normalizeElementName(name));
-	        Instance mainPageTransition = createSubpageTransition(name, gatewayPage);
-	        SubpageElement subPage = new SubpageElement(this, gatewayPage, mainPageTransition);
-	    	subPage.createTransition(name);
-	        subpages.put(each, subPage);
-	    	nodeMap.put(each, mainPageTransition);
+        	SubpageElement subPage = createSubpage(each);
+	    	subPage.createTransition(elementName(each));
         });
     }
     
@@ -533,6 +513,16 @@ public class CompilerApp implements AbstractPageScope {
     			.filter(any -> any.isForReference(assoc.getDataElement())).findAny().get();
     }    
     
+    
+    public SubpageElement createSubpage(FlowElement element) {
+    	String name = elementName(element);
+    	Page activityPage = createPage(normalizeElementName(name));
+        Instance mainPageTransition = createSubpageTransition(name, activityPage);
+        SubpageElement subpage = new SubpageElement(this, activityPage, mainPageTransition);
+        subpages.put(element, subpage);
+        nodeMap.put(element, mainPageTransition);
+        return subpage;
+    }
     
     //========Accessors======
 	

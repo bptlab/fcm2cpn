@@ -19,10 +19,10 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
 	protected CompilerApp parent;
 	protected SubpageElement elementPage;
 	
-	public FlowElementCompiler(CompilerApp parent, T element, SubpageElement elementPage) {
+	public FlowElementCompiler(CompilerApp parent, T element) {
 		this.element = element;
 		this.parent = parent;
-		this.elementPage = elementPage;
+		this.elementPage = parent.createSubpage(element);
 	}
 	
 	protected void createCreationRegistrationArcs(Transition transition, Set<DataObjectWrapper> createdObjects) {
