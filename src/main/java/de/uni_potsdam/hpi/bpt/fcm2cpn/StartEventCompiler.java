@@ -17,7 +17,7 @@ import org.cpntools.accesscpn.model.Transition;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
-public class StartEventCompiler extends XCompiler<StartEvent> {
+public class StartEventCompiler extends FlowElementCompiler<StartEvent> {
 
 	public StartEventCompiler(CompilerApp parent, StartEvent element, SubpageElement elementPage) {
 		super(parent, element, elementPage);

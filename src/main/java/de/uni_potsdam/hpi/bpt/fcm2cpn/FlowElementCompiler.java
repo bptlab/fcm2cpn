@@ -10,16 +10,17 @@ import java.util.stream.Collectors;
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
+import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.cpntools.accesscpn.model.Transition;
 
-public abstract class XCompiler<T extends BaseElement> {
+public abstract class FlowElementCompiler<T extends FlowElement> {
 	
 	
 	protected T element;
 	protected CompilerApp parent;
 	protected SubpageElement elementPage;
 	
-	public XCompiler(CompilerApp parent, T element, SubpageElement elementPage) {
+	public FlowElementCompiler(CompilerApp parent, T element, SubpageElement elementPage) {
 		this.element = element;
 		this.parent = parent;
 		this.elementPage = elementPage;
