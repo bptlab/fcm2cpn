@@ -36,6 +36,9 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 public class ActivityCompiler extends XCompiler<Activity> {
 
+	private boolean hasCreatedArcToAssocPlace = false;
+	private boolean hasCreatedArcFromAssocPlace = false;
+
 	public ActivityCompiler(CompilerApp parent, Activity activity, SubpageElement elementPage) {
 		super(parent, activity, elementPage);
 	}
@@ -210,10 +213,10 @@ public class ActivityCompiler extends XCompiler<Activity> {
 		if(!checkedAssociations.isEmpty() || !associationsToWrite.isEmpty()) {
 			// Create reading arcs
 			String readAnnotation = "assoc";
-			elementPage.createArcFrom(parent.associationsPlace, transition, readAnnotation);
-			if(!parent.associationReaders.contains(element)) {
-				parent.createArc(parent.associationsPlace, parent.nodeFor(element));
-				parent.associationReaders.add(element);
+			elementPage.createArcFrom(parent.getAssociationsPlace(), transition, readAnnotation);
+			if(!hasCreatedArcFromAssocPlace) {
+				parent.createArc(parent.getAssociationsPlace(), parent.nodeFor(element));
+				hasCreatedArcFromAssocPlace = true;
 			}
 			
 			//Create write back arcs; if new assocs are create, write the union back; if assocs are checked, they already exist
@@ -271,10 +274,10 @@ public class ActivityCompiler extends XCompiler<Activity> {
 				
 				
 			}
-			elementPage.createArcTo(parent.associationsPlace, transition, writeAnnotation);
-			if(!parent.associationWriters.contains(element)) {
-				parent.createArc(parent.nodeFor(element), parent.associationsPlace);
-				parent.associationWriters.add(element);
+			elementPage.createArcTo(parent.getAssociationsPlace(), transition, writeAnnotation);
+			if(!hasCreatedArcToAssocPlace) {
+				parent.createArc(parent.nodeFor(element), parent.getAssociationsPlace());
+				hasCreatedArcToAssocPlace = true;
 			}
 		}
     }

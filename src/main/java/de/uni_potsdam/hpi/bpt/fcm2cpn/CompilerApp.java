@@ -18,26 +18,19 @@
 
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.allCombinationsOf;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.dataObjectStateToNetColors;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getSource;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getTarget;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,20 +42,15 @@ import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.BoundaryEvent;
-import org.camunda.bpm.model.bpmn.instance.DataAssociation;
-import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
-import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataState;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
-import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.FlowNode;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
-import org.camunda.bpm.model.bpmn.instance.OutputSet;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
@@ -75,7 +63,6 @@ import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Place;
-import org.cpntools.accesscpn.model.PlaceNode;
 import org.cpntools.accesscpn.model.RefPlace;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.accesscpn.model.cpntypes.CPNEnum;
@@ -86,10 +73,6 @@ import org.cpntools.accesscpn.model.cpntypes.CpntypesFactory;
 import org.cpntools.accesscpn.model.exporter.DOMGenerator;
 import org.cpntools.accesscpn.model.util.BuildCPNUtil;
 
-import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.InputSetWrapper;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.OutputSetWrapper;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
@@ -107,7 +90,7 @@ public class CompilerApp {
 	private DataModel dataModel;
 	
 	/** Helper for constructing the resulting net*/
-	public final BuildCPNUtil builder;
+	private final BuildCPNUtil builder;
 	/** The resulting petri net*/
 	private PetriNet petriNet;
     /** Net page that includes high level subpage transitions for bpmn elements like events, activities and gateways*/
@@ -118,11 +101,7 @@ public class CompilerApp {
 	private Map<BaseElement, SubpageElement> subpages;
 	
 	/** Global place for all associations*/
-	Place associationsPlace;
-	/** Set of activities that read from {@link #associationsPlace}, to avoid duplicate arcs on main page*/
-	final Set<Activity> associationReaders;
-	/** Set of activities that write to {@link #associationsPlace}, to avoid duplicate arcs on main page*/
-	final Set<Activity> associationWriters;
+	private Place associationsPlace;
 	
 	/** Global place that registers all tokens*/
 	private Place registryPlace;
@@ -196,9 +175,6 @@ public class CompilerApp {
         this.nodeMap = new HashMap<>();
         this.deferred = new ArrayList<>();
         this.dataModel = dataModel.orElse(DataModel.none());
-        
-        this.associationReaders = new HashSet<>();
-        this.associationWriters = new HashSet<>();
 	}
     
     private static BpmnModelInstance loadBPMNFile(File bpmnFile) {
@@ -615,6 +591,10 @@ public class CompilerApp {
 
 	public Place getRegistryPlace() {
 		return registryPlace;
+	}
+
+	Place getAssociationsPlace() {
+		return associationsPlace;
 	}
 
 	public Node nodeFor(BaseElement element) {
