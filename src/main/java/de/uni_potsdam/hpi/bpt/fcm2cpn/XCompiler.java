@@ -1,6 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.addGuardCondition;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.addGuardCondition;
 
 import java.util.List;
 import java.util.Map;

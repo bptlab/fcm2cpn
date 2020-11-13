@@ -1,8 +1,4 @@
-package de.uni_potsdam.hpi.bpt.fcm2cpn;
-
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.dataObjectStateToNetColors;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.getSource;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.getTarget;
+package de.uni_potsdam.hpi.bpt.fcm2cpn.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +22,8 @@ import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.xml.ModelInstance;
 import org.cpntools.accesscpn.model.Transition;
+
+import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
 
 public class Utils {
 	

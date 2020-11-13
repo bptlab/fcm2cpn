@@ -1,7 +1,7 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.elementName;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.normalizeElementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;

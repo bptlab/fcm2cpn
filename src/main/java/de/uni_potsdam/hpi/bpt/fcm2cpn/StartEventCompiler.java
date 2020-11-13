@@ -1,6 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.elementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -14,6 +14,8 @@ import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.Transition;
+
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 public class StartEventCompiler extends XCompiler<StartEvent> {
 

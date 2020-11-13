@@ -1,11 +1,11 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.addGuardCondition;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.allCombinationsOf;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.elementName;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.getSource;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.getTarget;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.normalizeElementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.addGuardCondition;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.allCombinationsOf;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getSource;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getTarget;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -31,6 +31,8 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.InputSetWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.OutputSetWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 public class ActivityCompiler extends XCompiler<Activity> {
 

@@ -13,6 +13,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
 public class DataModelParserTests {
 	

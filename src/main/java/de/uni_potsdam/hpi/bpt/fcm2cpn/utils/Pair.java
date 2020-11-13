@@ -1,4 +1,4 @@
-package de.uni_potsdam.hpi.bpt.fcm2cpn;
+package de.uni_potsdam.hpi.bpt.fcm2cpn.utils;
 
 import java.util.Arrays;
 import java.util.Objects;

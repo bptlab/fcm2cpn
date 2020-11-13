@@ -1,6 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.normalizeElementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
 import java.io.File;
 import java.io.IOException;

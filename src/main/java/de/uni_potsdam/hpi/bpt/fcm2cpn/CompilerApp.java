@@ -18,12 +18,12 @@
 
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.allCombinationsOf;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.dataObjectStateToNetColors;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.elementName;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.getSource;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.getTarget;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.normalizeElementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.allCombinationsOf;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.dataObjectStateToNetColors;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getSource;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getTarget;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -92,6 +92,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 
 public class CompilerApp {

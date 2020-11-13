@@ -1,6 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.*;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.*;
 
 import java.io.File;
 import java.lang.annotation.Retention;
@@ -60,6 +60,8 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ArgumentTreeTests;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 public abstract class ModelStructureTests {
 
