@@ -55,7 +55,6 @@ import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
-import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.ModelFactory;
 import org.cpntools.accesscpn.model.ModelPrinter;
@@ -63,7 +62,6 @@ import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Place;
-import org.cpntools.accesscpn.model.RefPlace;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.accesscpn.model.cpntypes.CPNEnum;
 import org.cpntools.accesscpn.model.cpntypes.CPNList;
@@ -75,10 +73,11 @@ import org.cpntools.accesscpn.model.util.BuildCPNUtil;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.AbstractPageScope;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 
-public class CompilerApp {
+public class CompilerApp implements AbstractPageScope {
 
     public final static String licenseInfo = "fCM2CPN translator  Copyright (C) 2020  Hasso Plattner Institute gGmbH, University of Potsdam, Germany\n" +
             "This program comes with ABSOLUTELY NO WARRANTY.\n" +
@@ -365,7 +364,7 @@ public class CompilerApp {
         	String name = activity.getName();
         	Page activityPage = createPage(normalizeElementName(name));
             Instance mainPageTransition = createSubpageTransition(name, activityPage);
-            SubpageElement subPage = new SubpageElement(this, activity.getId(), activityPage, mainPageTransition);
+            SubpageElement subPage = new SubpageElement(this, activityPage, mainPageTransition);
             subpages.putIfAbsent(activity, subPage);
             nodeMap.put(activity, mainPageTransition);
         	new ActivityCompiler(this, activity, subPage).compile();
@@ -385,7 +384,7 @@ public class CompilerApp {
         	Page eventPage = createPage(normalizeElementName(name));
             Instance mainPageTransition = createSubpageTransition(name, eventPage);
         	nodeMap.put(startEvent, mainPageTransition);
-            SubpageElement elementPage = new SubpageElement(this, startEvent.getId(), eventPage, mainPageTransition);
+            SubpageElement elementPage = new SubpageElement(this, eventPage, mainPageTransition);
             subpages.put(startEvent, elementPage);
         	new StartEventCompiler(this, startEvent, elementPage).compile();
         });
@@ -407,9 +406,9 @@ public class CompilerApp {
         	//Must be called before control flow arcs and places are created, because it needs to have the outgoing control flow created
             String name = elementName(each);
         	Page eventPage = createPage(normalizeElementName(name));
-        	Transition subpageTransition = createTransition(eventPage, name);
             Instance mainPageTransition = createSubpageTransition(name, eventPage);
-            SubpageElement subPage = new SubpageElement(this, each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
+            SubpageElement subPage = new SubpageElement(this, eventPage, mainPageTransition);
+        	Transition subpageTransition = subPage.createTransition(name);
             subpages.put(each, subPage);
         	nodeMap.put(each, mainPageTransition);
 
@@ -421,8 +420,8 @@ public class CompilerApp {
     				.map(arc -> arc.getPlaceNode())
     				.filter(place -> place.getSort().getText().equals("CaseID"))
     				.forEach(place -> {
-    					createArc(eventPage, subPage.refPlaceFor((Place) place), subpageTransition, caseId());
-    					createArc(mainPage, place, mainPageTransition, "");
+    					subPage.createArc(subPage.refPlaceFor((Place) place), subpageTransition, caseId());
+    					createArc(place, mainPageTransition, "");
     				});
         	});
         });
@@ -456,9 +455,9 @@ public class CompilerApp {
         parallelGateways.forEach(each -> {        	
         	String name = elementName(each);
 	    	Page gatewayPage = createPage(normalizeElementName(name));
-	    	Transition subpageTransition = createTransition(gatewayPage, name);
 	        Instance mainPageTransition = createSubpageTransition(name, gatewayPage);
-	        SubpageElement subPage = new SubpageElement(this, each.getId(), gatewayPage, mainPageTransition, Arrays.asList(subpageTransition));
+	        SubpageElement subPage = new SubpageElement(this, gatewayPage, mainPageTransition);
+	    	subPage.createTransition(name);
 	        subpages.put(each, subPage);
 	    	nodeMap.put(each, mainPageTransition);
         });
@@ -473,12 +472,12 @@ public class CompilerApp {
         	Node target = nodeFor(targetNode);
         	//System.out.println(source.getName().asString()+" -> "+target.getName().asString());
         	if(isPlace(source) && isPlace(target)) {
-        		Transition transition = createTransition(mainPage, null);
-        		createArc(mainPage, source, transition, caseId());
-        		createArc(mainPage, transition, target, caseId());
+        		Transition transition = createTransition(null);
+        		createArc(source, transition, caseId());
+        		createArc(transition, target, caseId());
         		
         	} else if(isPlace(source) || isPlace(target)) {
-        		createArc(mainPage, source, target, "");
+        		createArc(source, target, "");
         		if(subpages.containsKey(targetNode)) {
         			subpages.get(targetNode).createArcsFrom((Place) source, caseId());
         		}
@@ -489,12 +488,12 @@ public class CompilerApp {
         	} else {
             	Place place = createPlace(null, "CaseID");
             	
-            	createArc(mainPage, source, place, "");
+            	createArc(source, place, "");
        			if(subpages.containsKey(sourceNode)) {
            			subpages.get(sourceNode).createArcsTo(place, caseId());
        			}
 
-       			createArc(mainPage, place, target, "");
+       			createArc(place, target, "");
     			if(subpages.containsKey(targetNode)) {
         			subpages.get(targetNode).createArcsFrom(place, caseId());
     			}
@@ -534,52 +533,7 @@ public class CompilerApp {
     }    
     
     
-    //=======Generation Methods======
-    public Page createPage(String name) {
-    	return builder.addPage(petriNet, name);
-    }
-    
-    public Place createPlace(String name, String type) {
-    	return builder.addPlace(mainPage, name, type);
-    }
-    
-    public Place createPlace(String name, String type, String initialMarking) {
-    	return builder.addPlace(mainPage, name, type, initialMarking);
-    }
-    
-    public Place createPlace(Page page, String name, String type, String initialMarking) {
-    	return builder.addPlace(page, name, type, initialMarking);
-    }
-    
-    public RefPlace createFusionPlace(Page page, String name, String type, String initialMarking) {
-    	return builder.addFusionPlace(page, name, type, initialMarking, name);
-    }
-    
-    public Transition createTransition(Page page, String name) {
-    	return builder.addTransition(page, name);
-    }
-    
-    public Instance createSubpageTransition(String name, Page page) {
-    	return builder.createSubPageTransition(page, mainPage, name);
-    }
-    
-    public Arc createArc(Page page, Node source, Node target, String annotation) {
-    	return builder.addArc(page, source, target, annotation);
-    }
-    
-    public Arc createArc(Node source, Node target) {
-    	return createArc(mainPage, source, target, "");
-    }
-    
-    public void createVariable(String name, String type) {
-        builder.declareVariable(petriNet, name, type);
-    }
-    
-    
     //========Accessors======
-	public BuildCPNUtil getBuilder() {
-		return builder;
-	}
 	
 	public BpmnModelInstance getBpmn() {
 		return bpmn;
@@ -603,6 +557,21 @@ public class CompilerApp {
 	
 	public String caseId() {
 		return "caseId";
+	}
+
+	@Override
+	public BuildCPNUtil builder() {
+		return builder;
+	}
+
+	@Override
+	public PetriNet petriNet() {
+		return petriNet;
+	}
+
+	@Override
+	public Page getPage() {
+		return mainPage;
 	}
 
 }

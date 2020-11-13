@@ -26,12 +26,11 @@ public class StartEventCompiler extends FlowElementCompiler<StartEvent> {
 	public void compile() {
 
     	String name = elementName(element);
-    	Transition subpageTransition = parent.createTransition(elementPage.getPage(), name);
-    	elementPage.getSubpageTransitions().add(subpageTransition);
+    	Transition subpageTransition = elementPage.createTransition(name);
         
-        Place caseTokenPlace = parent.createPlace(elementPage.getPage(), "Case Count", "INT", "1`0");
-        parent.createArc(elementPage.getPage(), caseTokenPlace, subpageTransition, "count");
-        parent.createArc(elementPage.getPage(), subpageTransition, caseTokenPlace, "count + 1");
+        Place caseTokenPlace = elementPage.createPlace("Case Count", "INT", "1`0");
+        elementPage.createArc(caseTokenPlace, subpageTransition, "count");
+        elementPage.createArc(subpageTransition, caseTokenPlace, "count + 1");
 
         
         List<StatefulDataAssociation<DataOutputAssociation, ?>> outputs = element.getDataOutputAssociations().stream()

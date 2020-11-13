@@ -24,7 +24,6 @@ import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.IoSpecification;
 import org.camunda.bpm.model.bpmn.instance.OutputSet;
-import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.PlaceNode;
 import org.cpntools.accesscpn.model.Transition;
 
@@ -35,6 +34,12 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
+
+/**
+ * Encapsulates the compilation of one bpmn activity
+ * @author Leon Bein
+ *
+ */
 public class ActivityCompiler extends FlowElementCompiler<Activity> {
 	
 	private Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputtingTransitions;
@@ -160,8 +165,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
                 .filter(object -> !readObjects.contains(object) || (readContext.get(object).stream().allMatch(StatefulDataAssociation::isCollection) && !writeContext.get(object).stream().allMatch(StatefulDataAssociation::isCollection)))
                 .collect(Collectors.toSet());
 
-        Transition subpageTransition = parent.createTransition(elementPage.getPage(), element.getName() + "_" + transputSetIndex);
-        elementPage.getSubpageTransitions().add(subpageTransition);
+        Transition subpageTransition = elementPage.createTransition(element.getName() + "_" + transputSetIndex);
         attachObjectCreationCounters(subpageTransition, createdObjects);
         createCreationRegistrationArcs(subpageTransition, createdObjects);
         
@@ -178,7 +182,6 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
         String countVariables = createObjects.stream().map(DataObjectWrapper::dataElementCount).collect(Collectors.joining(",\n"));
         String idVariables = createObjects.stream().map(DataObjectWrapper::dataElementId).collect(Collectors.joining(",\n"));
         String idGeneration = createObjects.stream().map(object -> "("+object.namePrefix() + ", " + object.dataElementCount() +")").collect(Collectors.joining(",\n"));
-        Page page = transition.getPage();
         transition.getCode().setText(String.format(
                 "input (%s);\n"
                         + "output (%s);\n"
@@ -187,9 +190,9 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
                 idVariables,
                 idGeneration));
         createObjects.forEach(object -> {
-            PlaceNode caseTokenPlace = object.creationCounterForPage(page);
-            parent.createArc(page, caseTokenPlace, transition, object.dataElementCount());
-            parent.createArc(page, transition, caseTokenPlace, object.dataElementCount() + "+ 1");
+            PlaceNode caseTokenPlace = object.creationCounterForPage(elementPage);
+            elementPage.createArc(caseTokenPlace, transition, object.dataElementCount());
+            elementPage.createArc(transition, caseTokenPlace, object.dataElementCount() + "+ 1");
         });
     }
 	

@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.FlowElement;
@@ -79,14 +78,14 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
     protected void linkWritingTransitions(DataElementWrapper<?,?> dataElement, String annotation, List<Transition> transitions) {
     	dataElement.assertMainPageArcFrom(element);
     	transitions.forEach(subPageTransition -> {
-    		parent.createArc(subPageTransition.getPage(), subPageTransition, elementPage.refPlaceFor(dataElement.place), annotation);
+    		elementPage.createArc(subPageTransition, elementPage.refPlaceFor(dataElement.place), annotation);
     	});
     }    
     
     protected void linkReadingTransitions(DataElementWrapper<?,?> dataElement, String annotation, List<Transition> transitions) {
     	dataElement.assertMainPageArcTo(element);
     	transitions.forEach(subPageTransition -> {
-    		parent.createArc(subPageTransition.getPage(), elementPage.refPlaceFor(dataElement.place), subPageTransition, annotation);
+    		elementPage.createArc(elementPage.refPlaceFor(dataElement.place), subPageTransition, annotation);
     	});
     }
     

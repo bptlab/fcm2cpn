@@ -7,13 +7,12 @@ import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
-import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.PlaceNode;
 
 public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObjectReference> {
 
-	private final Map<Page, PlaceNode> creationCounterPlaces = new HashMap<>();
+	private final Map<SubpageElement, PlaceNode> creationCounterPlaces = new HashMap<>();
 	
 
 	public DataObjectWrapper(CompilerApp compilerApp, String normalizedName) {
@@ -33,8 +32,8 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 	}
 
 
-	public PlaceNode creationCounterForPage(Page page) {
-		return creationCounterPlaces.computeIfAbsent(page, _page -> compilerApp.createFusionPlace(_page, dataElementCount(), "INT", "1`0"));
+	public PlaceNode creationCounterForPage(SubpageElement page) {
+		return creationCounterPlaces.computeIfAbsent(page, _page -> _page.createFusionPlace(dataElementCount(), "INT", "1`0"));
 	}
 
 
