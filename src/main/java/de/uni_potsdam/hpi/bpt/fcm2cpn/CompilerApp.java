@@ -407,7 +407,7 @@ public class CompilerApp {
         	//Must be called before control flow arcs and places are created, because it needs to have the outgoing control flow created
             String name = elementName(each);
         	Page eventPage = createPage(normalizeElementName(name));
-        	Transition subpageTransition = builder.addTransition(eventPage, name);
+        	Transition subpageTransition = createTransition(eventPage, name);
             Instance mainPageTransition = createSubpageTransition(name, eventPage);
             SubpageElement subPage = new SubpageElement(this, each.getId(), eventPage, mainPageTransition, Arrays.asList(subpageTransition));
             subpages.put(each, subPage);
@@ -421,8 +421,8 @@ public class CompilerApp {
     				.map(arc -> arc.getPlaceNode())
     				.filter(place -> place.getSort().getText().equals("CaseID"))
     				.forEach(place -> {
-    					builder.addArc(eventPage, subPage.refPlaceFor((Place) place), subpageTransition, caseId());
-    					builder.addArc(mainPage, place, mainPageTransition, "");
+    					createArc(eventPage, subPage.refPlaceFor((Place) place), subpageTransition, caseId());
+    					createArc(mainPage, place, mainPageTransition, "");
     				});
         	});
         });
@@ -456,7 +456,7 @@ public class CompilerApp {
         parallelGateways.forEach(each -> {        	
         	String name = elementName(each);
 	    	Page gatewayPage = createPage(normalizeElementName(name));
-	    	Transition subpageTransition = builder.addTransition(gatewayPage, name);
+	    	Transition subpageTransition = createTransition(gatewayPage, name);
 	        Instance mainPageTransition = createSubpageTransition(name, gatewayPage);
 	        SubpageElement subPage = new SubpageElement(this, each.getId(), gatewayPage, mainPageTransition, Arrays.asList(subpageTransition));
 	        subpages.put(each, subPage);
@@ -473,12 +473,12 @@ public class CompilerApp {
         	Node target = nodeFor(targetNode);
         	//System.out.println(source.getName().asString()+" -> "+target.getName().asString());
         	if(isPlace(source) && isPlace(target)) {
-        		Transition transition = builder.addTransition(mainPage, null);
-        		builder.addArc(mainPage, source, transition, caseId());
-        		builder.addArc(mainPage, transition, target, caseId());
+        		Transition transition = createTransition(mainPage, null);
+        		createArc(mainPage, source, transition, caseId());
+        		createArc(mainPage, transition, target, caseId());
         		
         	} else if(isPlace(source) || isPlace(target)) {
-        		builder.addArc(mainPage, source, target, "");
+        		createArc(mainPage, source, target, "");
         		if(subpages.containsKey(targetNode)) {
         			subpages.get(targetNode).createArcsFrom((Place) source, caseId());
         		}
@@ -489,12 +489,12 @@ public class CompilerApp {
         	} else {
             	Place place = createPlace(null, "CaseID");
             	
-            	builder.addArc(mainPage, source, place, "");
+            	createArc(mainPage, source, place, "");
        			if(subpages.containsKey(sourceNode)) {
            			subpages.get(sourceNode).createArcsTo(place, caseId());
        			}
 
-            	builder.addArc(mainPage, place, target, "");
+       			createArc(mainPage, place, target, "");
     			if(subpages.containsKey(targetNode)) {
         			subpages.get(targetNode).createArcsFrom(place, caseId());
     			}
