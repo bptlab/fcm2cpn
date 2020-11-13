@@ -51,11 +51,9 @@ import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
 import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.FlowNode;
-import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
-import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.ModelFactory;
 import org.cpntools.accesscpn.model.ModelPrinter;
@@ -412,21 +410,6 @@ public class CompilerApp implements AbstractPageScope {
         	});
         });
 	}
-    
-    public DataObjectWrapper getDataObjectCollectionIdentifier(Activity activity, DataObjectWrapper object) {
-    	Set<DataObjectWrapper> potentialIdentifiers = activity.getDataInputAssociations().stream()
-    		.flatMap(Utils::splitDataAssociationByState)
-    		.map(this::wrapperFor)
-    		.filter(DataElementWrapper::isDataObjectWrapper)
-    		.map(DataObjectWrapper.class::cast)
-			.filter(potentialIdentifier -> {
-				return dataModel.getAssociation(potentialIdentifier.getNormalizedName(), object.getNormalizedName())
-					.filter(identifyingAssoc -> identifyingAssoc.getEnd(potentialIdentifier.normalizedName).getUpperBound() <= 1)
-					.isPresent();
-			}).collect(Collectors.toSet());
-		assert potentialIdentifiers.size() == 1;
-		return potentialIdentifiers.stream().findAny().get();
-    } 
         
     
     private void translateGateways() {
@@ -482,16 +465,6 @@ public class CompilerApp implements AbstractPageScope {
         });
     }
     
-    public ItemAwareElement findParentDataElement(String sourceId) {
-    	ModelElementInstance element = bpmn.getModelElementById(sourceId);
-    	while(element != null && !(element instanceof ItemAwareElement)) {
-    		element = element.getParentElement();
-    	}
-    	if(element != null)return (ItemAwareElement) element;
-    	return null;
-		
-    }
-    
     private static boolean isPlace(Node node) {
     	return node instanceof Place;
     }
@@ -511,7 +484,22 @@ public class CompilerApp implements AbstractPageScope {
     public DataElementWrapper<?,?> wrapperFor(StatefulDataAssociation<?, ?> assoc) {
     	return Stream.concat(dataObjectWrappers.stream(), dataStoreWrappers.stream())
     			.filter(any -> any.isForReference(assoc.getDataElement())).findAny().get();
-    }    
+    }  
+    
+    public DataObjectWrapper getDataObjectCollectionIdentifier(Activity activity, DataObjectWrapper object) {
+    	Set<DataObjectWrapper> potentialIdentifiers = activity.getDataInputAssociations().stream()
+    		.flatMap(Utils::splitDataAssociationByState)
+    		.map(this::wrapperFor)
+    		.filter(DataElementWrapper::isDataObjectWrapper)
+    		.map(DataObjectWrapper.class::cast)
+			.filter(potentialIdentifier -> {
+				return dataModel.getAssociation(potentialIdentifier.getNormalizedName(), object.getNormalizedName())
+					.filter(identifyingAssoc -> identifyingAssoc.getEnd(potentialIdentifier.normalizedName).getUpperBound() <= 1)
+					.isPresent();
+			}).collect(Collectors.toSet());
+		assert potentialIdentifiers.size() == 1;
+		return potentialIdentifiers.stream().findAny().get();
+    } 
     
     
     public SubpageElement createSubpage(FlowElement element) {

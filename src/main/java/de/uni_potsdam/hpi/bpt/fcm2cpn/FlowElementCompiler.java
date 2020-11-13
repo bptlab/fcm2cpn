@@ -10,13 +10,16 @@ import java.util.stream.Collectors;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.FlowElement;
+import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Transition;
 
 public abstract class FlowElementCompiler<T extends FlowElement> {
 	
-	
+	/**The bpmn element that is compiled with this object*/
 	protected T element;
+	/**The compiler that is responsible for the whole bpmn model*/
 	protected CompilerApp parent;
+	/**Handle for target cpn subpage*/
 	protected SubpageElement elementPage;
 	
 	public FlowElementCompiler(CompilerApp parent, T element) {
@@ -36,21 +39,22 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
     
     
     /**
-     * Creates arcs for all data associations of one element, for all transitions of that element
+     * Creates arcs for all data associations of the compiled element, for all transitions of that element
      * @param element: The element that writes or reads, usually an activity or event
      * @param outputs: For each stateful data assoc: Which (inputset x outputset)-Transitions write this data object in this state
      * @param inputs: For each stateful data assoc: Which (inputset x outputset)-Transitions read this data object in this state
      */
-    protected void createDataAssociationArcs(Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputs, Map<StatefulDataAssociation<DataInputAssociation, ?>, List<Transition>> inputs) {
-    	Set<DataElementWrapper<?,?>> readElements = inputs.keySet().stream().map(parent::wrapperFor).collect(Collectors.toSet());
-    	Set<DataElementWrapper<?,?>> writtenElements = outputs.keySet().stream().map(parent::wrapperFor).collect(Collectors.toSet());
+    protected void createDataAssociationArcs(
+    		Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputs, 
+    		Map<StatefulDataAssociation<DataInputAssociation, ?>, List<Transition>> inputs) {
     	
+    	Set<DataElementWrapper<?,?>> readElements = inputs.keySet().stream().map(parent::wrapperFor).collect(Collectors.toSet());
     	
         outputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = parent.wrapperFor(assoc);
         	String annotation = dataElement.annotationForDataFlow(element, assoc);
         	linkWritingTransitions(dataElement, annotation, transitions);
-    		/*Assert that when writing a data store and not reading, the token read before*/
+        	/*Assert that when writing a data store and not reading, the token is read before*/
         	if(!readElements.contains(dataElement) && dataElement.isDataStoreWrapper()) {
         		linkReadingTransitions(dataElement, annotation, transitions);
             	readElements.add(dataElement);
@@ -60,6 +64,7 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
         inputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = parent.wrapperFor(assoc);
             String annotation = dataElement.annotationForDataFlow(element, assoc);
+            /*Collections are initialized in guard to make arcs more tidy*/
             if(assoc.isCollection()) {
                 String guard = dataElement.collectionCreationGuard(element, assoc);
                 transitions.stream().forEach(transition -> addGuardCondition(transition, guard));
@@ -87,6 +92,10 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
     	transitions.forEach(subPageTransition -> {
     		elementPage.createArc(elementPage.refPlaceFor(dataElement.place), subPageTransition, annotation);
     	});
+    }
+    
+    protected Node node() {
+    	return elementPage.getMainPageTransition();
     }
     
     public abstract void compile();

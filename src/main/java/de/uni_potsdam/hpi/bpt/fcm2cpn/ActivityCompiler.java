@@ -198,7 +198,8 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 	
     private void associateDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
     	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = new HashSet<>() {
-			
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			public boolean add(Pair<DataObjectWrapper, DataObjectWrapper> e) {
 				if(!contains(e) && !contains(e.reversed())) return super.add(e);
@@ -211,7 +212,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 			};
 		};
 		
-		
+		//Associations are created two objects are written together or if one is read and the other one is written
 		for(DataObjectWrapper writtenObject : writtenDataObjects) {
 			for(DataObjectWrapper readObject : readDataObjects) {
 				if(!writtenObject.equals(readObject) && parent.getDataModel().isAssociated(writtenObject.getNormalizedName(), readObject.getNormalizedName())) {
@@ -224,6 +225,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 				}
 			}
 		}
+		
 		Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(transition, readDataObjects, readContext);
 		
 		//If either new assocs are created or old assocs are checked, we need arcs from and to the assoc place
@@ -232,7 +234,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 			String readAnnotation = "assoc";
 			elementPage.createArcFrom(parent.getAssociationsPlace(), transition, readAnnotation);
 			if(!hasCreatedArcFromAssocPlace) {
-				parent.createArc(parent.getAssociationsPlace(), parent.nodeFor(element));
+				parent.createArc(parent.getAssociationsPlace(), node());
 				hasCreatedArcFromAssocPlace = true;
 			}
 			
@@ -293,7 +295,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 			}
 			elementPage.createArcTo(parent.getAssociationsPlace(), transition, writeAnnotation);
 			if(!hasCreatedArcToAssocPlace) {
-				parent.createArc(parent.nodeFor(element), parent.getAssociationsPlace());
+				parent.createArc(node(), parent.getAssociationsPlace());
 				hasCreatedArcToAssocPlace = true;
 			}
 		}
