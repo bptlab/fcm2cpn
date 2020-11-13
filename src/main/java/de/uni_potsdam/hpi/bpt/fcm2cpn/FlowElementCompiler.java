@@ -11,6 +11,7 @@ import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.cpntools.accesscpn.model.Node;
+import org.cpntools.accesscpn.model.PlaceNode;
 import org.cpntools.accesscpn.model.Transition;
 
 public abstract class FlowElementCompiler<T extends FlowElement> {
@@ -93,6 +94,29 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
     		elementPage.createArc(elementPage.refPlaceFor(dataElement.place), subPageTransition, annotation);
     	});
     }
+    
+	protected void attachObjectCreationCounters(Transition transition, Set<DataObjectWrapper> createObjects) {
+		if(createObjects.isEmpty()) return;
+        String countVariables = createObjects.stream().map(DataObjectWrapper::dataElementCount).collect(Collectors.joining(",\n"));
+        String idVariables = createObjects.stream().map(DataObjectWrapper::dataElementId).collect(Collectors.joining(",\n"));
+        String idGeneration = createObjects.stream().map(object -> "("+object.namePrefix() + ", " + object.dataElementCount() +")").collect(Collectors.joining(",\n"));
+        setTransitionCode(transition, countVariables, idVariables, idGeneration);
+        createObjects.forEach(object -> {
+            PlaceNode caseTokenPlace = object.creationCounterForPage(elementPage);
+            elementPage.createArc(caseTokenPlace, transition, object.dataElementCount());
+            elementPage.createArc(transition, caseTokenPlace, object.dataElementCount() + " + 1");
+        });
+    }
+	
+	protected void setTransitionCode(Transition transition, String input, String output, String action) {
+        transition.getCode().setText(String.format(
+                "input (%s);\n"
+                        + "output (%s);\n"
+                        + "action (%s);",
+                input,
+                output,
+                action));
+	}
     
     protected Node node() {
     	return elementPage.getMainPageTransition();

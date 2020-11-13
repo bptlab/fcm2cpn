@@ -42,29 +42,21 @@ public class StartEventCompiler extends FlowElementCompiler<StartEvent> {
                 .distinct()
         		.collect(Collectors.toList());
         
-        /* 
-         * TODO all data outputs of event are using case count, should dedicated counters be created
-         * Use Case: When the input event creates a data object that can also be created by a task
-         * Then they should both use the same counter, one for the data object, and not the case counter
-         */            
-        String idVariables = "caseId, "+createdDataElements.stream().map(DataElementWrapper::dataElementId).collect(Collectors.joining(", "));
-        String idGeneration = "String.concat[\"case\", Int.toString(count)]"+createdDataElements.stream().map(n -> ",\n("+n.namePrefix() + ", count)").collect(Collectors.joining(""));
-        subpageTransition.getCode().setText(String.format(
-        	"input (count);\n"
-            +"output (%s);\n"
-			+"action (%s);",
-            idVariables,
-            idGeneration));
-        
         Set<DataObjectWrapper> createdObjects = createdDataElements.stream()
         		.filter(DataElementWrapper::isDataObjectWrapper)
         		.map(DataObjectWrapper.class::cast)
         		.collect(Collectors.toSet());
+        attachObjectCreationCounters(subpageTransition, createdObjects);
         createCreationRegistrationArcs(subpageTransition, createdObjects);
         
         Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputTransitions = new HashMap<>();
         outputs.forEach(assoc -> outputTransitions.put(assoc, Arrays.asList(subpageTransition)));
     	createDataAssociationArcs(outputTransitions, Collections.emptyMap());
+	}
+	
+	@Override
+	protected void setTransitionCode(Transition transition, String input, String output, String action) {
+		super.setTransitionCode(transition, "count, "+input, "caseId, "+output, "String.concat[\"case\", Int.toString(count)], "+action);
 	}
 
 }

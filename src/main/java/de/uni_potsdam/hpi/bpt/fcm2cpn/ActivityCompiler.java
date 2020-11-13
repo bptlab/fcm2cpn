@@ -24,7 +24,6 @@ import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.IoSpecification;
 import org.camunda.bpm.model.bpmn.instance.OutputSet;
-import org.cpntools.accesscpn.model.PlaceNode;
 import org.cpntools.accesscpn.model.Transition;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.InputSetWrapper;
@@ -175,25 +174,6 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
         outputSet.forEach(output -> outputtingTransitions.get(output).add(subpageTransition));
         
         transputSetIndex++;
-    }
-
-	private void attachObjectCreationCounters(Transition transition, Set<DataObjectWrapper> createObjects) {
-		if(createObjects.isEmpty()) return;
-        String countVariables = createObjects.stream().map(DataObjectWrapper::dataElementCount).collect(Collectors.joining(",\n"));
-        String idVariables = createObjects.stream().map(DataObjectWrapper::dataElementId).collect(Collectors.joining(",\n"));
-        String idGeneration = createObjects.stream().map(object -> "("+object.namePrefix() + ", " + object.dataElementCount() +")").collect(Collectors.joining(",\n"));
-        transition.getCode().setText(String.format(
-                "input (%s);\n"
-                        + "output (%s);\n"
-                        + "action (%s);",
-                countVariables,
-                idVariables,
-                idGeneration));
-        createObjects.forEach(object -> {
-            PlaceNode caseTokenPlace = object.creationCounterForPage(elementPage);
-            elementPage.createArc(caseTokenPlace, transition, object.dataElementCount());
-            elementPage.createArc(transition, caseTokenPlace, object.dataElementCount() + "+ 1");
-        });
     }
 	
     private void associateDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {

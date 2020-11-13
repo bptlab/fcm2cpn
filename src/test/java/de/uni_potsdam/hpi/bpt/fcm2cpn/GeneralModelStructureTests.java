@@ -371,5 +371,46 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 				"There is not exactly one arc that registers creation "+createdObject+" in transition "+transition.getName().getText());
 		});
 	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(Activity.class)
+	public void testEachCreateIsCounted(Activity activity) {
+		expectedIOCombinations(activity).forEach(ioCombination -> {
+			Transition transition = transitionForIoCombination(ioCombination, activity).get();
+			expectedCreatedObjects(ioCombination).forEach(createdObject -> {
+				String objectId = createdObject.first;
+				assertEquals(1, arcsFromNodeNamed(transition, objectId+"Count")
+						.map(arc -> arc.getHlinscription().getText())
+						.filter((objectId+"Count")::equals)
+						.count(),
+					"There is not exactly one arc that reads the current "+objectId+" count in transition "+transition.getName().getText());
+				assertEquals(1, arcsToNodeNamed(transition, objectId+"Count")
+						.map(arc -> arc.getHlinscription().getText())
+						.filter((objectId+"Count"+" + 1")::equals)
+						.count(),
+					"There is not exactly one arc that writes the incremented "+objectId+" count in transition "+transition.getName().getText());
+			});
+		});
+	}
+	
+	
+	@TestWithAllModels
+	@ForEachBpmn(StartEvent.class)
+	public void testEachCreateIsCountedForStartEvents(StartEvent startEvent) {
+		Transition transition = transitionsFor(startEvent).findAny().get();
+		dataObjectToStateMap(writtenDataObjectRefs(startEvent)).entrySet().forEach(createdObject -> {
+			String objectId = createdObject.getKey();
+			assertEquals(1, arcsFromNodeNamed(transition, objectId+"Count")
+					.map(arc -> arc.getHlinscription().getText())
+					.filter((objectId+"Count")::equals)
+					.count(),
+				"There is not exactly one arc that reads the current "+objectId+" count in transition "+transition.getName().getText());
+			assertEquals(1, arcsToNodeNamed(transition, objectId+"Count")
+					.map(arc -> arc.getHlinscription().getText())
+					.filter((objectId+"Count"+" + 1")::equals)
+					.count(),
+				"There is not exactly one arc that writes the incremented "+objectId+" count in transition "+transition.getName().getText());
+		});
+	}
 
 }
