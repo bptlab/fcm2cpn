@@ -82,6 +82,9 @@ public class CompilerApp implements AbstractPageScope {
     public final static String licenseInfo = "fCM2CPN translator  Copyright (C) 2020  Hasso Plattner Institute gGmbH, University of Potsdam, Germany\n" +
             "This program comes with ABSOLUTELY NO WARRANTY.\n" +
             "This is free software, and you are welcome to redistribute it under certain conditions.\n";
+
+    private static final FileNameExtensionFilter bpmnFileFilter = new FileNameExtensionFilter("BPMN Process Model", "bpmn");
+    private static final FileNameExtensionFilter umlFileFilter = new FileNameExtensionFilter("UML Data Model Class Diagram", "uml");
     
     /** The bpmn model to be parsed*/
 	private BpmnModelInstance bpmn;
@@ -126,7 +129,7 @@ public class CompilerApp implements AbstractPageScope {
         	bpmnFile = new File(args.get(0));
         	args.remove(0);
         } else {
-        	bpmnFile = getFile();
+        	bpmnFile = getFile(bpmnFileFilter);
         }        
         if (null == bpmnFile) {
             System.exit(0);
@@ -138,7 +141,7 @@ public class CompilerApp implements AbstractPageScope {
             	dataModelFile = Optional.of(new File(args.get(0)));
             	args.remove(0);
             } else {
-            	dataModelFile = Optional.ofNullable(getFile());//TODO adapt file filter
+            	dataModelFile = Optional.ofNullable(getFile(umlFileFilter));
             }       
         } 
         
@@ -155,10 +158,8 @@ public class CompilerApp implements AbstractPageScope {
     	return new CompilerApp(bpmn, dataModel).translateBPMN2CPN();
     }
 
-    private static File getFile() {
+    private static File getFile(FileNameExtensionFilter filter) {
         JFileChooser chooser = new JFileChooser("./");
-        FileNameExtensionFilter filter = new FileNameExtensionFilter(
-                "BPMN Process Model", "bpmn");
         chooser.setFileFilter(filter);
         int returnVal = chooser.showOpenDialog(null);
         if(returnVal == JFileChooser.APPROVE_OPTION) {
