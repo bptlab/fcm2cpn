@@ -47,6 +47,7 @@ public class StartEventCompiler extends FlowElementCompiler<StartEvent> {
         		.map(DataObjectWrapper.class::cast)
         		.collect(Collectors.toSet());
         attachObjectCreationCounters(subpageTransition, createdObjects);
+        if(createdObjects.isEmpty()) setTransitionCode(subpageTransition, "", "", "");        
         createCreationRegistrationArcs(subpageTransition, createdObjects);
         
         Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputTransitions = new HashMap<>();
@@ -54,6 +55,7 @@ public class StartEventCompiler extends FlowElementCompiler<StartEvent> {
     	createDataAssociationArcs(outputTransitions, Collections.emptyMap());
 	}
 	
+	//TODO created utility code to access code fragments
 	@Override
 	protected void setTransitionCode(Transition transition, String input, String output, String action) {
 		super.setTransitionCode(transition, "count, "+input, "caseId, "+output, "String.concat[\"case\", Int.toString(count)], "+action);
