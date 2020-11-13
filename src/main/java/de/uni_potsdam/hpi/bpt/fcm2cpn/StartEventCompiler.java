@@ -55,10 +55,15 @@ public class StartEventCompiler extends FlowElementCompiler<StartEvent> {
     	createDataAssociationArcs(outputTransitions, Collections.emptyMap());
 	}
 	
-	//TODO created utility code to access code fragments
+	//TODO created utility code to access code fragments like seen with guard access
 	@Override
 	protected void setTransitionCode(Transition transition, String input, String output, String action) {
-		super.setTransitionCode(transition, "count, "+input, "caseId, "+output, "String.concat[\"case\", Int.toString(count)], "+action);
+		String delim = input.isEmpty() ? "" : ", ";
+		super.setTransitionCode(
+				transition, 
+				"count"+delim+input, 
+				"caseId"+delim+output, 
+				"String.concat[\"case\", Int.toString(count)]"+delim+action);
 	}
 
 }
