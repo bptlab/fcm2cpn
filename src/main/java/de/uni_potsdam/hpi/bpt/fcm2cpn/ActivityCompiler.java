@@ -7,16 +7,12 @@ import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getSource;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getTarget;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
@@ -43,15 +39,18 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 	
 	private Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputtingTransitions;
 	private Map<StatefulDataAssociation<DataInputAssociation, ?>, List<Transition>> inputtingTransitions;
-	
+
+	private ObjectLifeCycle[] olcs;
+
 	private int transputSetIndex = 0;
 
 	private boolean hasCreatedArcToAssocPlace = false;
 	private boolean hasCreatedArcFromAssocPlace = false;
 	
 
-	public ActivityCompiler(CompilerApp parent, Activity activity) {
+	public ActivityCompiler(CompilerApp parent, Activity activity, ObjectLifeCycle[] olcs) {
 		super(parent, activity);
+		this.olcs = olcs;
 	}
 
 	public void compile() {
@@ -191,12 +190,15 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 				return super.remove(e) || super.remove(((Pair<?,?>)e).reversed());
 			};
 		};
+    	Set<Pair<DataObjectWrapper, DataObjectWrapper>> stateChangesToPerform = new HashSet<>();
 		
 		//Associations are created two objects are written together or if one is read and the other one is written
 		for(DataObjectWrapper writtenObject : writtenDataObjects) {
 			for(DataObjectWrapper readObject : readDataObjects) {
 				if(!writtenObject.equals(readObject) && parent.getDataModel().isAssociated(writtenObject.getNormalizedName(), readObject.getNormalizedName())) {
 					associationsToWrite.add(new Pair<>(writtenObject, readObject));
+				} else if (writtenObject.equals(readObject)) {
+					stateChangesToPerform.add(new Pair<>(readObject, writtenObject));
 				}
 			}
 			for(DataObjectWrapper otherWrittenObject : writtenDataObjects) {
@@ -206,10 +208,40 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 			}
 		}
 		
-		Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(transition, readDataObjects, readContext);
-		
-		//If either new assocs are created or old assocs are checked, we need arcs from and to the assoc place
-		if(!checkedAssociations.isEmpty() || !associationsToWrite.isEmpty()) {
+
+		// Add guards for goal cardinalities
+		if (!stateChangesToPerform.isEmpty()) {
+			for (Pair<DataObjectWrapper, DataObjectWrapper> stateChange : stateChangesToPerform) {
+				Set<String> inputStates = readContext.get(stateChange.first).stream()
+					.map(obj -> obj.getStateName().orElse(null))
+					.filter(Objects::nonNull)
+					.collect(Collectors.toSet());
+				Set<String> outputStates = writeContext.get(stateChange.second).stream()
+						.map(obj -> obj.getStateName().orElse(null))
+						.filter(Objects::nonNull)
+						.collect(Collectors.toSet());
+				assert(inputStates.size() <= 1);
+				assert(outputStates.size() <= 1);
+				Optional<ObjectLifeCycle> olc = Arrays.stream(olcs)
+						.filter(o -> normalizeElementName(o.getClassName()).equals(stateChange.first.normalizedName))
+						.findFirst();
+				// if (olc.isEmpty()) continue;
+				for (String inputState : inputStates) {
+					ObjectLifeCycle.State istate = olc.get().getState(inputState).get();
+					if (istate.getUpdateableAssociations().isEmpty()) continue;
+					for (String outputState : outputStates) {
+						ObjectLifeCycle.State ostate = olc.get().getState(outputState).get();
+						for (AssociationEnd assocEnd : istate.getUpdateableAssociations()) {
+							if (!ostate.getUpdateableAssociations().contains(assocEnd)) {
+								// TODO: generalize: look at all possible successor states
+								int goalLowerBound = assocEnd.getGoalLowerBound();
+								String newGuard = "(enforceLowerBound "+stateChange.first.dataElementId()+" "+normalizeElementName(assocEnd.getDataObject())+" assoc "+goalLowerBound+")";
+								addGuardCondition(transition, newGuard);
+							}
+						}
+					}
+				}
+			}
 			// Create reading arcs
 			String readAnnotation = "assoc";
 			elementPage.createArcFrom(parent.getAssociationsPlace(), transition, readAnnotation);
@@ -217,7 +249,20 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 				parent.createArc(parent.getAssociationsPlace(), node());
 				hasCreatedArcFromAssocPlace = true;
 			}
-			
+		}
+
+		//If either new assocs are created or old assocs are checked, we need arcs from and to the assoc place
+		Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(transition, readDataObjects, readContext);
+		if(!checkedAssociations.isEmpty() || !associationsToWrite.isEmpty()) {
+			// Create reading arcs
+			if (stateChangesToPerform.isEmpty()) {
+				String readAnnotation = "assoc";
+				elementPage.createArcFrom(parent.getAssociationsPlace(), transition, readAnnotation);
+				if (!hasCreatedArcFromAssocPlace) {
+					parent.createArc(parent.getAssociationsPlace(), node());
+					hasCreatedArcFromAssocPlace = true;
+				}
+			}
 			//Create write back arcs; if new assocs are create, write the union back; if assocs are checked, they already exist
 			String writeAnnotation = "assoc";
 			checkedAssociations.forEach(associationsToWrite::remove);
@@ -273,6 +318,14 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 				
 				
 			}
+			elementPage.createArcTo(parent.getAssociationsPlace(), transition, writeAnnotation);
+			if(!hasCreatedArcToAssocPlace) {
+				parent.createArc(node(), parent.getAssociationsPlace());
+				hasCreatedArcToAssocPlace = true;
+			}
+		} else if (!stateChangesToPerform.isEmpty()) {
+			// Create writing arcs
+			String writeAnnotation = "assoc";
 			elementPage.createArcTo(parent.getAssociationsPlace(), transition, writeAnnotation);
 			if(!hasCreatedArcToAssocPlace) {
 				parent.createArc(node(), parent.getAssociationsPlace());

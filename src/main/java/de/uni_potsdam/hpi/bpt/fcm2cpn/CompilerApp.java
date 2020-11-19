@@ -364,7 +364,7 @@ public class CompilerApp implements AbstractPageScope {
     private void translateActivities() {
         Collection<Activity> activities = bpmn.getModelElementsByType(Activity.class);
         activities.forEach(activity -> {
-        	new ActivityCompiler(this, activity).compile();
+        	new ActivityCompiler(this, activity, olcs).compile();
         });
     }
     
@@ -495,11 +495,9 @@ public class CompilerApp implements AbstractPageScope {
     		.map(this::wrapperFor)
     		.filter(DataElementWrapper::isDataObjectWrapper)
     		.map(DataObjectWrapper.class::cast)
-			.filter(potentialIdentifier -> {
-				return dataModel.getAssociation(potentialIdentifier.getNormalizedName(), object.getNormalizedName())
-					.filter(identifyingAssoc -> identifyingAssoc.getEnd(potentialIdentifier.normalizedName).getUpperBound() <= 1)
-					.isPresent();
-			}).collect(Collectors.toSet());
+			.filter(potentialIdentifier -> dataModel.getAssociation(potentialIdentifier.getNormalizedName(), object.getNormalizedName())
+                .filter(identifyingAssoc -> identifyingAssoc.getEnd(potentialIdentifier.normalizedName).getUpperBound() <= 1)
+                .isPresent()).collect(Collectors.toSet());
 		assert potentialIdentifiers.size() == 1;
 		return potentialIdentifiers.stream().findAny().get();
     } 

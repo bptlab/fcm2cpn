@@ -137,7 +137,12 @@ public class ObjectLifeCycle {
         String iRefId = iRef.getId();
         Collection<DataInputAssociation> inputAssociations = bpmn.getModelElementsByType(DataInputAssociation.class);
         DataInputAssociation inputAssoc = inputAssociations.stream().filter(assoc -> assoc.getTarget().getId().equals(iRefId)).findFirst().get();
-        return Arrays.stream(inputAssoc.getSources().stream().findFirst().get().getDataState().getName().replaceAll("[\\[\\]]", "").split("\\|")).collect(Collectors.toSet());
+        return Arrays.stream(inputAssoc.getSources().stream().findFirst().get().getDataState().getName()
+                .replaceAll("[\\[\\]]", "")
+                .replaceAll("\\s", " ")
+                .split("\\|"))
+                .map(Utils::singleDataObjectStateToNetColor)
+                .collect(Collectors.toSet());
     }
 
     private static Set<String> getDataObjectStates(DataOutput oRef, BpmnModelInstance bpmn) {
@@ -147,7 +152,9 @@ public class ObjectLifeCycle {
         return Arrays.stream(outputAssoc.getTarget().getDataState().getName()
                 .replaceAll("[\\[\\]]", "")
                 .replaceAll("\\s", " ")
-                .split("\\|")).collect(Collectors.toSet());
+                .split("\\|"))
+                .map(Utils::singleDataObjectStateToNetColor)
+                .collect(Collectors.toSet());
     }
 
     private static String getDataObjectName(DataOutput oRef, BpmnModelInstance bpmn) {
@@ -209,6 +216,10 @@ public class ObjectLifeCycle {
 
     public void setStates(Set<State> states) {
         this.states = states;
+    }
+
+    public Optional<State> getState(String inputState) {
+        return states.stream().filter(state -> state.stateName.equals(inputState)).findAny();
     }
 
     public static class State {

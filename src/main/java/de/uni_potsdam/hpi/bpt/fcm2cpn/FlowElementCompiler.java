@@ -41,7 +41,6 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
     
     /**
      * Creates arcs for all data associations of the compiled element, for all transitions of that element
-     * @param element: The element that writes or reads, usually an activity or event
      * @param outputs: For each stateful data assoc: Which (inputset x outputset)-Transitions write this data object in this state
      * @param inputs: For each stateful data assoc: Which (inputset x outputset)-Transitions read this data object in this state
      */
