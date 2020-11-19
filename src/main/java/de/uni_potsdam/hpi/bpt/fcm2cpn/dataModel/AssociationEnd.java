@@ -6,6 +6,7 @@ public class AssociationEnd {
 	
 	private String dataObject;
 	private int lowerBound = 1;
+	private int goalLowerBound = 1;
 	private int upperBound = 1;
 	
 	public AssociationEnd(String dataObject) {
@@ -31,7 +32,15 @@ public class AssociationEnd {
 	public void setUpperBound(int upperBound) {
 		this.upperBound = upperBound;
 	}
-	
+
+	public int getGoalLowerBound() {
+		return goalLowerBound;
+	}
+
+	public void setGoalLowerBound(int goalLowerBound) {
+		this.goalLowerBound = goalLowerBound;
+	}
+
 	@Override
 	public String toString() {
 		return "("+lowerBound+".."+(upperBound == UNLIMITED ? "*" : upperBound)+" "+dataObject+")";

@@ -18,7 +18,9 @@ import org.jdom2.input.SAXBuilder;
 
 public class DataModelParser {
 
-	
+
+	private Namespace xmiNamespace;
+
 	public static void main(String[] args) {
 		DataModel dataModel = parse(new File("./testDiagram.uml"));
 		System.out.println(dataModel.getAssociations());
@@ -45,7 +47,7 @@ public class DataModelParser {
         SAXBuilder builder = new SAXBuilder();
 		Document document = builder.build(file);
 		Element root = document.getRootElement();
-		Namespace xmiNamespace = root.getNamespace("xmi");
+		xmiNamespace = root.getNamespace("xmi");
         elements = root.getChildren("packagedElement").stream().collect(Collectors.groupingBy(element -> element.getAttributeValue("type", xmiNamespace)));
         
         idsToDataObjectNames = elements.get("uml:Class").stream().collect(Collectors.toMap(
@@ -55,23 +57,35 @@ public class DataModelParser {
 
     	Set<Association> associations = elements.get("uml:Association").stream().map(assoc -> {
         	List<Element> endpoints = assoc.getChildren("ownedEnd");
+        	List<Element> comments = assoc.getChildren("ownedComment");
         	assert endpoints.size() == 2;
         	return new Association(
-        			parseEndpoint(endpoints.get(0)), 
-        			parseEndpoint(endpoints.get(1)));
+        			parseEndpoint(endpoints.get(0), comments),
+        			parseEndpoint(endpoints.get(1), comments));
 		}).collect(Collectors.toSet());
 		
     	return new DataModel(idsToDataObjectNames.values(), associations);
 	}
 	
-	private AssociationEnd parseEndpoint(Element endpointElement) {
-		String id = endpointElement.getAttributeValue("type");
-		AssociationEnd endpoint = new AssociationEnd(idsToDataObjectNames.get(id));
+	private AssociationEnd parseEndpoint(Element endpointElement, List<Element> comments) {
+		String id = endpointElement.getAttributeValue("id", xmiNamespace);
+		String classId = endpointElement.getAttributeValue("type");
+		AssociationEnd endpoint = new AssociationEnd(idsToDataObjectNames.get(classId));
 		Optional.ofNullable(endpointElement.getChild("lowerValue")).map(this::parseMultiplicity).ifPresent(endpoint::setLowerBound);
 		Optional.ofNullable(endpointElement.getChild("upperValue")).map(this::parseMultiplicity).ifPresent(endpoint::setUpperBound);
+		comments.stream()
+				.filter(element -> element.getAttributeValue("annotatedElement").equals(id))
+				.findFirst()
+				.map(this::parseGoalLowerBound)
+				.ifPresentOrElse(endpoint::setGoalLowerBound, () -> endpoint.setGoalLowerBound(endpoint.getLowerBound()));
 		return endpoint;
 	}
-	
+
+	private int parseGoalLowerBound(Element element) {
+		String comment = element.getChild("body").getValue();
+		return Integer.parseInt(comment.replaceAll("goalLowerBound:\\s+", ""));
+	}
+
 	private int parseMultiplicity(Element threshold) {
 		String multiplicity = threshold.getAttributeValue("value");
 		if(multiplicity == null) multiplicity = "0";

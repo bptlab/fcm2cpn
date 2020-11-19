@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.Activity;
@@ -84,7 +85,8 @@ public class CompilerApp implements AbstractPageScope {
 
     private static final FileNameExtensionFilter bpmnFileFilter = new FileNameExtensionFilter("BPMN Process Model", "bpmn");
     private static final FileNameExtensionFilter umlFileFilter = new FileNameExtensionFilter("UML Data Model Class Diagram", "uml");
-    
+    private final ObjectLifeCycle[] olcs;
+
     /** The bpmn model to be parsed*/
 	private BpmnModelInstance bpmn;
     /** Parsed data model of the bpmn model*/
@@ -170,10 +172,11 @@ public class CompilerApp implements AbstractPageScope {
     private CompilerApp(BpmnModelInstance bpmn, Optional<DataModel> dataModel) {
     	this.bpmn = bpmn;
         this.builder = new BuildCPNUtil();
+        this.dataModel = dataModel.orElse(DataModel.none());
+        this.olcs = ObjectLifeCycle.getOLCs(this.dataModel, bpmn);
         this.subpages = new HashMap<>();
         this.nodeMap = new HashMap<>();
         this.deferred = new ArrayList<>();
-        this.dataModel = dataModel.orElse(DataModel.none());
 	}
     
     private static BpmnModelInstance loadBPMNFile(File bpmnFile) {
