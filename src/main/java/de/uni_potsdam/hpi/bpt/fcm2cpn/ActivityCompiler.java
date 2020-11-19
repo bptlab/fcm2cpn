@@ -197,7 +197,8 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 			for(DataObjectWrapper readObject : readDataObjects) {
 				if(!writtenObject.equals(readObject) && parent.getDataModel().isAssociated(writtenObject.getNormalizedName(), readObject.getNormalizedName())) {
 					associationsToWrite.add(new Pair<>(writtenObject, readObject));
-				} else if (writtenObject.equals(readObject)) {
+				} else if (writtenObject.equals(readObject) &&
+						(readContext.get(readObject).stream().anyMatch(StatefulDataAssociation::isCollection) == writeContext.get(writtenObject).stream().anyMatch(StatefulDataAssociation::isCollection))) {
 					stateChangesToPerform.add(new Pair<>(readObject, writtenObject));
 				}
 			}
@@ -235,7 +236,18 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 							if (!ostate.getUpdateableAssociations().contains(assocEnd)) {
 								// TODO: generalize: look at all possible successor states
 								int goalLowerBound = assocEnd.getGoalLowerBound();
-								String newGuard = "(enforceLowerBound "+stateChange.first.dataElementId()+" "+normalizeElementName(assocEnd.getDataObject())+" assoc "+goalLowerBound+")";
+								int lowerBound = assocEnd.getLowerBound();
+								if (writtenDataObjects.stream().anyMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject()))) &&
+										readDataObjects.stream().noneMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject())))) {
+									goalLowerBound--;
+								}
+								if (!readDataObjects.contains(stateChange.first) || goalLowerBound <= lowerBound) continue;
+								String newGuard;
+								if (readContext.get(stateChange.first).stream().anyMatch(StatefulDataAssociation::isCollection)) {
+									newGuard = "(List.all (fn oId => (enforceLowerBound oId " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ")) (List.map (fn obj => #id obj) " + stateChange.first.dataElementList() + ")) (*goal cardinality*)";
+								} else {
+									newGuard = "(enforceLowerBound " + stateChange.first.dataElementId() + " " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ") (*goal cardinality*)";
+								}
 								addGuardCondition(transition, newGuard);
 							}
 						}
@@ -311,7 +323,8 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 									.orElse(false)) throw new ModelValidationException("Identifier data object "+identifier.getNormalizedName()+" for list data object "+collectionDataObject.getNormalizedName()+" is not associated 1 to 1 with "+singleObject.getNormalizedName()+" in activity "+normalizeElementName(elementName(element)));
 
 							int lowerBound = assoc.getEnd(collectionDataObject.getNormalizedName()).getLowerBound();
-							String newGuard = "(enforceLowerBound "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc "+lowerBound+")";
+							String newGuard = "((length " + collectionDataObject.dataElementList() + ") < " + lowerBound + ") (*requirements "+ singleObject.getNormalizedName() + "*)";
+							// String newGuard = "(enforceLowerBound "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc "+lowerBound+")";
 							addGuardCondition(transition, newGuard);
 					});
 				});

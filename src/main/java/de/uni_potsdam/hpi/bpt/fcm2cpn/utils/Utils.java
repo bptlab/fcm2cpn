@@ -159,6 +159,7 @@ public class Utils {
 	 */
     public static void addGuardCondition(Transition transition, String newGuard) {
         String existingGuard = transition.getCondition().asString();
+        if (existingGuard.contains(newGuard)) return;
         existingGuard = existingGuard.replaceFirst("^\\[", "").replaceFirst("]$", "");
         if(!existingGuard.isEmpty()) existingGuard += ",\n";
         transition.getCondition().setText("[" + existingGuard + newGuard + "]");
