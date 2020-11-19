@@ -21,6 +21,7 @@ public class ObjectLifeCycle {
         Map<String, ObjectLifeCycle> olcForClass = new HashMap<>();
         for (Task task : tasks) {
             IoSpecification io = task.getIoSpecification();
+            if (io == null) continue;
             Collection<InputSet> inputSets = io.getInputSets();
             Collection<OutputSet> outputSets = io.getOutputSets();
             for (OutputSet outputSet : outputSets) {
@@ -137,10 +138,12 @@ public class ObjectLifeCycle {
         String iRefId = iRef.getId();
         Collection<DataInputAssociation> inputAssociations = bpmn.getModelElementsByType(DataInputAssociation.class);
         DataInputAssociation inputAssoc = inputAssociations.stream().filter(assoc -> assoc.getTarget().getId().equals(iRefId)).findFirst().get();
-        return Arrays.stream(inputAssoc.getSources().stream().findFirst().get().getDataState().getName()
-                .replaceAll("[\\[\\]]", "")
-                .replaceAll("\\s", " ")
-                .split("\\|"))
+        return Arrays.stream(Optional.ofNullable(inputAssoc.getTarget().getDataState())
+                .map(DataState::getName)
+                .map(s -> s.replaceAll("[\\[\\]]", ""))
+                .map(s -> s.replaceAll("\\s", " "))
+                .map(s -> s.split("\\|"))
+                .orElse(new String[] {""}))
                 .map(Utils::singleDataObjectStateToNetColor)
                 .collect(Collectors.toSet());
     }
@@ -149,10 +152,12 @@ public class ObjectLifeCycle {
         String oRefId = oRef.getId();
         Collection<DataOutputAssociation> outputAssociations = bpmn.getModelElementsByType(DataOutputAssociation.class);
         DataOutputAssociation outputAssoc = outputAssociations.stream().filter(assoc -> assoc.getSources().stream().anyMatch(src -> src.getId().equals(oRefId))).findAny().get();
-        return Arrays.stream(outputAssoc.getTarget().getDataState().getName()
-                .replaceAll("[\\[\\]]", "")
-                .replaceAll("\\s", " ")
-                .split("\\|"))
+        return Arrays.stream(Optional.ofNullable(outputAssoc.getTarget().getDataState())
+                .map(DataState::getName)
+                .map(s -> s.replaceAll("[\\[\\]]", ""))
+                .map(s -> s.replaceAll("\\s", " "))
+                .map(s -> s.split("\\|"))
+                .orElse(new String[] {""}))
                 .map(Utils::singleDataObjectStateToNetColor)
                 .collect(Collectors.toSet());
     }
