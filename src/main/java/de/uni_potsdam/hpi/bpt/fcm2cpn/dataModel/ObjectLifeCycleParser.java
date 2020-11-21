@@ -20,6 +20,7 @@ import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.DataInput;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
+import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataOutput;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.InputSet;
@@ -30,6 +31,7 @@ import org.camunda.bpm.model.bpmn.instance.Task;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle.State;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 public class ObjectLifeCycleParser {
 
@@ -49,48 +51,66 @@ public class ObjectLifeCycleParser {
     private ObjectLifeCycle[] getOLCs() {
         Collection<Activity> activities = bpmn.getModelElementsByType(Activity.class);
         Map<String, ObjectLifeCycle> olcForClass = new HashMap<>();
+        bpmn.getModelElementsByType(DataObject.class).stream()
+        	.map(DataObject::getName)
+        	.map(Utils::normalizeElementName)
+        	.forEach(className -> olcForClass.put(className, new ObjectLifeCycle(className)));
+        
         for (Activity activity : activities) {
             IoSpecification io = activity.getIoSpecification();
             if (io == null) continue;
             Collection<InputSet> inputSets = io.getInputSets();
             Collection<OutputSet> outputSets = io.getOutputSets();
             for (OutputSet outputSet : outputSets) {
-                Map<String, Set<String>> outputStatesForObject = new HashMap<>();
+                //Determine in which states which object appears at the current activity
+            	Map<String, Set<String>> outputStatesForObject = new HashMap<>();
                 Map<String, Set<String>> allStatesForObject = new HashMap<>();
+                
                 for (DataOutput oRef : outputSet.getDataOutputRefs()) {
                     String outputName = getDataObjectName(oRef);
                     Set<String> outputStates = getDataObjectStates(oRef);
-                    allStatesForObject.put(outputName, outputStates);
-                    outputStatesForObject.put(outputName, outputStates);
+                    allStatesForObject
+	                	.computeIfAbsent(outputName, s -> new HashSet<>())
+	                	.addAll(outputStates);
+                    outputStatesForObject	                    	
+	                    .computeIfAbsent(outputName, s -> new HashSet<>())
+	                	.addAll(outputStates);
                 }
                 Map<String, Set<String>> inputStatesForObject = new HashMap<>();
                 for (InputSet inputSet : inputSets) {
                     for (DataInput input : inputSet.getDataInputs()) {
                         String inputName = getDataObjectName(input);
                         Set<String> inputStates = getDataObjectStates(input);
-                        inputStatesForObject.put(inputName, inputStates);
+                        inputStatesForObject
+	                    	.computeIfAbsent(inputName, s -> new HashSet<>())
+	                    	.addAll(inputStates);
                         allStatesForObject
                         	.computeIfAbsent(inputName, s -> new HashSet<>())
                         	.addAll(inputStates);
                     }
                 }
-                outputStatesForObject.keySet().forEach(k -> olcForClass.computeIfAbsent(k,s -> new ObjectLifeCycle(k)));
-                inputStatesForObject.keySet().forEach(k -> olcForClass.computeIfAbsent(k,s -> new ObjectLifeCycle(k)));
+                
+                //Add state object for each found state
                 for (Map.Entry<String, Set<String>> e : allStatesForObject.entrySet()) {
                     ObjectLifeCycle olc = olcForClass.get(e.getKey());
                     olc.getStates().addAll(e.getValue().stream()
                             .map(State::new)
                             .collect(Collectors.toSet()));
                 }
-                for (Map.Entry<String, Set<String>> e : inputStatesForObject.entrySet()) {
-                    ObjectLifeCycle olc = olcForClass.get(e.getKey());
-                    if (outputStatesForObject.containsKey(e.getKey())) {
-                        for (String stateName : e.getValue()) {
-                            State source = olc.getStates().stream().filter(state -> state.stateName.equals(stateName)).findFirst().get();
-                            e.getValue().stream().map(s -> olc.getStates().stream().filter(state -> s.equals(state.stateName)).findFirst().get()).forEach(source::addSuccessor);
+                
+                //Create successor relations
+                olcForClass.keySet().forEach(dataObject -> {
+                    if (inputStatesForObject.containsKey(dataObject) && outputStatesForObject.containsKey(dataObject)) {
+                    	Set<String> inputStates = inputStatesForObject.get(dataObject);
+                    	Set<String> outputStates = outputStatesForObject.get(dataObject);
+                        ObjectLifeCycle olc = olcForClass.get(dataObject);
+                        for (String inputState : inputStates) {
+                            for (String outputState : outputStates) {
+                                olc.getState(inputState).get().addSuccessor(olc.getState(outputState).get());                            
+                            }
                         }
                     }
-                }
+                });
             }
         }
         addToEachStateReferencesToAssociatedObjectsThatCanBeCreated(olcForClass);
@@ -111,7 +131,7 @@ public class ObjectLifeCycleParser {
                     ObjectLifeCycle olc = olcForClass.get(object);
                     olc.getStates().stream()
                             .filter(state -> requiredStates.contains(state.getStateName()))
-                            .forEach(state -> state.updateableAssociations.add(assocEnd));
+                            .forEach(state -> state.addUpdateableAssociation(assocEnd));
                 }
             }
         }

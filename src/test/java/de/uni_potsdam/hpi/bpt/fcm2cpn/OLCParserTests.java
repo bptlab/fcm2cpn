@@ -1,10 +1,12 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.*;
 
 import java.util.Arrays;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
+import org.camunda.bpm.model.bpmn.instance.DataObject;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycleParser;
@@ -27,6 +29,13 @@ public class OLCParserTests extends ModelStructureTests {
     }
 	
 	@TestWithAllModels
+	@ForEachBpmn(DataObject.class)
+	public void testOLCsAreComplete(DataObject dataObject) {
+		String className = normalizeElementName(dataObject.getName());
+		assertNotNull(olcFor(className), "No OLC for "+className+" exists.");
+	}
+	
+	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testAllTransitionsByActivityArePossible(Activity activity) {
 		expectedIOCombinations(activity).forEach(ioCombination -> {
@@ -37,7 +46,6 @@ public class OLCParserTests extends ModelStructureTests {
 						ObjectLifeCycle olc = olcFor(object);
 						assertTrue(olc.getState(inputState).get().getSuccessors().contains(olc.getState(outputState).get()), 
 								"Olc does not support lifecycle transition ("+inputState+" -> "+outputState+") for data object "+object+" which is definied by activity "+activity.getName());
-						System.out.println(" -> proofed");
 					}
 				}
 			});

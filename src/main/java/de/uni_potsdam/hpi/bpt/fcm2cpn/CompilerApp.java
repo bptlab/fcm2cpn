@@ -38,6 +38,8 @@ import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycleParser;
+
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.Activity;
@@ -173,7 +175,7 @@ public class CompilerApp implements AbstractPageScope {
     	this.bpmn = bpmn;
         this.builder = new BuildCPNUtil();
         this.dataModel = dataModel.orElse(DataModel.none());
-        this.olcs = ObjectLifeCycle.getOLCs(this.dataModel, bpmn);
+        this.olcs = ObjectLifeCycleParser.getOLCs(this.dataModel, bpmn);
         this.subpages = new HashMap<>();
         this.nodeMap = new HashMap<>();
         this.deferred = new ArrayList<>();

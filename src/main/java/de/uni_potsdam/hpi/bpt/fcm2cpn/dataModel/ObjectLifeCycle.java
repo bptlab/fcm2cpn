@@ -28,9 +28,9 @@ public class ObjectLifeCycle {
     
 
     public static class State {
-        protected String stateName;
-        protected Set<State> successors;
-        protected Set<AssociationEnd> updateableAssociations;
+        protected final String stateName;
+        protected final Set<State> successors;
+        protected final Set<AssociationEnd> updateableAssociations;
 
         public State(String stateName) {
             this.stateName = stateName;
@@ -43,34 +43,27 @@ public class ObjectLifeCycle {
             return obj instanceof State &&
             stateName.equals(((State)obj).stateName);
         }
-
-        public void addSuccessor(State successor) {
-            successors.add(successor);
-        }
-
+        
         public String getStateName() {
             return stateName;
         }
-
-        public void setStateName(String stateName) {
-            this.stateName = stateName;
+        
+        public void addSuccessor(State successor) {
+            successors.add(successor);
         }
 
         public Set<State> getSuccessors() {
             return successors;
         }
-
-        public void setSuccessors(Set<State> successors) {
-            this.successors = successors;
+        
+        public void addUpdateableAssociation(AssociationEnd updateableAssociation) {
+        	updateableAssociations.add(updateableAssociation);
         }
 
         public Set<AssociationEnd> getUpdateableAssociations() {
             return updateableAssociations;
         }
 
-        public void setUpdateableAssociations(Set<AssociationEnd> updateableAssociations) {
-            this.updateableAssociations = updateableAssociations;
-        }
 
         @Override
         public int hashCode() {
