@@ -364,7 +364,7 @@ public class CompilerApp implements AbstractPageScope {
     private void translateActivities() {
         Collection<Activity> activities = bpmn.getModelElementsByType(Activity.class);
         activities.forEach(activity -> {
-        	new ActivityCompiler(this, activity, olcs).compile();
+        	new ActivityCompiler(this, activity).compile();
         });
     }
     
@@ -488,6 +488,13 @@ public class CompilerApp implements AbstractPageScope {
     	return Stream.concat(dataObjectWrappers.stream(), dataStoreWrappers.stream())
     			.filter(any -> any.isForReference(assoc.getDataElement())).findAny().get();
     }  
+    
+    public ObjectLifeCycle olcFor(DataObjectWrapper dataObject) {
+    	return Arrays.stream(olcs)
+    			.filter(olc -> olc.getClassName().equals(dataObject.getNormalizedName()))
+    			.findAny()
+    			.get();
+    }
     
     public DataObjectWrapper getDataObjectCollectionIdentifier(Activity activity, DataObjectWrapper object) {
     	Set<DataObjectWrapper> potentialIdentifiers = activity.getDataInputAssociations().stream()

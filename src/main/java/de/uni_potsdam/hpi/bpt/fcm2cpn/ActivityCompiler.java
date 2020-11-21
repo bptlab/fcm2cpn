@@ -39,18 +39,15 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 	
 	private Map<StatefulDataAssociation<DataOutputAssociation, ?>, List<Transition>> outputtingTransitions;
 	private Map<StatefulDataAssociation<DataInputAssociation, ?>, List<Transition>> inputtingTransitions;
-
-	private ObjectLifeCycle[] olcs;
-
+	
 	private int transputSetIndex = 0;
 
 	private boolean hasCreatedArcToAssocPlace = false;
 	private boolean hasCreatedArcFromAssocPlace = false;
 	
 
-	public ActivityCompiler(CompilerApp parent, Activity activity, ObjectLifeCycle[] olcs) {
+	public ActivityCompiler(CompilerApp parent, Activity activity) {
 		super(parent, activity);
-		this.olcs = olcs;
 	}
 
 	public void compile() {
@@ -176,84 +173,30 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
     }
 	
     private void associateDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
-    	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = new HashSet<>() {
-			private static final long serialVersionUID = 1L;
 
-			@Override
-			public boolean add(Pair<DataObjectWrapper, DataObjectWrapper> e) {
-				if(!contains(e) && !contains(e.reversed())) return super.add(e);
-				else return false;
-			};
-			
-			@Override
-			public boolean remove(Object e) {
-				return super.remove(e) || super.remove(((Pair<?,?>)e).reversed());
-			};
-		};
-    	Set<Pair<DataObjectWrapper, DataObjectWrapper>> stateChangesToPerform = new HashSet<>();
-		
-		//Associations are created two objects are written together or if one is read and the other one is written
+    	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = determineAssociationsToWrite(readDataObjects, writtenDataObjects, readContext, writeContext);
+    	
+    	Set<DataObjectWrapper> stateChangesToPerform = new HashSet<>();
 		for(DataObjectWrapper writtenObject : writtenDataObjects) {
 			for(DataObjectWrapper readObject : readDataObjects) {
-				if(!writtenObject.equals(readObject) && parent.getDataModel().isAssociated(writtenObject.getNormalizedName(), readObject.getNormalizedName())) {
-					associationsToWrite.add(new Pair<>(writtenObject, readObject));
-				} else if (writtenObject.equals(readObject) &&
+				if (writtenObject.equals(readObject) &&
 						(readContext.get(readObject).stream().anyMatch(StatefulDataAssociation::isCollection) == writeContext.get(writtenObject).stream().anyMatch(StatefulDataAssociation::isCollection))) {
-					stateChangesToPerform.add(new Pair<>(readObject, writtenObject));
-				}
-			}
-			for(DataObjectWrapper otherWrittenObject : writtenDataObjects) {
-				if(!writtenObject.equals(otherWrittenObject) && parent.getDataModel().isAssociated(writtenObject.getNormalizedName(), otherWrittenObject.getNormalizedName())) {
-					associationsToWrite.add(new Pair<>(writtenObject, otherWrittenObject));
+					//TODO there might be case where data object is read as collection and as normal, but only written as normal. 
+					//Then the guard returns false, but should be true.
+					stateChangesToPerform.add(readObject);
 				}
 			}
 		}
-		
 
 		// Add guards for goal cardinalities
 		if (!stateChangesToPerform.isEmpty()) {
-			for (Pair<DataObjectWrapper, DataObjectWrapper> stateChange : stateChangesToPerform) {
-				Set<String> inputStates = readContext.get(stateChange.first).stream()
-					.map(obj -> obj.getStateName().orElse(null))
-					.filter(Objects::nonNull)
-					.collect(Collectors.toSet());
-				Set<String> outputStates = writeContext.get(stateChange.second).stream()
-						.map(obj -> obj.getStateName().orElse(null))
-						.filter(Objects::nonNull)
-						.collect(Collectors.toSet());
-				assert(inputStates.size() <= 1);
-				assert(outputStates.size() <= 1);
-				Optional<ObjectLifeCycle> olc = Arrays.stream(olcs)
-						.filter(o -> normalizeElementName(o.getClassName()).equals(stateChange.first.normalizedName))
-						.findFirst();
-				// if (olc.isEmpty()) continue;
-				for (String inputState : inputStates) {
-					ObjectLifeCycle.State istate = olc.get().getState(inputState).get();
-					if (istate.getUpdateableAssociations().isEmpty()) continue;
-					for (String outputState : outputStates) {
-						ObjectLifeCycle.State ostate = olc.get().getState(outputState).get();
-						for (AssociationEnd assocEnd : istate.getUpdateableAssociations()) {
-							if (!ostate.getUpdateableAssociations().contains(assocEnd)) {
-								// TODO: generalize: look at all possible successor states
-								int goalLowerBound = assocEnd.getGoalLowerBound();
-								int lowerBound = assocEnd.getLowerBound();
-								if (writtenDataObjects.stream().anyMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject()))) &&
-										readDataObjects.stream().noneMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject())))) {
-									goalLowerBound--;
-								}
-								if (!readDataObjects.contains(stateChange.first) || goalLowerBound <= lowerBound) continue;
-								String newGuard;
-								if (readContext.get(stateChange.first).stream().anyMatch(StatefulDataAssociation::isCollection)) {
-									newGuard = "(List.all (fn oId => (enforceLowerBound oId " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ")) (List.map (fn obj => #id obj) " + stateChange.first.dataElementList() + ")) (*goal cardinality*)";
-								} else {
-									newGuard = "(enforceLowerBound " + stateChange.first.dataElementId() + " " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ") (*goal cardinality*)";
-								}
-								addGuardCondition(transition, newGuard);
-							}
-						}
-					}
-				}
-			}
+			addGuardsForStateChanges(stateChangesToPerform, transition, readDataObjects, writtenDataObjects, readContext, writeContext);
+		}
+		
+		Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(transition, readDataObjects, readContext);
+		
+		//If either new assocs are created or old assocs are checked, we need arcs from and to the assoc place
+		if(!checkedAssociations.isEmpty() || !associationsToWrite.isEmpty() || !stateChangesToPerform.isEmpty()) {
 			// Create reading arcs
 			String readAnnotation = "assoc";
 			elementPage.createArcFrom(parent.getAssociationsPlace(), transition, readAnnotation);
@@ -261,20 +204,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 				parent.createArc(parent.getAssociationsPlace(), node());
 				hasCreatedArcFromAssocPlace = true;
 			}
-		}
-
-		//If either new assocs are created or old assocs are checked, we need arcs from and to the assoc place
-		Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(transition, readDataObjects, readContext);
-		if(!checkedAssociations.isEmpty() || !associationsToWrite.isEmpty()) {
-			// Create reading arcs
-			if (stateChangesToPerform.isEmpty()) {
-				String readAnnotation = "assoc";
-				elementPage.createArcFrom(parent.getAssociationsPlace(), transition, readAnnotation);
-				if (!hasCreatedArcFromAssocPlace) {
-					parent.createArc(parent.getAssociationsPlace(), node());
-					hasCreatedArcFromAssocPlace = true;
-				}
-			}
+			
 			//Create write back arcs; if new assocs are create, write the union back; if assocs are checked, they already exist
 			String writeAnnotation = "assoc";
 			checkedAssociations.forEach(associationsToWrite::remove);
@@ -323,8 +253,9 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 									.orElse(false)) throw new ModelValidationException("Identifier data object "+identifier.getNormalizedName()+" for list data object "+collectionDataObject.getNormalizedName()+" is not associated 1 to 1 with "+singleObject.getNormalizedName()+" in activity "+normalizeElementName(elementName(element)));
 
 							int lowerBound = assoc.getEnd(collectionDataObject.getNormalizedName()).getLowerBound();
-							String newGuard = "((length " + collectionDataObject.dataElementList() + ") < " + lowerBound + ") (*requirements "+ singleObject.getNormalizedName() + "*)";
-							// String newGuard = "(enforceLowerBound "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc "+lowerBound+")";
+							//TODO new guard
+							//String newGuard = "((length " + collectionDataObject.dataElementList() + ") < " + lowerBound + ") (*requirements "+ singleObject.getNormalizedName() + "*)";
+							String newGuard = "(enforceLowerBound "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc "+lowerBound+")";
 							addGuardCondition(transition, newGuard);
 					});
 				});
@@ -336,13 +267,81 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 				parent.createArc(node(), parent.getAssociationsPlace());
 				hasCreatedArcToAssocPlace = true;
 			}
-		} else if (!stateChangesToPerform.isEmpty()) {
-			// Create writing arcs
-			String writeAnnotation = "assoc";
-			elementPage.createArcTo(parent.getAssociationsPlace(), transition, writeAnnotation);
-			if(!hasCreatedArcToAssocPlace) {
-				parent.createArc(node(), parent.getAssociationsPlace());
-				hasCreatedArcToAssocPlace = true;
+		}
+    }
+    
+    private Set<Pair<DataObjectWrapper, DataObjectWrapper>> determineAssociationsToWrite(Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
+    	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = new HashSet<>() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public boolean add(Pair<DataObjectWrapper, DataObjectWrapper> e) {
+				if(!contains(e) && !contains(e.reversed())) return super.add(e);
+				else return false;
+			};
+			
+			@Override
+			public boolean remove(Object e) {
+				return super.remove(e) || super.remove(((Pair<?,?>)e).reversed());
+			};
+		};
+		
+		//Associations are created two objects are written together or if one is read and the other one is written
+		for(DataObjectWrapper writtenObject : writtenDataObjects) {
+			for(DataObjectWrapper readObject : readDataObjects) {
+				if(!writtenObject.equals(readObject) && parent.getDataModel().isAssociated(writtenObject.getNormalizedName(), readObject.getNormalizedName())) {
+					associationsToWrite.add(new Pair<>(writtenObject, readObject));
+				}
+			}
+			for(DataObjectWrapper otherWrittenObject : writtenDataObjects) {
+				if(!writtenObject.equals(otherWrittenObject) && parent.getDataModel().isAssociated(writtenObject.getNormalizedName(), otherWrittenObject.getNormalizedName())) {
+					associationsToWrite.add(new Pair<>(writtenObject, otherWrittenObject));
+				}
+			}
+		}
+		return associationsToWrite;
+    }
+    
+    private void addGuardsForStateChanges(Set<DataObjectWrapper> stateChangesToPerform, Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
+		for (DataObjectWrapper stateChange : stateChangesToPerform) {
+			Set<String> inputStates = readContext.get(stateChange).stream()
+				.map(obj -> obj.getStateName().orElse(null))
+				.filter(Objects::nonNull)
+				.collect(Collectors.toSet());
+			Set<String> outputStates = writeContext.get(stateChange).stream()
+					.map(obj -> obj.getStateName().orElse(null))
+					.filter(Objects::nonNull)
+					.collect(Collectors.toSet());
+			assert(inputStates.size() <= 1);
+			assert(outputStates.size() <= 1);
+			ObjectLifeCycle olc = parent.olcFor(stateChange);
+			// if (olc.isEmpty()) continue;
+			for (String inputState : inputStates) {
+				ObjectLifeCycle.State istate = olc.getState(inputState).get();
+				if (istate.getUpdateableAssociations().isEmpty()) continue;//TODO: currently always true, so code below is dead!
+				if(1 * 1 == 1) throw new RuntimeException("This is never called");
+				for (String outputState : outputStates) {
+					ObjectLifeCycle.State ostate = olc.getState(outputState).get();
+					for (AssociationEnd assocEnd : istate.getUpdateableAssociations()) {
+						if (!ostate.getUpdateableAssociations().contains(assocEnd)) {
+							// TODO: generalize: look at all possible successor states
+							int goalLowerBound = assocEnd.getGoalLowerBound();
+							int lowerBound = assocEnd.getLowerBound();
+							if (writtenDataObjects.stream().anyMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject()))) &&
+									readDataObjects.stream().noneMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject())))) {
+								goalLowerBound--;
+							}
+							if (!readDataObjects.contains(stateChange) || goalLowerBound <= lowerBound) continue;
+							String newGuard;
+							if (readContext.get(stateChange).stream().anyMatch(StatefulDataAssociation::isCollection)) {
+								newGuard = "(List.all (fn oId => (enforceLowerBound oId " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ")) (List.map (fn obj => #id obj) " + stateChange.dataElementList() + ")) (*goal cardinality*)";
+							} else {
+								newGuard = "(enforceLowerBound " + stateChange.dataElementId() + " " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ") (*goal cardinality*)";
+							}
+							addGuardCondition(transition, newGuard);
+						}
+					}
+				}
 			}
 		}
     }
