@@ -319,7 +319,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 			for (String inputState : inputStates) {
 				ObjectLifeCycle.State istate = olc.getState(inputState).get();
 				if (istate.getUpdateableAssociations().isEmpty()) continue;//TODO: currently always true, so code below is dead!
-				if(1 * 1 == 1) throw new RuntimeException("This is never called");
+				//if(1 * 1 == 1) throw new RuntimeException("This is never called");
 				for (String outputState : outputStates) {
 					ObjectLifeCycle.State ostate = olc.getState(outputState).get();
 					for (AssociationEnd assocEnd : istate.getUpdateableAssociations()) {
