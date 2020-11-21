@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
+import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.DataInput;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataOutput;
@@ -46,10 +47,10 @@ public class ObjectLifeCycleParser {
 
 
     private ObjectLifeCycle[] getOLCs() {
-        Collection<Task> tasks = bpmn.getModelElementsByType(Task.class);
+        Collection<Activity> activities = bpmn.getModelElementsByType(Activity.class);
         Map<String, ObjectLifeCycle> olcForClass = new HashMap<>();
-        for (Task task : tasks) {
-            IoSpecification io = task.getIoSpecification();
+        for (Activity activity : activities) {
+            IoSpecification io = activity.getIoSpecification();
             if (io == null) continue;
             Collection<InputSet> inputSets = io.getInputSets();
             Collection<OutputSet> outputSets = io.getOutputSets();
