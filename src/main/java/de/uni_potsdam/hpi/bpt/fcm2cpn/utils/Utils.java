@@ -37,6 +37,19 @@ public class Utils {
 	}
 	
 	/**
+	 * Extends {@link #elementName(FlowElement)} to work for objects like datastores
+	 */
+	public static String elementName(ItemAwareElement element) {
+		if(element instanceof FlowElement) {
+			return elementName((FlowElement)element);
+		} else {
+	    	String name = element.getAttributeValue("name");
+	    	if(name == null || name.equals("")) name = element.getId();
+	    	return name;
+		}
+	}
+	
+	/**
 	 * Makes element names usable as page ids, but also allows to equalize names with excess whitespaces
 	 */
     public static String normalizeElementName(String name) {
@@ -108,12 +121,12 @@ public class Utils {
     		.get();
     }
     
-    public static ItemAwareElement getReferencedElement(ItemAwareElement reference) {
-    	assert reference instanceof DataObjectReference || reference instanceof DataStoreReference;
-    	if(reference instanceof DataObjectReference) {
-    		return ((DataObjectReference) reference).getDataObject();
+    public static ItemAwareElement getReferencedElement(ItemAwareElement dataElementReference) {
+    	assert dataElementReference instanceof DataObjectReference || dataElementReference instanceof DataStoreReference;
+    	if(dataElementReference instanceof DataObjectReference) {
+    		return ((DataObjectReference) dataElementReference).getDataObject();
     	} else {
-    		return ((DataStoreReference) reference).getDataStore();
+    		return ((DataStoreReference) dataElementReference).getDataStore();
     	}
     }
     
@@ -138,20 +151,25 @@ public class Utils {
         return combinations;
 	}
 	
+	public static ItemAwareElement dataElementReferenceOf(DataAssociation assoc) {
+    	BaseElement source = getSource(assoc);
+    	BaseElement target = getTarget(assoc);
+        ItemAwareElement dataElementReference = (ItemAwareElement) (source instanceof DataObjectReference || source instanceof DataStoreReference ? source : target);
+        assert dataElementReference != null;
+        return dataElementReference;
+	}
+	
 	/**
 	 * Creates distinct result object for each state of one bpmn data object reference, enables the [stateA | stateB] notation
 	 */
     public static <T extends DataAssociation> Stream<StatefulDataAssociation<T, ?>> splitDataAssociationByState(T assoc) {
-    	BaseElement source = getSource(assoc);
-    	BaseElement target = getTarget(assoc);
-        ItemAwareElement dataElement = (ItemAwareElement) (source instanceof DataObjectReference || source instanceof DataStoreReference ? source : target);
-        assert dataElement != null;
-    	Stream<String> possibleStates = Optional.ofNullable(dataElement.getDataState())
+    	ItemAwareElement dataElementReference = dataElementReferenceOf(assoc);
+    	Stream<String> possibleStates = Optional.ofNullable(dataElementReference.getDataState())
         		.map(DataState::getName)
         		.map(stateName -> dataObjectStateToNetColors(stateName))
         		.orElse(Stream.of((String)null));
-    	boolean isCollection = Optional.ofNullable(Utils.getReferencedElement(dataElement).getAttributeValue("isCollection")).map(Boolean::parseBoolean).orElse(false);
-    	return possibleStates.map(state -> new StatefulDataAssociation<>(assoc, state, dataElement, isCollection));
+    	boolean isCollection = Optional.ofNullable(getReferencedElement(dataElementReference).getAttributeValue("isCollection")).map(Boolean::parseBoolean).orElse(false);
+    	return possibleStates.map(state -> new StatefulDataAssociation<>(assoc, state, dataElementReference, isCollection));
     }
 	
 	/**

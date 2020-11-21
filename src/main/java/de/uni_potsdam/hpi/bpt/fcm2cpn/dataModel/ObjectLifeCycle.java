@@ -1,15 +1,17 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel;
 
-import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.*;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.*;
+
+import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class ObjectLifeCycle {
-    private String className;
-    private Set<State> states;
+    private final String className;
+    private final Set<State> states;
 
     public ObjectLifeCycle(String className) {
         this.states = new HashSet<>();
@@ -39,13 +41,9 @@ public class ObjectLifeCycle {
                         String inputName = getDataObjectName(input, bpmn);
                         Set<String> inputStates = getDataObjectStates(input, bpmn);
                         inputStatesForObject.put(inputName, inputStates);
-                        allStatesForObject.compute(inputName, (k, s) -> {
-                            if (s == null) {
-                                return new HashSet<>(inputStates);
-                            } else {
-                                s.addAll(inputStates);
-                                return s;
-                            }});
+                        allStatesForObject
+                        	.computeIfAbsent(inputName, s -> new HashSet<>())
+                        	.addAll(inputStates);
                     }
                 }
                 outputStatesForObject.keySet().forEach(k -> olcForClass.computeIfAbsent(k,s -> new ObjectLifeCycle(k)));
@@ -127,48 +125,33 @@ public class ObjectLifeCycle {
     }
 
     private static String getDataObjectName(DataInput iRef, BpmnModelInstance bpmn) {
-        String iRefId = iRef.getId();
-        Collection<DataInputAssociation> inputAssociations = bpmn.getModelElementsByType(DataInputAssociation.class);
-        DataInputAssociation inputAssoc = inputAssociations.stream().filter(assoc -> assoc.getTarget().getId().equals(iRefId)).findFirst().get();
-        String objId = inputAssoc.getSources().stream().findFirst().get().getAttributeValue("dataObjectRef");
-        return Utils.normalizeElementName(bpmn.getModelElementById(objId).getAttributeValue("name"));
+        DataInputAssociation inputAssoc = getAssociation(iRef);
+        ItemAwareElement dataElement = getReferencedElement(inputAssoc.getSources().stream().findAny().get());
+        return normalizeElementName(elementName(dataElement));
+    }
+    
+    private static String getDataObjectName(DataOutput oRef, BpmnModelInstance bpmn) {
+        DataOutputAssociation outputAssoc = getAssociation(oRef);
+        ItemAwareElement dataElement = getReferencedElement(dataElementReferenceOf(outputAssoc));
+        return normalizeElementName(elementName(dataElement));
     }
 
     private static Set<String> getDataObjectStates(DataInput iRef, BpmnModelInstance bpmn) {
-        String iRefId = iRef.getId();
-        Collection<DataInputAssociation> inputAssociations = bpmn.getModelElementsByType(DataInputAssociation.class);
-        DataInputAssociation inputAssoc = inputAssociations.stream().filter(assoc -> assoc.getTarget().getId().equals(iRefId)).findFirst().get();
-        return Arrays.stream(Optional.ofNullable(inputAssoc.getTarget().getDataState())
-                .map(DataState::getName)
-                .map(s -> s.replaceAll("[\\[\\]]", ""))
-                .map(s -> s.replaceAll("\\s", " "))
-                .map(s -> s.split("\\|"))
-                .orElse(new String[] {""}))
-                .map(Utils::singleDataObjectStateToNetColor)
-                .collect(Collectors.toSet());
+        DataInputAssociation inputAssoc = getAssociation(iRef);
+        return splitDataAssociationByState(inputAssoc)
+        		.map(StatefulDataAssociation::getStateName)
+        		.flatMap(Optional::stream)
+        		.collect(Collectors.toSet());
     }
 
     private static Set<String> getDataObjectStates(DataOutput oRef, BpmnModelInstance bpmn) {
-        String oRefId = oRef.getId();
-        Collection<DataOutputAssociation> outputAssociations = bpmn.getModelElementsByType(DataOutputAssociation.class);
-        DataOutputAssociation outputAssoc = outputAssociations.stream().filter(assoc -> assoc.getSources().stream().anyMatch(src -> src.getId().equals(oRefId))).findAny().get();
-        return Arrays.stream(Optional.ofNullable(outputAssoc.getTarget().getDataState())
-                .map(DataState::getName)
-                .map(s -> s.replaceAll("[\\[\\]]", ""))
-                .map(s -> s.replaceAll("\\s", " "))
-                .map(s -> s.split("\\|"))
-                .orElse(new String[] {""}))
-                .map(Utils::singleDataObjectStateToNetColor)
-                .collect(Collectors.toSet());
+        DataOutputAssociation outputAssoc = getAssociation(oRef);
+        return splitDataAssociationByState(outputAssoc)
+        		.map(StatefulDataAssociation::getStateName)
+        		.flatMap(Optional::stream)
+        		.collect(Collectors.toSet());
     }
 
-    private static String getDataObjectName(DataOutput oRef, BpmnModelInstance bpmn) {
-        String oRefId = oRef.getId();
-        Collection<DataOutputAssociation> outputAssociations = bpmn.getModelElementsByType(DataOutputAssociation.class);
-        DataOutputAssociation outputAssoc = outputAssociations.stream().filter(assoc -> assoc.getSources().stream().anyMatch(src -> src.getId().equals(oRefId))).findAny().get();
-        String objId = outputAssoc.getTarget().getAttributeValue("dataObjectRef");
-        return Utils.normalizeElementName(bpmn.getModelElementById(objId).getAttributeValue("name"));
-    }
 
     public static DataState getDataStateForInputAssociation(DataInputAssociation assoc) {
         Collection<ItemAwareElement> references = assoc.getSources();
@@ -211,16 +194,8 @@ public class ObjectLifeCycle {
         return className;
     }
 
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
     public Set<State> getStates() {
         return states;
-    }
-
-    public void setStates(Set<State> states) {
-        this.states = states;
     }
 
     public Optional<State> getState(String inputState) {

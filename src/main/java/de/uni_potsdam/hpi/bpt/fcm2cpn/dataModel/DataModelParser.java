@@ -44,7 +44,7 @@ public class DataModelParser {
 	}
 	
 	private DataModel parse() throws JDOMException, IOException {
-        SAXBuilder builder = new SAXBuilder();
+		SAXBuilder builder = new SAXBuilder();
 		Document document = builder.build(file);
 		Element root = document.getRootElement();
 		xmiNamespace = root.getNamespace("xmi");
