@@ -312,6 +312,8 @@ public abstract class ModelStructureTests {
 	
 	public static Stream<String> guardsOf(Transition transition) {
 		String guard = transition.getCondition().getText().replaceFirst("^\\[", "").replaceFirst("]$", "");
+		//Remove arc comments:
+		guard = guard.replaceAll("\\(\\*(.|[\\r\\n])*?\\*\\)", "");
 		return Arrays.stream(guard.split(",\n"))
 				.map(String::trim);
 	}
