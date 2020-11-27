@@ -56,7 +56,7 @@ public class ArgumentTreeTests {
 			Annotation nextSource = remainingSources.get(0);
 			Stream<Object[]> arguments;
 			try {
-				ExtensionContext context = createContext(method, currentArguments);
+				ExtensionContext context = new ArgumentTreeExtensionContext(method, currentArguments);
 				ArgumentsProvider provider = providerFor(nextSource);
 				if(provider instanceof AnnotationConsumer<?>)((AnnotationConsumer<Annotation>) provider).accept(nextSource);
 				arguments = provider.provideArguments(context).map(Arguments::get);
@@ -111,85 +111,97 @@ public class ArgumentTreeTests {
 				: AnnotationUtils.findAnnotation(sourceAnnotation.getClass(), ArgumentsSource.class).get();
 		return ReflectionUtils.newInstance(source.value());
 	}
+
 	
-	private ExtensionContext createContext(Method method, List<Object> additionalIdentifiers) {
-		return new ExtensionContext() {
-			
-			@Override
-			public void publishReportEntry(Map<String, String> map) {
-				throw new UnsupportedOperationException();
-			}
-			
-			@Override
-			public String getUniqueId() {
-				return getClass().getSimpleName()+method.getName()+additionalIdentifiers.toString();
-			}
-			
-			@Override
-			public Optional<Method> getTestMethod() {
-				return Optional.of(method);
-			}
-			
-			@Override
-			public Optional<TestInstances> getTestInstances() {
-				return null;
-			}
-			
-			@Override
-			public Optional<Lifecycle> getTestInstanceLifecycle() {
-				return null;
-			}
-			
-			@Override
-			public Optional<Object> getTestInstance() {
-				return Optional.of(wrappedTestObject);
-			}
-			
-			@Override
-			public Optional<Class<?>> getTestClass() {
-				return Optional.of(getClass());
-			}
-			
-			@Override
-			public Set<String> getTags() {
-				return null;
-			}
-			
-			@Override
-			public Store getStore(Namespace namespace) {
-				return null;
-			}
-			
-			@Override
-			public ExtensionContext getRoot() {
-				return null;
-			}
-			
-			@Override
-			public Optional<ExtensionContext> getParent() {
-				return null;
-			}
-			
-			@Override
-			public Optional<Throwable> getExecutionException() {
-				return null;
-			}
-			
-			@Override
-			public Optional<AnnotatedElement> getElement() {
-				return null;
-			}
-			
-			@Override
-			public String getDisplayName() {
-				return getUniqueId();
-			}
-			
-			@Override
-			public Optional<String> getConfigurationParameter(String key) {
-				return null;
-			}
-		};
-	}
+	public class ArgumentTreeExtensionContext implements ExtensionContext {
+		
+		private final Method method;
+		private final List<Object> currentArguments;
+
+		private ArgumentTreeExtensionContext(Method method, List<Object> additionalIdentifiers) {
+			this.method = method;
+			this.currentArguments = additionalIdentifiers;
+		}
+		
+		@Override
+		public void publishReportEntry(Map<String, String> map) {
+			throw new UnsupportedOperationException();
+		}
+		
+		@Override
+		public String getUniqueId() {
+			return getClass().getSimpleName()+method.getName()+currentArguments.toString();
+		}
+		
+		@Override
+		public Optional<Method> getTestMethod() {
+			return Optional.of(method);
+		}
+		
+		@Override
+		public Optional<TestInstances> getTestInstances() {
+			return null;
+		}
+		
+		@Override
+		public Optional<Lifecycle> getTestInstanceLifecycle() {
+			return null;
+		}
+		
+		@Override
+		public Optional<Object> getTestInstance() {
+			return Optional.of(wrappedTestObject);
+		}
+		
+		@Override
+		public Optional<Class<?>> getTestClass() {
+			return Optional.of(getClass());
+		}
+		
+		@Override
+		public Set<String> getTags() {
+			return null;
+		}
+		
+		@Override
+		public Store getStore(Namespace namespace) {
+			return null;
+		}
+		
+		@Override
+		public ExtensionContext getRoot() {
+			return null;
+		}
+		
+		@Override
+		public Optional<ExtensionContext> getParent() {
+			return null;
+		}
+		
+		@Override
+		public Optional<Throwable> getExecutionException() {
+			return null;
+		}
+		
+		@Override
+		public Optional<AnnotatedElement> getElement() {
+			return null;
+		}
+		
+		@Override
+		public String getDisplayName() {
+			return getUniqueId();
+		}
+		
+		@Override
+		public Optional<String> getConfigurationParameter(String key) {
+			return null;
+		}
+
+		public List<Object> getCurrentArguments() {
+			return currentArguments;
+		}
+		
+	};
 
 }
