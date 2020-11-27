@@ -175,6 +175,77 @@ public abstract class ModelStructureTests {
 					Collectors.flatMapping(each -> Utils.dataObjectStateToNetColors(each.getDataState().getName()), Collectors.toList())));
 	}
 	
+	//TODO: duplicates with next method
+	public static Set<Pair<List<DataInputAssociation>, List<DataOutputAssociation>>> ioAssociationCombinations(Activity activity) {
+		Set<Pair<List<DataInputAssociation>, List<DataOutputAssociation>>> combinations = new HashSet<>();
+		if(activity.getIoSpecification() == null) {
+			combinations.add(new Pair<>(
+					activity.getDataInputAssociations().stream().collect(Collectors.toList()),
+					activity.getDataOutputAssociations().stream().collect(Collectors.toList())
+			));
+		} else {
+			activity.getIoSpecification().getInputSets().forEach(inputSet -> {
+				inputSet.getOutputSets().forEach(outputSet -> {
+					combinations.add(new Pair<>(
+							inputSet.getDataInputs().stream().map(Utils::getAssociation).collect(Collectors.toList()), 
+							outputSet.getDataOutputRefs().stream().map(Utils::getAssociation).collect(Collectors.toList()))
+					);
+				});	
+			});
+		}
+		return combinations;
+		
+	}
+	
+
+	public static Set<Pair<Map<String, String>, Map<String, String>>> expectedIOCombinations2(Activity activity) {
+		return ioAssociationCombinations(activity).stream().flatMap(ioAssociationCombination -> {
+			Map<String, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> inputStates = ioAssociationCombination.first.stream()
+					.flatMap(Utils::splitDataAssociationByState)
+					.filter(StatefulDataAssociation::isDataObjectReference)
+					.map(assoc -> (StatefulDataAssociation<DataInputAssociation, DataObjectReference>) assoc)
+					.collect(Collectors.groupingBy(assoc -> normalizeElementName(assoc.getDataElement().getDataObject().getName())));
+			Map<String, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> outputStates = ioAssociationCombination.second.stream()
+					.flatMap(Utils::splitDataAssociationByState)
+					.filter(StatefulDataAssociation::isDataObjectReference)
+					.map(assoc -> (StatefulDataAssociation<DataOutputAssociation, DataObjectReference>) assoc)
+					.collect(Collectors.groupingBy(assoc -> normalizeElementName(assoc.getDataElement().getDataObject().getName())));
+
+			List<List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> possibleInputForms = Utils.allCombinationsOf(inputStates.values());
+			List<List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> possibleOutputForms = Utils.allCombinationsOf(outputStates.values());
+			List<Pair<List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>>> ioForms = new ArrayList<>();
+			for(var inputForm: possibleInputForms) {
+				for(var outputForm: possibleOutputForms) {
+					ioForms.add(new Pair<>(inputForm, outputForm));
+				}
+			}
+			return ioForms.stream();
+		})
+		.map(ModelStructureTests::ioAssociationsToStateMaps)	
+		.peek(ioConfiguration -> {
+		})
+		.collect(Collectors.toSet());
+	}
+	
+	public static Pair<Map<String, String>, Map<String, String>> ioAssociationsToStateMaps(Pair<List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> ioAssociations) {
+		Pair<Map<String, String>, Map<String, String>> ioConfiguration = new Pair<>(
+				ioAssociations.first.stream()
+					.filter(each -> each.getStateName().isPresent())
+					.collect(Collectors.toMap(assoc -> normalizeElementName(assoc.getDataElement().getDataObject().getName()), assoc -> assoc.getStateName().get())),
+				ioAssociations.second.stream()
+					.filter(each -> each.getStateName().isPresent())
+					.collect(Collectors.toMap(assoc -> normalizeElementName(assoc.getDataElement().getDataObject().getName()), assoc -> assoc.getStateName().get())));	
+
+		//Expect read objects that are not explicitly written to be written back in the same state as they are read
+		Map<String, String> inputSet = ioConfiguration.first;
+		Map<String, String> outputSet = ioConfiguration.second;
+		for(String inputObject : inputSet.keySet()) {
+			if(!outputSet.containsKey(inputObject)) outputSet.put(inputObject, inputSet.get(inputObject));
+		}
+		
+		return ioConfiguration;
+	}
+	
 	public static Set<Pair<Map<String, String>, Map<String, String>>> expectedIOCombinations(Activity activity) {
 		Set<Pair<Map<String, String>, Map<String, String>>> expectedCombinations = new HashSet<>();
 		
@@ -304,14 +375,14 @@ public abstract class ModelStructureTests {
 		else return Optional.empty();
 	}
 	
-	public static List<Map<String, String>> indexedCombinationsOf(Map<String, List<String>> groups) {
+	public static <Key, T> List<Map<Key, T>> indexedCombinationsOf(Map<Key, List<T>> groups) {
 		//Get defined order into collection
-		List<String> keys = new ArrayList<>(groups.keySet());
-		List<List<String>> combinations = Utils.allCombinationsOf(keys.stream().map(groups::get).collect(Collectors.toList()));
+		List<Key> keys = new ArrayList<>(groups.keySet());
+		List<List<T>> combinations = Utils.allCombinationsOf(keys.stream().map(groups::get).collect(Collectors.toList()));
 		
 		//Zip keys with each combination
 		return combinations.stream().map(combination -> {
-			HashMap<String, String> map = new HashMap<>();
+			HashMap<Key, T> map = new HashMap<>();
 			for(int i = 0; i < keys.size(); i++) {
 				map.put(keys.get(i), combination.get(i));
 			}

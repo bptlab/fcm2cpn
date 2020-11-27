@@ -18,6 +18,13 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 
 public class AssociationTests extends ModelStructureTests {
 	
+	//TODO this test is only for documentary purposes and will be removed in production
+	@TestWithAllModels
+	@ForEachBpmn(Activity.class)
+	public void testNewIOCollectingIsEquivalent(Activity activity) {
+		assertEquals(expectedIOCombinations2(activity), expectedIOCombinations(activity));
+	}
+	
 	@TestWithAllModels
 	public void testAssociationPlaceIsCreated() {
 		assertEquals(1, placesNamed("associations").count(),
