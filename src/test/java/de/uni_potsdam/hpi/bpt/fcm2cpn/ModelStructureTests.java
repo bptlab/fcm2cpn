@@ -121,50 +121,45 @@ public abstract class ModelStructureTests {
 				.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
 	}
 	
-	public boolean associationShouldAlreadyBeInPlace(Activity activity, String firstDataObject, String secondDataObject) {
-		return reads(activity, firstDataObject) && reads(activity, secondDataObject) 
-				&& (!writes(activity, firstDataObject) || 
-						readsAsCollection(activity, firstDataObject) == writesAsCollection(activity, firstDataObject)
-						&& readsAsNonCollection(activity, firstDataObject) == writesAsNonCollection(activity, firstDataObject)
+	public boolean associationShouldAlreadyBeInPlace(DataObjectIOSet ioSet, String firstDataObject, String secondDataObject) {
+		return reads(ioSet, firstDataObject) && reads(ioSet, secondDataObject) 
+				&& (!writes(ioSet, firstDataObject) || 
+						readsAsCollection(ioSet, firstDataObject) == writesAsCollection(ioSet, firstDataObject)
+						&& readsAsNonCollection(ioSet, firstDataObject) == writesAsNonCollection(ioSet, firstDataObject)
 					)
-				&& (!writes(activity, secondDataObject) ||
-						readsAsCollection(activity, secondDataObject) == writesAsCollection(activity, secondDataObject) 
-						&& readsAsNonCollection(activity, secondDataObject) == writesAsNonCollection(activity, secondDataObject)
+				&& (!writes(ioSet, secondDataObject) ||
+						readsAsCollection(ioSet, secondDataObject) == writesAsCollection(ioSet, secondDataObject) 
+						&& readsAsNonCollection(ioSet, secondDataObject) == writesAsNonCollection(ioSet, secondDataObject)
 					);
 	}
 	
-	public boolean reads(Activity activity, String dataObject) {
-		return readDataObjectRefs(activity)
-				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject));
+	public boolean reads(DataObjectIOSet ioSet, String dataObject) {
+		return ioSet.first.stream().anyMatch(each -> each.dataElementName().equals(dataObject));
 	}
 	
-	public boolean readsAsCollection(Activity activity, String dataObject) {
-		return readDataObjectRefs(activity)
-				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject) && each.getDataObject().isCollection());
+	public boolean readsAsCollection(DataObjectIOSet ioSet, String dataObject) {
+		return ioSet.first.stream().anyMatch(each -> each.dataElementName().equals(dataObject) && each.isCollection());
 	}
 	
-	public boolean readsAsNonCollection(Activity activity, String dataObject) {
-		return readDataObjectRefs(activity)
-				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject) && !each.getDataObject().isCollection());
+	public boolean readsAsNonCollection(DataObjectIOSet ioSet, String dataObject) {
+		return ioSet.first.stream().anyMatch(each -> each.dataElementName().equals(dataObject) && !each.isCollection());
 	}
 	
-	public boolean writes(Activity activity, String dataObject) {
-		return writtenDataObjectRefs(activity)
-				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject));
+	public boolean writes(DataObjectIOSet ioSet, String dataObject) {
+		return ioSet.second.stream().anyMatch(each -> each.dataElementName().equals(dataObject));
 	}
 	
-	public boolean writesAsCollection(Activity activity, String dataObject) {
-		return writtenDataObjectRefs(activity)
-				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject) && each.getDataObject().isCollection());
+	public boolean writesAsCollection(DataObjectIOSet ioSet, String dataObject) {
+		return ioSet.second.stream().anyMatch(each -> each.dataElementName().equals(dataObject) && each.isCollection());
 	}
 	
-	public boolean writesAsNonCollection(Activity activity, String dataObject) {
-		return writtenDataObjectRefs(activity)
-				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject) && !each.getDataObject().isCollection());
+	public boolean writesAsNonCollection(DataObjectIOSet ioSet, String dataObject) {
+		return ioSet.second.stream().anyMatch(each -> each.dataElementName().equals(dataObject) && !each.isCollection());
 	}
 	
-	public boolean creates(Activity activity, String dataObject) {
-		return writes(activity, dataObject) && !reads(activity, dataObject);
+	@Deprecated//TODO: attention for the collection cases
+	public boolean creates(DataObjectIOSet ioSet, String dataObject) {
+		return writes(ioSet, dataObject) && !reads(ioSet, dataObject);
 	}
 	
 	public static Map<String, List<String>> dataObjectToStateMap(Stream<DataObjectReference> dataObjectReferences) {
@@ -175,8 +170,14 @@ public abstract class ModelStructureTests {
 					Collectors.flatMapping(each -> Utils.dataObjectStateToNetColors(each.getDataState().getName()), Collectors.toList())));
 	}
 	
-	//TODO: duplicates with next method
-	public static Set<Pair<List<DataInputAssociation>, List<DataOutputAssociation>>> ioAssociationCombinations(Activity activity) {
+	//Alias class to avoid really long type parameters
+	protected static class DataObjectIOSet extends Pair<List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> {
+		public DataObjectIOSet(List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>> first, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> second) {
+			super(first, second);
+		}
+	}
+	
+	public static Set<Pair<List<DataInputAssociation>, List<DataOutputAssociation>>> statelessAssociationCombinations(Activity activity) {
 		Set<Pair<List<DataInputAssociation>, List<DataOutputAssociation>>> combinations = new HashSet<>();
 		if(activity.getIoSpecification() == null) {
 			combinations.add(new Pair<>(
@@ -193,41 +194,38 @@ public abstract class ModelStructureTests {
 				});	
 			});
 		}
-		return combinations;
-		
+		return combinations;		
 	}
 	
 
-	public static Set<Pair<Map<String, String>, Map<String, String>>> expectedIOCombinations2(Activity activity) {
-		return ioAssociationCombinations(activity).stream().flatMap(ioAssociationCombination -> {
+	@SuppressWarnings("unchecked")
+	public static Set<DataObjectIOSet> ioAssociationCombinations(Activity activity) {
+		return statelessAssociationCombinations(activity).stream().flatMap(ioAssociationCombination -> {
 			Map<String, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> inputStates = ioAssociationCombination.first.stream()
 					.flatMap(Utils::splitDataAssociationByState)
 					.filter(StatefulDataAssociation::isDataObjectReference)
 					.map(assoc -> (StatefulDataAssociation<DataInputAssociation, DataObjectReference>) assoc)
-					.collect(Collectors.groupingBy(assoc -> normalizeElementName(assoc.getDataElement().getDataObject().getName())));
+					.collect(Collectors.groupingBy(StatefulDataAssociation::dataElementName));
 			Map<String, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> outputStates = ioAssociationCombination.second.stream()
 					.flatMap(Utils::splitDataAssociationByState)
 					.filter(StatefulDataAssociation::isDataObjectReference)
 					.map(assoc -> (StatefulDataAssociation<DataOutputAssociation, DataObjectReference>) assoc)
-					.collect(Collectors.groupingBy(assoc -> normalizeElementName(assoc.getDataElement().getDataObject().getName())));
+					.collect(Collectors.groupingBy(StatefulDataAssociation::dataElementName));
 
 			List<List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> possibleInputForms = Utils.allCombinationsOf(inputStates.values());
 			List<List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> possibleOutputForms = Utils.allCombinationsOf(outputStates.values());
-			List<Pair<List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>>> ioForms = new ArrayList<>();
+			List<DataObjectIOSet> ioForms = new ArrayList<>();
 			for(var inputForm: possibleInputForms) {
 				for(var outputForm: possibleOutputForms) {
-					ioForms.add(new Pair<>(inputForm, outputForm));
+					ioForms.add(new DataObjectIOSet(inputForm, outputForm));
 				}
 			}
 			return ioForms.stream();
 		})
-		.map(ModelStructureTests::ioAssociationsToStateMaps)	
-		.peek(ioConfiguration -> {
-		})
 		.collect(Collectors.toSet());
 	}
 	
-	public static Pair<Map<String, String>, Map<String, String>> ioAssociationsToStateMaps(Pair<List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> ioAssociations) {
+	public static Pair<Map<String, String>, Map<String, String>> ioAssociationsToStateMaps(DataObjectIOSet ioAssociations) {
 		Pair<Map<String, String>, Map<String, String>> ioConfiguration = new Pair<>(
 				ioAssociations.first.stream()
 					.filter(each -> each.getStateName().isPresent())
@@ -247,66 +245,8 @@ public abstract class ModelStructureTests {
 	}
 	
 	public static Set<Pair<Map<String, String>, Map<String, String>>> expectedIOCombinations(Activity activity) {
-		Set<Pair<Map<String, String>, Map<String, String>>> expectedCombinations = new HashSet<>();
-		
-		//Default if no specification: Use all inputs and outputs
-		if(activity.getIoSpecification() == null) {
-			// All read states, grouped by data objects
-			Map<String, List<String>> inputStates = dataObjectToStateMap(readDataObjectRefs(activity));
-			Map<String, List<String>> outputStates = dataObjectToStateMap(writtenDataObjectRefs(activity));
-
-			// All possible combinations, assuming that all possible objects are read and written
-			List<Map<String, String>> possibleInputSets = indexedCombinationsOf(inputStates);
-			List<Map<String, String>> possibleOutputSets = indexedCombinationsOf(outputStates);
-
-			if(possibleInputSets.isEmpty() && !possibleOutputSets.isEmpty()) possibleInputSets.add(Collections.emptyMap());
-			if(possibleOutputSets.isEmpty()&& !possibleInputSets.isEmpty()) possibleOutputSets.add(Collections.emptyMap());
-			for(Map<String, String> inputSet : possibleInputSets) {
-				for(Map<String, String> outputSet : possibleOutputSets) {
-					expectedCombinations.add(new Pair<>(inputSet, new HashMap<>(outputSet)));
-				}
-			}
-		
-		// Else parse io specification
-		} else {
-			Map<String, List<Map<String, String>>> outputSetsToPossibleForms = activity.getIoSpecification().getOutputSets().stream()
-				.collect(Collectors.toMap(OutputSet::getId, outputSet -> {
-					Stream<DataObjectReference> writtenReferences = outputSet.getDataOutputRefs().stream()
-							.map(Utils::getAssociation)
-							.map(DataOutputAssociation::getTarget)
-							.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
-					Map<String, List<String>> outputStates = dataObjectToStateMap(writtenReferences);
-					List<Map<String, String>> possibleForms = indexedCombinationsOf(outputStates);
-					return possibleForms;
-				}));
-			activity.getIoSpecification().getInputSets().stream().forEach(inputSet -> {
-				Stream<DataObjectReference> readReferences = inputSet.getDataInputs().stream()
-						.map(Utils::getAssociation)
-						.flatMap(assoc -> assoc.getSources().stream())
-						.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
-				Map<String, List<String>> inputStates = dataObjectToStateMap(readReferences);
-				List<Map<String, String>> possibleForms = indexedCombinationsOf(inputStates);
-				
-				for(OutputSet associatedOutputSet : inputSet.getOutputSets()) {
-					for(Map<String, String> inputSetForm : possibleForms) {
-						for(Map<String, String> outputSetForm : outputSetsToPossibleForms.get(associatedOutputSet.getId())) {
-							expectedCombinations.add(new Pair<>(inputSetForm, new HashMap<>(outputSetForm)));
-						}
-					}
-				}
-			});
-		}
-
-		//Expect read objects that are not explicitly written to be written back in the same state as they are read
-		for(Pair<Map<String, String>, Map<String, String>> ioConfiguration : expectedCombinations) {
-			Map<String, String> inputSet = ioConfiguration.first;
-			Map<String, String> outputSet = ioConfiguration.second;
-			for(String inputObject : inputSet.keySet()) {
-				if(!outputSet.containsKey(inputObject)) outputSet.put(inputObject, inputSet.get(inputObject));
-			}
-		}
-		
-		return expectedCombinations;
+		return ioAssociationCombinations(activity).stream()
+				.map(ModelStructureTests::ioAssociationsToStateMaps).collect(Collectors.toSet());
 	}
 	
 	public static Stream<Pair<String, String>> expectedCreatedObjects(Pair<Map<String, String>, Map<String, String>> ioCombination) {
