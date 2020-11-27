@@ -12,4 +12,4 @@ jobs:
       with:
         java-version: 11
     - name: Test with Maven
-      run: mvn clean test --file pom.xml
+      run: mvn clean initialize test --file pom.xml
