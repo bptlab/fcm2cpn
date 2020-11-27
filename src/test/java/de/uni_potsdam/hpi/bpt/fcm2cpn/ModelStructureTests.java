@@ -121,6 +121,18 @@ public abstract class ModelStructureTests {
 				.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
 	}
 	
+	public boolean associationShouldAlreadyBeInPlace(Activity activity, String firstDataObject, String secondDataObject) {
+		return reads(activity, firstDataObject) && reads(activity, secondDataObject) 
+				&& (!writes(activity, firstDataObject) || 
+						readsAsCollection(activity, firstDataObject) == writesAsCollection(activity, firstDataObject)
+						&& readsAsNonCollection(activity, firstDataObject) == writesAsNonCollection(activity, firstDataObject)
+					)
+				&& (!writes(activity, secondDataObject) ||
+						readsAsCollection(activity, secondDataObject) == writesAsCollection(activity, secondDataObject) 
+						&& readsAsNonCollection(activity, secondDataObject) == writesAsNonCollection(activity, secondDataObject)
+					);
+	}
+	
 	public boolean reads(Activity activity, String dataObject) {
 		return readDataObjectRefs(activity)
 				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject));
@@ -131,9 +143,24 @@ public abstract class ModelStructureTests {
 				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject) && each.getDataObject().isCollection());
 	}
 	
+	public boolean readsAsNonCollection(Activity activity, String dataObject) {
+		return readDataObjectRefs(activity)
+				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject) && !each.getDataObject().isCollection());
+	}
+	
 	public boolean writes(Activity activity, String dataObject) {
 		return writtenDataObjectRefs(activity)
 				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject));
+	}
+	
+	public boolean writesAsCollection(Activity activity, String dataObject) {
+		return writtenDataObjectRefs(activity)
+				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject) && each.getDataObject().isCollection());
+	}
+	
+	public boolean writesAsNonCollection(Activity activity, String dataObject) {
+		return writtenDataObjectRefs(activity)
+				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equalsIgnoreCase(dataObject) && !each.getDataObject().isCollection());
 	}
 	
 	public boolean creates(Activity activity, String dataObject) {

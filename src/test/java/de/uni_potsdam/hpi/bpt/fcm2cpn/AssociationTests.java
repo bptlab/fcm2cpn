@@ -29,7 +29,7 @@ public class AssociationTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	public void testDataAssociationsBetweenReadAndWriteAreCreated(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && writes(activity, second), "Activity does not read the first and write the second data object.");
-		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
+		assumeFalse(associationShouldAlreadyBeInPlace(activity, first, second), "Activity reads both data objects in the same collection/non-collection way as they are written, so an association is already in place");
 		
 		transitionsFor(activity).forEach(transition -> {
 			if(arcsFromNodeNamed(transition, first).count() != 0 && arcsToNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
@@ -44,7 +44,8 @@ public class AssociationTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	public void testDataAssociationsBetweenParallelWritesAreCreated(String first, String second, Activity activity) {
 		assumeTrue(writes(activity, first) && writes(activity, second), "Activity does not write both data objects.");
-		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
+		assumeFalse(associationShouldAlreadyBeInPlace(activity, first, second), "Activity reads both data objects in the same collection/non-collection way as they are written, so an association is already in place");
+		
 		
 		transitionsFor(activity).forEach(transition -> {
 			if(arcsToNodeNamed(transition, first).count() != 0 && arcsToNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
@@ -73,6 +74,8 @@ public class AssociationTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	public void testCheckedAssociationsAreNotDuplicated(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && reads(activity, second), "Activity does not read both data objects.");
+		assumeTrue(associationShouldAlreadyBeInPlace(activity, first, second), "A new association should be created.");
+		
 		transitionsFor(activity).forEach(transition -> {
 			assertEquals(0, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
 				"There is a writing association arc for objects "+first+" and "+second+" (which should already be associated) at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
