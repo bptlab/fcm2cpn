@@ -213,7 +213,6 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 				.forEach(associationsToWrite::remove);
 			
 			if(!associationsToWrite.isEmpty()) {
-				
 				writeAnnotation += associationsToWrite.stream()
 					.map(pair -> {
 						Optional<DataObjectWrapper> collectionDataObject = Stream.of(pair.first, pair.second)
