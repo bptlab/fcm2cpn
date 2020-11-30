@@ -1,6 +1,8 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.*;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
 import java.lang.annotation.Retention;
@@ -277,7 +279,12 @@ public abstract class ModelStructureTests {
 
 		transition.getSourceArc().stream()
 			.map(outputArc -> outputArc.getHlinscription().asString())
-			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> outputs.put(idAndState.first, idAndState.second)));
+			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> {
+				// TODO: it'd be better to handle the situation properly
+				// An activity may write a set and a single object of the same class in different states
+				assumeFalse(outputs.containsKey(idAndState.first));
+				outputs.put(idAndState.first, idAndState.second);
+			}));
 		return new Pair<Map<String,String>, Map<String,String>>(inputs, outputs);
 	}
 	
