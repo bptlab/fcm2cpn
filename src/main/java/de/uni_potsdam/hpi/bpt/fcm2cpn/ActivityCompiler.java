@@ -207,16 +207,24 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 			
 			//Create write back arcs; if new assocs are create, write the union back; if assocs are checked, they already exist
 			String writeAnnotation = "assoc";
-			checkedAssociations.forEach(associationsToWrite::remove);
+			checkedAssociations.stream()
+				.filter(pair -> !(Optional.ofNullable(readContext.get(pair.first)).map(opt -> opt.stream().anyMatch(StatefulDataAssociation::isCollection)).orElse(false) && Optional.ofNullable(writeContext.get(pair.first)).map(opt -> opt.stream().anyMatch(assoc -> !assoc.isCollection())).orElse(false)))
+				.filter(pair -> !(Optional.ofNullable(readContext.get(pair.second)).map(opt -> opt.stream().anyMatch(StatefulDataAssociation::isCollection)).orElse(false) && Optional.ofNullable(writeContext.get(pair.second)).map(opt -> opt.stream().anyMatch(assoc -> !assoc.isCollection())).orElse(false)))
+				.forEach(associationsToWrite::remove);
 			
 			if(!associationsToWrite.isEmpty()) {
-				
 				writeAnnotation += associationsToWrite.stream()
 					.map(pair -> {
 						Optional<DataObjectWrapper> collectionDataObject = Stream.of(pair.first, pair.second)
 								.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
 								.findAny();
-						if(!collectionDataObject.isPresent()) {
+						boolean listReadSingleObjectCreate = false;
+						if (collectionDataObject.isPresent()) {
+							listReadSingleObjectCreate = Stream.of(pair.first, pair.second)
+									.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
+									.allMatch(dataObject -> writtenDataObjects.contains(dataObject) && writeContext.get(dataObject).stream().anyMatch(assoc -> !assoc.isCollection()));
+						}
+						if(!collectionDataObject.isPresent() || listReadSingleObjectCreate) {
 							return "^^["+Stream.of(pair.first, pair.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString()+"]";
 						} else {
 							DataObjectWrapper identifier = parent.getDataObjectCollectionIdentifier(element, collectionDataObject.get());
@@ -227,6 +235,8 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 					})
 					.distinct()
 					.collect(Collectors.joining());
+
+				checkedAssociations.forEach(associationsToWrite::remove);
 				associationsToWrite.forEach(pair -> {
 					Association assoc = parent.getDataModel().getAssociation(pair.first.getNormalizedName(), pair.second.getNormalizedName()).get();
 					//Create guards for: Cannot create data object if this would violate upper bounds
@@ -240,7 +250,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 							addGuardCondition(transition, newGuard);
 						}
 					});
-					
+
 					//Create guards for: Cannot create data object if lower bounds of read list data object are not given
 					Stream.of(pair.first, pair.second)
 						.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
@@ -372,10 +382,4 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 		
 		return associationsToCheck;
     }
-
-    
-
-	
-	
-
 }

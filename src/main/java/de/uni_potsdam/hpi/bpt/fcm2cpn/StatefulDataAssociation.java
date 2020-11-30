@@ -10,6 +10,8 @@ import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
+
 public class StatefulDataAssociation<AssociationType extends DataAssociation, DataElement extends ItemAwareElement> {
 	private final Optional<String> stateName;
 	private final DataElement dataElement;//DataObjectReference or DataStoreReference
@@ -31,6 +33,10 @@ public class StatefulDataAssociation<AssociationType extends DataAssociation, Da
 
 	public DataElement getDataElement() {
 		return dataElement;
+	}
+	
+	public String dataElementName() {
+		return Utils.normalizeElementName(Utils.elementName(Utils.getReferencedElement(dataElement)));
 	}
 
 	public AssociationType getBpmnAssociation() {
