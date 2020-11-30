@@ -11,5 +11,7 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
+    - name: Install dependencies wit hmaven install plugin
+      run: mvn initialize --file pom.xml
     - name: Test with Maven
-      run: mvn clean initialize test --file pom.xml
+      run: mvn test --file pom.xml
