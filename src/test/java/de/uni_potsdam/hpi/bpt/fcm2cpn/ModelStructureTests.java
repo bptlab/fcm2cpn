@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -405,9 +406,12 @@ public abstract class ModelStructureTests {
 		}
 	}
 	
+	public Page mainPage() {
+		return petrinet.getPage().get(0);
+	}
+	
 	public Stream<Instance> instancesNamed(String name) {
-		Page mainPage = petrinet.getPage().get(0);
-		return StreamSupport.stream(mainPage.instance().spliterator(), false).filter(instance -> instance.getName().asString().equals(name));
+		return StreamSupport.stream(mainPage().instance().spliterator(), false).filter(instance -> instance.getName().asString().equals(name));
 	}
 	
 	public Stream<Page> pagesNamed(String name) {
@@ -419,8 +423,7 @@ public abstract class ModelStructureTests {
 	}
 	
 	public Stream<Place> placesNamed(String name) {
-		Page mainPage = petrinet.getPage().get(0);
-		return StreamSupport.stream(mainPage.place().spliterator(), false)
+		return StreamSupport.stream(mainPage().place().spliterator(), false)
 				.filter(place -> Objects.toString(place.getName().asString()).equals(name));
 	}
 
@@ -434,28 +437,58 @@ public abstract class ModelStructureTests {
 				.filter(place -> place.getSort().getText().equals("DATA_STORE") );
 	}
 	
+
+	public Stream<Place> controlFlowPlacesBetween(String elementA, String elementB) {	
+		Node nodeA = nodeFor(elementA);
+		Node nodeB = nodeFor(elementB);	
+		return StreamSupport.stream(mainPage().place().spliterator(), false)
+				.filter(place -> isControlFlowPlace(place) && connects(place, nodeA, nodeB));
+	}
+	
 	/**
 	 * Control flow between two bpmn elements is correctly mapped if: <br>
-	 * a) there is a place between transitions with the names <br>
-	 * OR<br> 
-	 * b) if there is a control flow place for one of them that is connected to a transition for the other one
+	 * a) there is a control flow place between transitions with the names <br>
+	 * XOR<br> 
+	 * b) if there is a place for one of them that is connected to a transition for the other one<br>
+	 * XOR<br>
+	 * c) if both are mapped to places and there is a control flow transition between the two
 	 */
-	public Stream<Place> controlFlowPlacesBetween(String nodeA, String nodeB) {
-		Page mainPage = petrinet.getPage().get(0);
-		return StreamSupport.stream(mainPage.place().spliterator(), false).filter(place -> {
-			return isControlFlowPlace(place) 
-					&& (
-						!place.getTargetArc().isEmpty() && place.getTargetArc().stream().anyMatch(any -> any.getOtherEnd(place).getName().asString().equals(nodeA))
-						|| Objects.toString(place.getName().asString()).equals(nodeA)
-					) && (
-						!place.getSourceArc().isEmpty() && place.getSourceArc().stream().anyMatch(any -> any.getOtherEnd(place).getName().asString().equals(nodeB))
-						|| Objects.toString(place.getName().asString()).equals(nodeB)
-					);
-		});
+	public Stream<Object> controlFlowMappingsBetween(String elementA, String elementB) {
+		Node nodeA = nodeFor(elementA);
+		Node nodeB = nodeFor(elementB);
+		Stream<Arc> controlFlowArcs = mainPage().getArc().stream()
+				.filter(arc -> arc.getSource().equals(nodeA) && arc.getTarget().equals(nodeB));
+		Stream<Place> controlFlowPlaces = controlFlowPlacesBetween(elementA, elementB);
+		Stream<Transition> controlFlowTransitions = StreamSupport.stream(mainPage().transition().spliterator(), false)
+				.filter(transition -> connects(transition, nodeA, nodeB));
+		
+		return Stream.of(controlFlowArcs, controlFlowPlaces, controlFlowTransitions).flatMap(Function.identity());
+	}
+	
+	public Node nodeFor(String element) {
+		return allNodes()
+			.filter(node -> element.equals(node.getName().asString()))
+			.findAny()
+			.get();
+	}
+	
+	public Stream<Node> allNodes() {
+		return Stream.of(
+				StreamSupport.stream(mainPage().place().spliterator(), false), 
+				StreamSupport.stream(mainPage().transition().spliterator(), false),
+				StreamSupport.stream(mainPage().instance().spliterator(), false)
+		).flatMap(Function.identity());
 	}
 	
 	public boolean isControlFlowPlace(Place place) {
 		return place.getSort().getText().equals("CaseID");
+	}
+	
+	public boolean connects(Node nodeInQuestion, Node nodeA, Node nodeB) {
+		return !nodeInQuestion.getTargetArc().isEmpty() 
+				&& nodeInQuestion.getTargetArc().stream().anyMatch(any -> any.getOtherEnd(nodeInQuestion).equals(nodeA))
+				&& !nodeInQuestion.getSourceArc().isEmpty() 
+				&& nodeInQuestion.getSourceArc().stream().anyMatch(any -> any.getOtherEnd(nodeInQuestion).equals(nodeB));
 	}
 
 	public Stream<Arc> arcsToNodeNamed(Node source, String targetName) {
@@ -546,7 +579,8 @@ public abstract class ModelStructureTests {
 			"Associations",
 			"TransputSets",
 			"ConferenceSimplified",
-			"conference_fragments_knowledge_intensive"
+			"conference_fragments_knowledge_intensive",
+			"TwoEventsInSuccessionRegression"
 		);
 	}
 	

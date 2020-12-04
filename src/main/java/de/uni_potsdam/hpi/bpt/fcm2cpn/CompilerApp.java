@@ -434,14 +434,14 @@ public class CompilerApp implements AbstractPageScope {
     
     private void translateControlFlow() {
         Collection<SequenceFlow> sequenceFlows = bpmn.getModelElementsByType(SequenceFlow.class);
-        sequenceFlows.forEach(each -> {
-        	FlowNode sourceNode = each.getSource();
-        	FlowNode targetNode = each.getTarget();
+        sequenceFlows.forEach(eachFlow -> {
+        	FlowNode sourceNode = eachFlow.getSource();
+        	FlowNode targetNode = eachFlow.getTarget();
         	Node source = nodeFor(sourceNode);
         	Node target = nodeFor(targetNode);
         	//System.out.println(source.getName().asString()+" -> "+target.getName().asString());
         	if(isPlace(source) && isPlace(target)) {
-        		Transition transition = createTransition(null);
+        		Transition transition = createTransition(elementName(eachFlow));
         		createArc(source, transition, caseId());
         		createArc(transition, target, caseId());
         		
@@ -455,7 +455,7 @@ public class CompilerApp implements AbstractPageScope {
         		}
         		
         	} else {
-            	Place place = createPlace(null, "CaseID");
+            	Place place = createPlace(elementName(eachFlow), "CaseID");
             	
             	createArc(source, place, "");
        			if(subpages.containsKey(sourceNode)) {

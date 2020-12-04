@@ -29,6 +29,7 @@ import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.model.Instance;
+import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.Transition;
@@ -125,9 +126,19 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 
 	@TestWithAllModels
 	@ForEachBpmn(SequenceFlow.class)
-	public void testControlFlowPlaceIsCreated(SequenceFlow sequenceFlow) {
-		assertEquals(1, controlFlowPlacesBetween(elementName(sequenceFlow.getSource()), elementName(sequenceFlow.getTarget())).count(), 
-			"There is not exactly one place for the control flow between "+elementName(sequenceFlow.getSource())+" and "+elementName(sequenceFlow.getTarget()));
+	public void testControlFlowIsMapped(SequenceFlow sequenceFlow) {
+		assertEquals(1, controlFlowMappingsBetween(elementName(sequenceFlow.getSource()), elementName(sequenceFlow.getTarget())).count(), 
+			"There is not exactly one mapping for the control flow between "+elementName(sequenceFlow.getSource())+" and "+elementName(sequenceFlow.getTarget()));
+	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(SequenceFlow.class)
+	public void testControlFlowMappingIsNamed(SequenceFlow sequenceFlow) {
+		Object controlFlowMapping = controlFlowMappingsBetween(elementName(sequenceFlow.getSource()), elementName(sequenceFlow.getTarget())).findAny().get();
+		assumeTrue(controlFlowMapping instanceof Node, "Only transitions and places can carry names");
+		Node controlFlowMappingNode = (Node) controlFlowMapping;
+		assertEquals(elementName(sequenceFlow), controlFlowMappingNode.getName().asString(),
+				"Control flow mapping between "+elementName(sequenceFlow.getSource())+" and "+elementName(sequenceFlow.getTarget())+" doesn't have right name");
 	}
 	
 	@TestWithAllModels
@@ -140,15 +151,12 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(ExclusiveGateway.class)
 	public void testExclusiveGatewayPlaceHasCorrectArcs(ExclusiveGateway gateway) {
-		Place gatewayPlace = placesNamed(elementName(gateway)).findAny().get();
-		List<String> incomingNames = gatewayPlace.getTargetArc().stream().map(arc -> arc.getSource().getName().asString()).collect(Collectors.toList());
-		List<String> outgoingNames = gatewayPlace.getSourceArc().stream().map(arc -> arc.getTarget().getName().asString()).collect(Collectors.toList());
-		
 		List<SequenceFlow> unmappedFlows = Stream.concat(
-				gateway.getIncoming().stream().filter(controlFlow -> incomingNames.stream().noneMatch(elementName(controlFlow.getSource())::equals)),
-				gateway.getOutgoing().stream().filter(controlFlow -> outgoingNames.stream().noneMatch(elementName(controlFlow.getTarget())::equals))
+				gateway.getIncoming().stream().filter(controlFlow -> controlFlowMappingsBetween(elementName(controlFlow.getSource()), elementName(gateway)).count() == 0),
+				gateway.getOutgoing().stream().filter(controlFlow -> controlFlowMappingsBetween(elementName(gateway), elementName(controlFlow.getTarget())).count() == 0)
 		).collect(Collectors.toList());
-		assertTrue(unmappedFlows.isEmpty(), "Unmapped sequence flows for exclusive gateway "+elementName(gateway)+": "+unmappedFlows);
+		assertTrue(unmappedFlows.isEmpty(), "Unmapped sequence flows for parallel gateway "+elementName(gateway)+": "
+				+unmappedFlows.stream().map(each -> elementName(each.getSource())+" -> "+elementName(each.getTarget())).collect(Collectors.toList()));
 	}
 	
 	@TestWithAllModels
@@ -169,8 +177,8 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@ForEachBpmn(ParallelGateway.class)
 	public void testParallelGatewayPlaceHasCorrectArcs(ParallelGateway gateway) {		
 		List<SequenceFlow> unmappedFlows = Stream.concat(
-				gateway.getIncoming().stream().filter(controlFlow -> controlFlowPlacesBetween(elementName(controlFlow.getSource()), elementName(gateway)).count() == 0),
-				gateway.getOutgoing().stream().filter(controlFlow -> controlFlowPlacesBetween(elementName(gateway), elementName(controlFlow.getTarget())).count() == 0)
+				gateway.getIncoming().stream().filter(controlFlow -> controlFlowMappingsBetween(elementName(controlFlow.getSource()), elementName(gateway)).count() == 0),
+				gateway.getOutgoing().stream().filter(controlFlow -> controlFlowMappingsBetween(elementName(gateway), elementName(controlFlow.getTarget())).count() == 0)
 		).collect(Collectors.toList());
 		assertTrue(unmappedFlows.isEmpty(), "Unmapped sequence flows for parallel gateway "+elementName(gateway)+": "
 				+unmappedFlows.stream().map(each -> elementName(each.getSource())+" -> "+elementName(each.getTarget())).collect(Collectors.toList()));
