@@ -73,7 +73,13 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
 
     		/*Assert that when reading and not writing, the unchanged token is put back*/
     		List<Transition> readOnlyTransitions = transitions.stream()
-    				.filter(transition -> outputs.entrySet().stream().noneMatch(entry -> parent.wrapperFor(entry.getKey()).equals(dataElement) && (entry.getValue().contains(transition)) && (entry.getKey().isCollection() == assoc.isCollection())))
+    				.filter(transition -> outputs.entrySet().stream()
+    						.noneMatch(entry -> 
+		    					parent.wrapperFor(entry.getKey()).equals(dataElement) 
+		    					&& entry.getValue().contains(transition)
+		    					&& entry.getKey().isCollection() == assoc.isCollection()
+	    					)
+					)
     				.collect(Collectors.toList());
     		linkWritingTransitions(dataElement, annotation, readOnlyTransitions);
         });

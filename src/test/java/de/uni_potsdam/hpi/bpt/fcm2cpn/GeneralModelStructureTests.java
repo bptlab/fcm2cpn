@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -237,10 +238,10 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testConsumedDataObjectsAreReproduced(Activity activity) {
-		Set<Pair<Map<String, String>, Map<String, String>>> ioCombinations = ioCombinationsInNet(activity);
+		Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> ioCombinations = ioCombinationsInNet(activity);
 		ioCombinations.forEach(ioCombination -> {
-			Map<String, String> inputs = ioCombination.first;
-			Map<String, String> outputs = ioCombination.second;
+			Map<String, Optional<String>> inputs = ioCombination.first;
+			Map<String, Optional<String>> outputs = ioCombination.second;
 			
 			Set<String> missingWriteBacks = new HashSet<>(inputs.keySet());
 			missingWriteBacks.removeAll(outputs.keySet());
@@ -253,8 +254,8 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testInputAndOutputStateCombinations(Activity activity) {
-		Set<Pair<Map<String, String>, Map<String, String>>> expectedCombinations = expectedIOCombinations(activity);
-		Set<Pair<Map<String, String>, Map<String, String>>> supportedCombinations = ioCombinationsInNet(activity);
+		Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> expectedCombinations = expectedIOCombinations(activity);
+		Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> supportedCombinations = ioCombinationsInNet(activity);
 		
 		assertEquals(supportedCombinations, expectedCombinations,
 			"Possible i/o state combinations did not match for activity \""+elementName(activity)+"\":"
@@ -263,6 +264,15 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 			+ "\n"
 		);
 		
+	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(Activity.class)
+	@ForEachIOSet
+	public void testEachIOSetIsMappedToTransition(Activity activity,  DataObjectIOSet ioSet) {
+		Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> stateMap = ioAssociationsToStateMaps(ioSet);
+		assertTrue(transitionForIoCombination(stateMap, activity).isPresent(), 
+				"No transition for ioSet "+stateMap+" of activity "+elementName(activity));		
 	}
 	
 	

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.*;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
@@ -41,10 +42,10 @@ public class OLCParserTests extends ModelStructureTests {
 		expectedIOCombinations(activity).forEach(ioCombination -> {
 			ioCombination.first.forEach((object, inputState) -> {
 				if(ioCombination.second.containsKey(object)) {
-					String outputState = ioCombination.second.get(object);
+					Optional<String> outputState = ioCombination.second.get(object);
 					if(!inputState.equals(outputState)) {
 						ObjectLifeCycle olc = olcFor(object);
-						assertTrue(olc.getState(inputState).get().getSuccessors().contains(olc.getState(outputState).get()), 
+						assertTrue(olc.getState(inputState.get()).get().getSuccessors().contains(olc.getState(outputState.get()).get()), 
 								"Olc does not support lifecycle transition ("+inputState+" -> "+outputState+") for data object "+object+" which is definied by activity "+activity.getName());
 					}
 				}

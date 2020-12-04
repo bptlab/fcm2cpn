@@ -224,52 +224,49 @@ public abstract class ModelStructureTests {
 		.collect(Collectors.toSet());
 	}
 	
-	public static Pair<Map<String, String>, Map<String, String>> ioAssociationsToStateMaps(DataObjectIOSet ioAssociations) {
-		Pair<Map<String, String>, Map<String, String>> ioConfiguration = new Pair<>(
+	public static Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioAssociationsToStateMaps(DataObjectIOSet ioAssociations) {
+		Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioConfiguration = new Pair<>(
 				ioAssociations.first.stream()
-					.filter(each -> each.getStateName().isPresent())
-					.collect(Collectors.toMap(assoc -> normalizeElementName(assoc.getDataElement().getDataObject().getName()), assoc -> assoc.getStateName().get())),
+					.collect(Collectors.toMap(StatefulDataAssociation::dataElementName, StatefulDataAssociation::getStateName)),
 				ioAssociations.second.stream()
-					.filter(each -> each.getStateName().isPresent())
-					.collect(Collectors.toMap(assoc -> normalizeElementName(assoc.getDataElement().getDataObject().getName()), assoc -> assoc.getStateName().get())));	
+					.collect(Collectors.toMap(StatefulDataAssociation::dataElementName, StatefulDataAssociation::getStateName)));	
 
 		//Expect read objects that are not explicitly written to be written back in the same state as they are read
-		Map<String, String> inputSet = ioConfiguration.first;
-		Map<String, String> outputSet = ioConfiguration.second;
-		for(String inputObject : inputSet.keySet()) {
-			if(!outputSet.containsKey(inputObject)) outputSet.put(inputObject, inputSet.get(inputObject));
+		for(StatefulDataAssociation<DataInputAssociation, DataObjectReference> inputAssoc : ioAssociations.first) {
+			if(ioAssociations.second.stream().noneMatch(outputAssoc -> outputAssoc.dataElementName().equals(inputAssoc.dataElementName()) && outputAssoc.isCollection() == inputAssoc.isCollection())) 
+				ioConfiguration.second.put(inputAssoc.dataElementName(), inputAssoc.getStateName());
 		}
 		
 		return ioConfiguration;
 	}
 	
-	public static Set<Pair<Map<String, String>, Map<String, String>>> expectedIOCombinations(Activity activity) {
+	public static Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> expectedIOCombinations(Activity activity) {
 		return ioAssociationCombinations(activity).stream()
 				.map(ModelStructureTests::ioAssociationsToStateMaps).collect(Collectors.toSet());
 	}
 	
-	public static Stream<Pair<String, String>> expectedCreatedObjects(Pair<Map<String, String>, Map<String, String>> ioCombination) {
+	public static Stream<Pair<String, Optional<String>>> expectedCreatedObjects(Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioCombination) {
 		return ioCombination.second.entrySet().stream()
 			.filter(idAndState -> !ioCombination.first.containsKey(idAndState.getKey()))
 			.map(entry -> new Pair<>(entry.getKey(), entry.getValue()));
 	}
 	
-	public Set<Pair<Map<String, String>, Map<String, String>>> ioCombinationsInNet(Activity activity) {
-		Set<Pair<Map<String, String>, Map<String, String>>> ioCombinations = new HashSet<>();
+	public Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> ioCombinationsInNet(Activity activity) {
+		Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> ioCombinations = new HashSet<>();
 		transitionsFor(activity).forEach(transition -> 
 			ioCombinations.add(ioCombinationOfTransition(transition)));
 		return ioCombinations;
 	}
 	
-	public Optional<Transition> transitionForIoCombination(Pair<Map<String, String>, Map<String, String>> ioCombination, Activity activity) {
+	public Optional<Transition> transitionForIoCombination(Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioCombination, Activity activity) {
 		return transitionsFor(activity)
 			.filter(transition -> ioCombinationOfTransition(transition).equals(ioCombination))
 			.findAny();
 	}
 	
-	public Pair<Map<String, String>, Map<String, String>> ioCombinationOfTransition(Transition transition) {
-		Map<String, String> inputs = new HashMap<>();
-		Map<String, String> outputs = new HashMap<>();
+	public Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioCombinationOfTransition(Transition transition) {
+		Map<String, Optional<String>> inputs = new HashMap<>();
+		Map<String, Optional<String>> outputs = new HashMap<>();
 		transition.getTargetArc().stream()
 			.map(inputArc -> inputArc.getHlinscription().asString())
 			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> inputs.put(idAndState.first, idAndState.second)));
@@ -277,10 +274,10 @@ public abstract class ModelStructureTests {
 		transition.getSourceArc().stream()
 			.map(outputArc -> outputArc.getHlinscription().asString())
 			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> outputs.put(idAndState.first, idAndState.second)));
-		return new Pair<Map<String,String>, Map<String,String>>(inputs, outputs);
+		return new Pair<Map<String,Optional<String>>, Map<String,Optional<String>>>(inputs, outputs);
 	}
 	
-	public static Optional<Pair<String, String>> parseCreatedTokenIdAndState(String inscription, Transition transition) {
+	public static Optional<Pair<String, Optional<String>>> parseCreatedTokenIdAndState(String inscription, Transition transition) {
 		String dataId = null;
 		String state = null;
 
@@ -310,7 +307,7 @@ public abstract class ModelStructureTests {
 					.findAny().orElse(null);
 			}
 		}
-		if(dataId != null && state != null) return Optional.of(new Pair<>(dataId, state));
+		if(dataId != null) return Optional.of(new Pair<>(dataId, Optional.ofNullable(state)));
 		else return Optional.empty();
 	}
 	
