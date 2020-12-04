@@ -39,6 +39,7 @@ public class Pair<S,T> {
 		return Objects.equals(first, other.first) && Objects.equals(second, other.second);
 	}
 	
+	//TODO unused
 	public int indexOf(Object o) {
 		return Arrays.asList(first, second).indexOf(o);
 	}

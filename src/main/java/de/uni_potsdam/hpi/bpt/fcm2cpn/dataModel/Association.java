@@ -1,6 +1,5 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel;
 
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
