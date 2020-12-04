@@ -1,8 +1,7 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.*;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
 import java.io.File;
 import java.lang.annotation.Retention;
@@ -18,9 +17,9 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,11 +36,9 @@ import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
-import org.camunda.bpm.model.bpmn.instance.OutputSet;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
-import org.cpntools.accesscpn.engine.highlevel.LocalCheckFailed;
 import org.cpntools.accesscpn.engine.highlevel.checker.Checker;
 import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Instance;
@@ -227,68 +224,60 @@ public abstract class ModelStructureTests {
 		.collect(Collectors.toSet());
 	}
 	
-	public static Pair<Map<String, String>, Map<String, String>> ioAssociationsToStateMaps(DataObjectIOSet ioAssociations) {
-		Pair<Map<String, String>, Map<String, String>> ioConfiguration = new Pair<>(
+	public static Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioAssociationsToStateMaps(DataObjectIOSet ioAssociations) {
+		Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioConfiguration = new Pair<>(
 				ioAssociations.first.stream()
-					.filter(each -> each.getStateName().isPresent())
-					.collect(Collectors.toMap(assoc -> normalizeElementName(assoc.getDataElement().getDataObject().getName()), assoc -> assoc.getStateName().get())),
+					.collect(Collectors.toMap(StatefulDataAssociation::dataElementName, StatefulDataAssociation::getStateName)),
 				ioAssociations.second.stream()
-					.filter(each -> each.getStateName().isPresent())
-					.collect(Collectors.toMap(assoc -> normalizeElementName(assoc.getDataElement().getDataObject().getName()), assoc -> assoc.getStateName().get())));	
+					.collect(Collectors.toMap(StatefulDataAssociation::dataElementName, StatefulDataAssociation::getStateName)));	
 
 		//Expect read objects that are not explicitly written to be written back in the same state as they are read
-		Map<String, String> inputSet = ioConfiguration.first;
-		Map<String, String> outputSet = ioConfiguration.second;
-		for(String inputObject : inputSet.keySet()) {
-			if(!outputSet.containsKey(inputObject)) outputSet.put(inputObject, inputSet.get(inputObject));
+		for(StatefulDataAssociation<DataInputAssociation, DataObjectReference> inputAssoc : ioAssociations.first) {
+			if(ioAssociations.second.stream().noneMatch(outputAssoc -> outputAssoc.dataElementName().equals(inputAssoc.dataElementName()) && outputAssoc.isCollection() == inputAssoc.isCollection())) 
+				ioConfiguration.second.put(inputAssoc.dataElementName(), inputAssoc.getStateName());
 		}
 		
 		return ioConfiguration;
 	}
 	
-	public static Set<Pair<Map<String, String>, Map<String, String>>> expectedIOCombinations(Activity activity) {
+	public static Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> expectedIOCombinations(Activity activity) {
 		return ioAssociationCombinations(activity).stream()
 				.map(ModelStructureTests::ioAssociationsToStateMaps).collect(Collectors.toSet());
 	}
 	
-	public static Stream<Pair<String, String>> expectedCreatedObjects(Pair<Map<String, String>, Map<String, String>> ioCombination) {
+	public static Stream<Pair<String, Optional<String>>> expectedCreatedObjects(Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioCombination) {
 		return ioCombination.second.entrySet().stream()
 			.filter(idAndState -> !ioCombination.first.containsKey(idAndState.getKey()))
 			.map(entry -> new Pair<>(entry.getKey(), entry.getValue()));
 	}
 	
-	public Set<Pair<Map<String, String>, Map<String, String>>> ioCombinationsInNet(Activity activity) {
-		Set<Pair<Map<String, String>, Map<String, String>>> ioCombinations = new HashSet<>();
+	public Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> ioCombinationsInNet(Activity activity) {
+		Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> ioCombinations = new HashSet<>();
 		transitionsFor(activity).forEach(transition -> 
 			ioCombinations.add(ioCombinationOfTransition(transition)));
 		return ioCombinations;
 	}
 	
-	public Optional<Transition> transitionForIoCombination(Pair<Map<String, String>, Map<String, String>> ioCombination, Activity activity) {
+	public Optional<Transition> transitionForIoCombination(Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioCombination, Activity activity) {
 		return transitionsFor(activity)
 			.filter(transition -> ioCombinationOfTransition(transition).equals(ioCombination))
 			.findAny();
 	}
 	
-	public Pair<Map<String, String>, Map<String, String>> ioCombinationOfTransition(Transition transition) {
-		Map<String, String> inputs = new HashMap<>();
-		Map<String, String> outputs = new HashMap<>();
+	public Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioCombinationOfTransition(Transition transition) {
+		Map<String, Optional<String>> inputs = new HashMap<>();
+		Map<String, Optional<String>> outputs = new HashMap<>();
 		transition.getTargetArc().stream()
 			.map(inputArc -> inputArc.getHlinscription().asString())
 			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> inputs.put(idAndState.first, idAndState.second)));
 
 		transition.getSourceArc().stream()
 			.map(outputArc -> outputArc.getHlinscription().asString())
-			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> {
-				// TODO: it'd be better to handle the situation properly
-				// An activity may write a set and a single object of the same class in different states
-				assumeFalse(outputs.containsKey(idAndState.first));
-				outputs.put(idAndState.first, idAndState.second);
-			}));
-		return new Pair<Map<String,String>, Map<String,String>>(inputs, outputs);
+			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> outputs.put(idAndState.first, idAndState.second)));
+		return new Pair<Map<String,Optional<String>>, Map<String,Optional<String>>>(inputs, outputs);
 	}
 	
-	public static Optional<Pair<String, String>> parseCreatedTokenIdAndState(String inscription, Transition transition) {
+	public static Optional<Pair<String, Optional<String>>> parseCreatedTokenIdAndState(String inscription, Transition transition) {
 		String dataId = null;
 		String state = null;
 
@@ -318,7 +307,7 @@ public abstract class ModelStructureTests {
 					.findAny().orElse(null);
 			}
 		}
-		if(dataId != null && state != null) return Optional.of(new Pair<>(dataId, state));
+		if(dataId != null) return Optional.of(new Pair<>(dataId, Optional.ofNullable(state)));
 		else return Optional.empty();
 	}
 	
@@ -407,25 +396,19 @@ public abstract class ModelStructureTests {
         try {
         	HighLevelSimulator simu = HighLevelSimulator.getHighLevelSimulator();
         	
-        	//Suppress error for places that have no name
-        	petrinet.getPage().stream()
-        		.flatMap(page -> StreamSupport.stream(page.getObject().spliterator(), false))
-        		.filter(each -> Objects.nonNull(each.getName()) && Objects.isNull(each.getName().getText()))
-        		.forEach(each -> each.getName().setText("XXX"+new Random().nextInt()));
-        	
         	Checker checker = new Checker(petrinet, null, simu);
         	checker.checkEntireModel();
-        } catch (LocalCheckFailed e) {
-        	boolean allowedFailure = e.getMessage().contains("illegal name (name is `null')") || e.getMessage().contains("is not unique");
-        	if(!allowedFailure) throw e;
 		} catch(NoSuchElementException e) {
 			// From Packet:170, weird bug, but catching this error seems to work
 		}
 	}
 	
+	public Page mainPage() {
+		return petrinet.getPage().get(0);
+	}
+	
 	public Stream<Instance> instancesNamed(String name) {
-		Page mainPage = petrinet.getPage().get(0);
-		return StreamSupport.stream(mainPage.instance().spliterator(), false).filter(instance -> instance.getName().asString().equals(name));
+		return StreamSupport.stream(mainPage().instance().spliterator(), false).filter(instance -> instance.getName().asString().equals(name));
 	}
 	
 	public Stream<Page> pagesNamed(String name) {
@@ -437,8 +420,7 @@ public abstract class ModelStructureTests {
 	}
 	
 	public Stream<Place> placesNamed(String name) {
-		Page mainPage = petrinet.getPage().get(0);
-		return StreamSupport.stream(mainPage.place().spliterator(), false)
+		return StreamSupport.stream(mainPage().place().spliterator(), false)
 				.filter(place -> Objects.toString(place.getName().asString()).equals(name));
 	}
 
@@ -452,28 +434,58 @@ public abstract class ModelStructureTests {
 				.filter(place -> place.getSort().getText().equals("DATA_STORE") );
 	}
 	
+
+	public Stream<Place> controlFlowPlacesBetween(String elementA, String elementB) {	
+		Node nodeA = nodeFor(elementA);
+		Node nodeB = nodeFor(elementB);	
+		return StreamSupport.stream(mainPage().place().spliterator(), false)
+				.filter(place -> isControlFlowPlace(place) && connects(place, nodeA, nodeB));
+	}
+	
 	/**
 	 * Control flow between two bpmn elements is correctly mapped if: <br>
-	 * a) there is a place between transitions with the names <br>
-	 * OR<br> 
-	 * b) if there is a control flow place for one of them that is connected to a transition for the other one
+	 * a) there is a control flow place between transitions with the names <br>
+	 * XOR<br> 
+	 * b) if there is a place for one of them that is connected to a transition for the other one<br>
+	 * XOR<br>
+	 * c) if both are mapped to places and there is a control flow transition between the two
 	 */
-	public Stream<Place> controlFlowPlacesBetween(String nodeA, String nodeB) {
-		Page mainPage = petrinet.getPage().get(0);
-		return StreamSupport.stream(mainPage.place().spliterator(), false).filter(place -> {
-			return isControlFlowPlace(place) 
-					&& (
-						!place.getTargetArc().isEmpty() && place.getTargetArc().stream().anyMatch(any -> any.getOtherEnd(place).getName().asString().equals(nodeA))
-						|| Objects.toString(place.getName().asString()).equals(nodeA)
-					) && (
-						!place.getSourceArc().isEmpty() && place.getSourceArc().stream().anyMatch(any -> any.getOtherEnd(place).getName().asString().equals(nodeB))
-						|| Objects.toString(place.getName().asString()).equals(nodeB)
-					);
-		});
+	public Stream<Object> controlFlowMappingsBetween(String elementA, String elementB) {
+		Node nodeA = nodeFor(elementA);
+		Node nodeB = nodeFor(elementB);
+		Stream<Arc> controlFlowArcs = mainPage().getArc().stream()
+				.filter(arc -> arc.getSource().equals(nodeA) && arc.getTarget().equals(nodeB));
+		Stream<Place> controlFlowPlaces = controlFlowPlacesBetween(elementA, elementB);
+		Stream<Transition> controlFlowTransitions = StreamSupport.stream(mainPage().transition().spliterator(), false)
+				.filter(transition -> connects(transition, nodeA, nodeB));
+		
+		return Stream.of(controlFlowArcs, controlFlowPlaces, controlFlowTransitions).flatMap(Function.identity());
+	}
+	
+	public Node nodeFor(String element) {
+		return allNodes()
+			.filter(node -> element.equals(node.getName().asString()))
+			.findAny()
+			.get();
+	}
+	
+	public Stream<Node> allNodes() {
+		return Stream.of(
+				StreamSupport.stream(mainPage().place().spliterator(), false), 
+				StreamSupport.stream(mainPage().transition().spliterator(), false),
+				StreamSupport.stream(mainPage().instance().spliterator(), false)
+		).flatMap(Function.identity());
 	}
 	
 	public boolean isControlFlowPlace(Place place) {
 		return place.getSort().getText().equals("CaseID");
+	}
+	
+	public boolean connects(Node nodeInQuestion, Node nodeA, Node nodeB) {
+		return !nodeInQuestion.getTargetArc().isEmpty() 
+				&& nodeInQuestion.getTargetArc().stream().anyMatch(any -> any.getOtherEnd(nodeInQuestion).equals(nodeA))
+				&& !nodeInQuestion.getSourceArc().isEmpty() 
+				&& nodeInQuestion.getSourceArc().stream().anyMatch(any -> any.getOtherEnd(nodeInQuestion).equals(nodeB));
 	}
 
 	public Stream<Arc> arcsToNodeNamed(Node source, String targetName) {
@@ -564,7 +576,8 @@ public abstract class ModelStructureTests {
 			"Associations",
 			"TransputSets",
 			"ConferenceSimplified",
-			"conference_fragments_knowledge_intensive"
+			"conference_fragments_knowledge_intensive",
+			"TwoEventsInSuccessionRegression"
 		);
 	}
 	
