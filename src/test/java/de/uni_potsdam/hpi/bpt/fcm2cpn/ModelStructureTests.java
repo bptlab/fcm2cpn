@@ -1,6 +1,7 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.*;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
 import java.io.File;
 import java.lang.annotation.Retention;
@@ -16,7 +17,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -35,11 +35,9 @@ import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
-import org.camunda.bpm.model.bpmn.instance.OutputSet;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
-import org.cpntools.accesscpn.engine.highlevel.LocalCheckFailed;
 import org.cpntools.accesscpn.engine.highlevel.checker.Checker;
 import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Instance;
@@ -400,17 +398,8 @@ public abstract class ModelStructureTests {
         try {
         	HighLevelSimulator simu = HighLevelSimulator.getHighLevelSimulator();
         	
-        	//Suppress error for places that have no name
-        	petrinet.getPage().stream()
-        		.flatMap(page -> StreamSupport.stream(page.getObject().spliterator(), false))
-        		.filter(each -> Objects.nonNull(each.getName()) && Objects.isNull(each.getName().getText()))
-        		.forEach(each -> each.getName().setText("XXX"+new Random().nextInt()));
-        	
         	Checker checker = new Checker(petrinet, null, simu);
         	checker.checkEntireModel();
-        } catch (LocalCheckFailed e) {
-        	boolean allowedFailure = e.getMessage().contains("illegal name (name is `null')") || e.getMessage().contains("is not unique");
-        	if(!allowedFailure) throw e;
 		} catch(NoSuchElementException e) {
 			// From Packet:170, weird bug, but catching this error seems to work
 		}
