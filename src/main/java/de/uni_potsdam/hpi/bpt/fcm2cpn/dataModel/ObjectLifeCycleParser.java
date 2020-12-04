@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.DataInput;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
+import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutput;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.InputSet;
@@ -30,7 +32,6 @@ import org.camunda.bpm.model.bpmn.instance.OutputSet;
 import org.camunda.bpm.model.bpmn.instance.Task;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle.State;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 public class ObjectLifeCycleParser {
@@ -41,61 +42,67 @@ public class ObjectLifeCycleParser {
 
 	private final BpmnModelInstance bpmn;
 	private final DataModel domainModel;
+	private final Map<String, ObjectLifeCycle> olcForClass;
 
     private ObjectLifeCycleParser (DataModel domainModel, BpmnModelInstance bpmn) {
     	this.bpmn = bpmn;
     	this.domainModel = domainModel;
+        this.olcForClass = new HashMap<>();
     }
 
-
     private ObjectLifeCycle[] getOLCs() {
-        Collection<Activity> activities = bpmn.getModelElementsByType(Activity.class);
-        Map<String, ObjectLifeCycle> olcForClass = new HashMap<>();
+    	determineDataClasses();    	
+    	determineStates();
+    	determineTransitions();
+        addToEachStateReferencesToAssociatedObjectsThatCanBeCreated();
+        return olcForClass.values().toArray(new ObjectLifeCycle[0]);
+    }
+
+	private void determineDataClasses() {
         bpmn.getModelElementsByType(DataObject.class).stream()
-        	.map(DataObject::getName)
-        	.map(Utils::normalizeElementName)
-        	.forEach(className -> olcForClass.put(className, new ObjectLifeCycle(className)));
-        
-        for (Activity activity : activities) {
-            IoSpecification io = activity.getIoSpecification();
-            if (io == null) continue;
-            Collection<InputSet> inputSets = io.getInputSets();
-            Collection<OutputSet> outputSets = io.getOutputSets();
-            for (OutputSet outputSet : outputSets) {
-                //Determine in which states which object appears at the current activity
-            	Map<String, Set<String>> outputStatesForObject = new HashMap<>();
-                Map<String, Set<String>> allStatesForObject = new HashMap<>();
+	    	.map(DataObject::getName)
+	    	.map(Utils::normalizeElementName)
+	    	.forEach(className -> olcForClass.put(className, new ObjectLifeCycle(className)));
+    }
+	
+    private void determineStates() {
+    	bpmn.getModelElementsByType(DataObjectReference.class).forEach(dataObjectRef -> {
+            ObjectLifeCycle olc = olcForClass.get(normalizeElementName(elementName(getReferencedElement(dataObjectRef))));
+    		Utils.dataElementStates(dataObjectRef)
+	    		.filter(Objects::nonNull)
+	    		.filter(stateName -> olc.getState(stateName).isEmpty())
+	    		.forEach(olc::addState);
+    	});
+	}
+    
+	private void determineTransitions() {
+        bpmn.getModelElementsByType(Activity.class).stream()
+	    	.map(Activity::getIoSpecification)
+	    	.filter(Objects::nonNull)//TODO don't ignore activities without ioconfig
+	    	.forEach(this::extractTransitionsFromIoSpecification);
+	}
+    
+    private void extractTransitionsFromIoSpecification(IoSpecification io) {
+        for (InputSet inputSet : io.getInputSets()) {
+        	for(OutputSet outputSet : inputSet.getOutputSets()) {
+                //Determine in which states which object appears at the current io set combination
+        		
+                Map<String, Set<String>> inputStatesForObject = new HashMap<>();
+                for (DataInput input : inputSet.getDataInputs()) {
+                    String inputName = getDataObjectName(input);
+                    Set<String> inputStates = getDataObjectStates(input);
+                    inputStatesForObject
+                    	.computeIfAbsent(inputName, s -> new HashSet<>())
+                    	.addAll(inputStates);
+                }
                 
+            	Map<String, Set<String>> outputStatesForObject = new HashMap<>();
                 for (DataOutput oRef : outputSet.getDataOutputRefs()) {
                     String outputName = getDataObjectName(oRef);
                     Set<String> outputStates = getDataObjectStates(oRef);
-                    allStatesForObject
-	                	.computeIfAbsent(outputName, s -> new HashSet<>())
-	                	.addAll(outputStates);
                     outputStatesForObject	                    	
-	                    .computeIfAbsent(outputName, s -> new HashSet<>())
-	                	.addAll(outputStates);
-                }
-                Map<String, Set<String>> inputStatesForObject = new HashMap<>();
-                for (InputSet inputSet : inputSets) {
-                    for (DataInput input : inputSet.getDataInputs()) {
-                        String inputName = getDataObjectName(input);
-                        Set<String> inputStates = getDataObjectStates(input);
-                        inputStatesForObject
-	                    	.computeIfAbsent(inputName, s -> new HashSet<>())
-	                    	.addAll(inputStates);
-                        allStatesForObject
-                        	.computeIfAbsent(inputName, s -> new HashSet<>())
-                        	.addAll(inputStates);
-                    }
-                }
-                
-                //Add state object for each found state
-                for (Map.Entry<String, Set<String>> e : allStatesForObject.entrySet()) {
-                    ObjectLifeCycle olc = olcForClass.get(e.getKey());
-                    olc.getStates().addAll(e.getValue().stream()
-                            .map(State::new)
-                            .collect(Collectors.toSet()));
+                        .computeIfAbsent(outputName, s -> new HashSet<>())
+                    	.addAll(outputStates);
                 }
                 
                 //Create successor relations
@@ -111,13 +118,11 @@ public class ObjectLifeCycleParser {
                         }
                     }
                 });
-            }
+        	}
         }
-        addToEachStateReferencesToAssociatedObjectsThatCanBeCreated(olcForClass);
-        return olcForClass.values().toArray(new ObjectLifeCycle[0]);
     }
 
-    private void addToEachStateReferencesToAssociatedObjectsThatCanBeCreated(Map<String, ObjectLifeCycle> olcForClass) {
+    private void addToEachStateReferencesToAssociatedObjectsThatCanBeCreated() {
         for (String object : olcForClass.keySet()) {
             List<AssociationEnd> relevantAssociatedObjects = domainModel.getAssociations().stream()
                     .filter(a -> a.first.getDataObject().equals(object) || a.second.getDataObject().equals(object))
@@ -137,7 +142,7 @@ public class ObjectLifeCycleParser {
         }
     }
 
-    private Set<String> getRequiredStates(Task task, String dataObject) {
+    private static Set<String> getRequiredStates(Task task, String dataObject) {
         // TODO generalize to consider I-O-relation
         IoSpecification io = task.getIoSpecification();
         Collection<InputSet> inputSets = task.getIoSpecification().getInputSets();
@@ -151,7 +156,7 @@ public class ObjectLifeCycleParser {
         return new HashSet<>(0);
     }
 
-    private boolean taskCreatesObject(Task task, String object) {
+    private static boolean taskCreatesObject(Task task, String object) {
         IoSpecification io = task.getIoSpecification();
         Collection<OutputSet> outputSets = io.getOutputSets();
         for (OutputSet outputSet : outputSets) {
@@ -170,19 +175,19 @@ public class ObjectLifeCycleParser {
         return false;
     }
 
-    private String getDataObjectName(DataInput iRef) {
+    private static String getDataObjectName(DataInput iRef) {
         DataInputAssociation inputAssoc = getAssociation(iRef);
         ItemAwareElement dataElement = getReferencedElement(inputAssoc.getSources().stream().findAny().get());
         return normalizeElementName(elementName(dataElement));
     }
     
-    private String getDataObjectName(DataOutput oRef) {
+    private static String getDataObjectName(DataOutput oRef) {
         DataOutputAssociation outputAssoc = getAssociation(oRef);
         ItemAwareElement dataElement = getReferencedElement(dataElementReferenceOf(outputAssoc));
         return normalizeElementName(elementName(dataElement));
     }
 
-    private Set<String> getDataObjectStates(DataInput iRef) {
+    private static Set<String> getDataObjectStates(DataInput iRef) {
         DataInputAssociation inputAssoc = getAssociation(iRef);
         return splitDataAssociationByState(inputAssoc)
         		.map(StatefulDataAssociation::getStateName)
@@ -190,7 +195,7 @@ public class ObjectLifeCycleParser {
         		.collect(Collectors.toSet());
     }
 
-    private Set<String> getDataObjectStates(DataOutput oRef) {
+    private static Set<String> getDataObjectStates(DataOutput oRef) {
         DataOutputAssociation outputAssoc = getAssociation(oRef);
         return splitDataAssociationByState(outputAssoc)
         		.map(StatefulDataAssociation::getStateName)

@@ -26,13 +26,17 @@ public class ObjectLifeCycle {
         return states.stream().filter(state -> state.stateName.equals(inputState)).findAny();
     }
     
+    public void addState(String stateName) {
+    	states.add(new State(stateName));
+    }
+    
 
     public static class State {
         protected final String stateName;
         protected final Set<State> successors;
         protected final Set<AssociationEnd> updateableAssociations;
 
-        public State(String stateName) {
+        private State(String stateName) {
             this.stateName = stateName;
             this.successors = new HashSet<>();
             this.updateableAssociations = new HashSet<>();

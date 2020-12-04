@@ -159,15 +159,20 @@ public class Utils {
         return dataElementReference;
 	}
 	
+	public static Stream<String> dataElementStates(ItemAwareElement dataElementReference) {
+		assert dataElementReference instanceof DataObjectReference || dataElementReference instanceof DataStoreReference;
+		return Optional.ofNullable(dataElementReference.getDataState())
+        		.map(DataState::getName)
+        		.map(stateName -> dataObjectStateToNetColors(stateName))
+        		.orElse(Stream.of((String)null));
+	}
+	
 	/**
 	 * Creates distinct result object for each state of one bpmn data object reference, enables the [stateA | stateB] notation
 	 */
     public static <T extends DataAssociation> Stream<StatefulDataAssociation<T, ?>> splitDataAssociationByState(T assoc) {
     	ItemAwareElement dataElementReference = dataElementReferenceOf(assoc);
-    	Stream<String> possibleStates = Optional.ofNullable(dataElementReference.getDataState())
-        		.map(DataState::getName)
-        		.map(stateName -> dataObjectStateToNetColors(stateName))
-        		.orElse(Stream.of((String)null));
+    	Stream<String> possibleStates = dataElementStates(dataElementReference);
     	boolean isCollection = Optional.ofNullable(getReferencedElement(dataElementReference).getAttributeValue("isCollection")).map(Boolean::parseBoolean).orElse(false);
     	return possibleStates.map(state -> new StatefulDataAssociation<>(assoc, state, dataElementReference, isCollection));
     }
