@@ -21,6 +21,12 @@ The resulting model can be used in combination with an accompanying [execution e
 
 ## Usage
 
+
+#### [Watch our short demo (~ 3 min) on Youtube.](https://youtu.be/ODpgQvxxQzY)
+
+#### [Watch our not so short demo (~ 9 min) on Youtube.](https://youtu.be/ogvqiO6a9Wg) 
+
+
 ### Compiling and Building the Binaries
 
 We use maven as build tool and for dependency management.
