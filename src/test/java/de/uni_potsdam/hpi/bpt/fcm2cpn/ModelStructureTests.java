@@ -164,21 +164,14 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	
 	public static Set<Pair<List<DataInputAssociation>, List<DataOutputAssociation>>> statelessAssociationCombinations(Activity activity) {
 		Set<Pair<List<DataInputAssociation>, List<DataOutputAssociation>>> combinations = new HashSet<>();
-		if(activity.getIoSpecification() == null) {
-			combinations.add(new Pair<>(
-					activity.getDataInputAssociations().stream().collect(Collectors.toList()),
-					activity.getDataOutputAssociations().stream().collect(Collectors.toList())
-			));
-		} else {
-			activity.getIoSpecification().getInputSets().forEach(inputSet -> {
-				inputSet.getOutputSets().forEach(outputSet -> {
-					combinations.add(new Pair<>(
-							inputSet.getDataInputs().stream().map(Utils::getAssociation).collect(Collectors.toList()), 
-							outputSet.getDataOutputRefs().stream().map(Utils::getAssociation).collect(Collectors.toList()))
-					);
-				});	
-			});
-		}
+		activity.getIoSpecification().getInputSets().forEach(inputSet -> {
+			inputSet.getOutputSets().forEach(outputSet -> {
+				combinations.add(new Pair<>(
+						inputSet.getDataInputs().stream().map(Utils::getAssociation).collect(Collectors.toList()), 
+						outputSet.getDataOutputRefs().stream().map(Utils::getAssociation).collect(Collectors.toList()))
+				);
+			});	
+		});
 		return combinations;		
 	}
 	

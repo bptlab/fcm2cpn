@@ -68,9 +68,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 	}
 	
 	private List<Pair<InputSetWrapper, OutputSetWrapper>> transputSets() {
-		return Optional.ofNullable(element.getIoSpecification())
-			.map(this::transputSetsFromIoSpecification)
-			.orElseGet(this::defaultTransputSets);
+		return transputSetsFromIoSpecification(element.getIoSpecification());
 	}
 	
     private List<Pair<InputSetWrapper, OutputSetWrapper>> transputSetsFromIoSpecification(IoSpecification ioSpecification) {
@@ -118,27 +116,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
     
     	return transputSets;
     }
-    
-    private List<Pair<InputSetWrapper, OutputSetWrapper>> defaultTransputSets() {
-    	List<Pair<InputSetWrapper, OutputSetWrapper>> transputSets = new ArrayList<>();
-        // All read data elements with all states in that they are read
-        Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataInputAssociation, ?>>> inputsPerObject = element.getDataInputAssociations().stream()
-        		.flatMap(Utils::splitDataAssociationByState)
-        		.collect(Collectors.groupingBy(parent::wrapperFor));
-
-        // All written data elements with all states in that they are written
-        Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataOutputAssociation, ?>>> outputsPerObject = element.getDataOutputAssociations().stream()
-        		.flatMap(Utils::splitDataAssociationByState)
-        		.collect(Collectors.groupingBy(parent::wrapperFor));
-        List<InputSetWrapper> inputSets = allCombinationsOf(inputsPerObject.values()).stream().map(InputSetWrapper::new).collect(Collectors.toList());
-        List<OutputSetWrapper> outputSets = allCombinationsOf(outputsPerObject.values()).stream().map(OutputSetWrapper::new).collect(Collectors.toList());
-    	for (InputSetWrapper inputSet : inputSets) {
-        	for (OutputSetWrapper outputSet : outputSets) {
-        		transputSets.add(new Pair<>(inputSet, outputSet));
-        	}
-        }
-    	return transputSets;
-    }
+ 
     
     private void compileTransputsSet(Pair<InputSetWrapper, OutputSetWrapper> transputSet) {
         InputSetWrapper inputSet = transputSet.first;
