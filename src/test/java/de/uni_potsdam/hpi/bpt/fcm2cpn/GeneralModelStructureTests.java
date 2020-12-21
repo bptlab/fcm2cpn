@@ -34,6 +34,7 @@ import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.Transition;
+import org.junit.jupiter.api.Assertions;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
@@ -430,6 +431,13 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 					.count(),
 				"There is not exactly one arc that writes the incremented "+objectId+" count in transition "+transition.getName().getText());
 		});
+	}
+	
+	/**@see BpmnPreprocessorTests#testModelsAreMarkedAsPreprocessed()*/
+	@TestWithAllModels
+	public void testModelsArePreprocessed() {
+		Assertions.assertEquals("true", bpmn.getDocumentElement().getAttributeValue("de.uni_potsdam.hpi.bpt.fcm2cpn.preprocessed"),
+				"Model "+modelName+" was not marked as preprocessed");
 	}
 
 }

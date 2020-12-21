@@ -189,6 +189,7 @@ public class CompilerApp implements AbstractPageScope {
     }
 
     private PetriNet translateBPMN2CPN() {
+    	preprocessBpmnModel();
     	initializeCPNModel();
     	System.out.print("Translating BPMN... ");
         translateData();
@@ -201,6 +202,10 @@ public class CompilerApp implements AbstractPageScope {
         System.out.println("DONE");
         return petriNet;
     }
+
+	private void preprocessBpmnModel() {
+		BpmnPreprocessor.process(bpmn);
+	}
 
 	private void initializeCPNModel() {
         System.out.print("Initalizing CPN model... ");
