@@ -78,7 +78,6 @@ public class ObjectLifeCycleParser {
 	private void determineTransitions() {
         bpmn.getModelElementsByType(Activity.class).stream()
 	    	.map(Activity::getIoSpecification)
-	    	.filter(Objects::nonNull)//TODO don't ignore activities without ioconfig
 	    	.forEach(this::extractTransitionsFromIoSpecification);
 	}
     
