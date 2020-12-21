@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.cpntools.accesscpn.model.Page;
@@ -127,5 +128,10 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 				assertEquals(1, activityTransitionsForTransput(activityPage, ACTIVITYNAME, inputState, outputState).count(), "There was no arc for activity "+ACTIVITYNAME+" with input "+inputState+" and output "+outputState);
 			}
 		}
+	}
+	
+	@Override
+	public Stream<String> allModels() {
+		return Stream.empty();
 	}
 }
