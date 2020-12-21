@@ -1,8 +1,5 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import java.io.File;
-
-import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.impl.instance.DataInputRefs;
 import org.camunda.bpm.model.bpmn.impl.instance.DataOutputRefs;
@@ -17,12 +14,6 @@ import org.camunda.bpm.model.bpmn.instance.OutputSet;
 public class BpmnPreprocessor {
 	
 	private BpmnModelInstance bpmn;
-	
-	public static void main(String[] args) {
-        BpmnModelInstance bpmn = Bpmn.readModelFromFile(new File("C:\\Users\\Leon Bein\\programming\\HIWI\\fcm2cpn\\src\\test\\resources\\NoIOSpecification.bpmn"));
-        process(bpmn);
-        System.out.println(Bpmn.convertToString(bpmn));
-	}
 	
 	public static void process(BpmnModelInstance bpmn) {
 		new BpmnPreprocessor(bpmn).process();

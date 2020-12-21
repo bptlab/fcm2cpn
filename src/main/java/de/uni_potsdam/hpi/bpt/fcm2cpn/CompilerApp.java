@@ -87,7 +87,7 @@ public class CompilerApp implements AbstractPageScope {
 
     private static final FileNameExtensionFilter bpmnFileFilter = new FileNameExtensionFilter("BPMN Process Model", "bpmn");
     private static final FileNameExtensionFilter umlFileFilter = new FileNameExtensionFilter("UML Data Model Class Diagram", "uml");
-    private final ObjectLifeCycle[] olcs;
+    private ObjectLifeCycle[] olcs;
 
     /** The bpmn model to be parsed*/
 	private BpmnModelInstance bpmn;
@@ -175,7 +175,6 @@ public class CompilerApp implements AbstractPageScope {
     	this.bpmn = bpmn;
         this.builder = new BuildCPNUtil();
         this.dataModel = dataModel.orElse(DataModel.none());
-        this.olcs = ObjectLifeCycleParser.getOLCs(this.dataModel, bpmn);
         this.subpages = new HashMap<>();
         this.nodeMap = new HashMap<>();
         this.deferred = new ArrayList<>();
@@ -205,6 +204,7 @@ public class CompilerApp implements AbstractPageScope {
 
 	private void preprocessBpmnModel() {
 		BpmnPreprocessor.process(bpmn);
+        olcs = ObjectLifeCycleParser.getOLCs(dataModel, bpmn);
 	}
 
 	private void initializeCPNModel() {
