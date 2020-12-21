@@ -29,7 +29,6 @@ import org.camunda.bpm.model.bpmn.instance.InputSet;
 import org.camunda.bpm.model.bpmn.instance.IoSpecification;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.OutputSet;
-import org.camunda.bpm.model.bpmn.instance.Task;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
@@ -128,10 +127,10 @@ public class ObjectLifeCycleParser {
                     .map(a -> a.first.getDataObject().equals(object) ? a.second : a.first)
                     .filter(e -> e.getGoalLowerBound() > e.getLowerBound())
                     .collect(Collectors.toList());
-            for (Task task : bpmn.getModelElementsByType(Task.class)) {
+            for (Activity activity : bpmn.getModelElementsByType(Activity.class)) {
                 for (AssociationEnd assocEnd : relevantAssociatedObjects) {
-                    if (!taskCreatesObject(task, assocEnd.getDataObject())) continue;
-                    Set<String> requiredStates = getRequiredStates(task, object);
+                    if (!activityCreatesObject(activity, assocEnd.getDataObject())) continue;
+                    Set<String> requiredStates = getRequiredStates(activity, object);
                     ObjectLifeCycle olc = olcForClass.get(object);
                     olc.getStates().stream()
                             .filter(state -> requiredStates.contains(state.getStateName()))
@@ -141,10 +140,10 @@ public class ObjectLifeCycleParser {
         }
     }
 
-    private static Set<String> getRequiredStates(Task task, String dataObject) {
+    private static Set<String> getRequiredStates(Activity activity, String dataObject) {
         // TODO generalize to consider I-O-relation
-        IoSpecification io = task.getIoSpecification();
-        Collection<InputSet> inputSets = task.getIoSpecification().getInputSets();
+        IoSpecification io = activity.getIoSpecification();
+        Collection<InputSet> inputSets = activity.getIoSpecification().getInputSets();
         for (InputSet inputSet : inputSets) {
             Collection<DataInput> inputs = inputSet.getDataInputs();
             return inputs.stream()
@@ -155,8 +154,8 @@ public class ObjectLifeCycleParser {
         return new HashSet<>(0);
     }
 
-    private static boolean taskCreatesObject(Task task, String object) {
-        IoSpecification io = task.getIoSpecification();
+    private static boolean activityCreatesObject(Activity activity, String object) {
+        IoSpecification io = activity.getIoSpecification();
         Collection<OutputSet> outputSets = io.getOutputSets();
         for (OutputSet outputSet : outputSets) {
             Collection<DataOutput> outputs = outputSet.getDataOutputRefs();
