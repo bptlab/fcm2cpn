@@ -122,7 +122,7 @@ public class Utils {
     }
     
     public static ItemAwareElement getReferencedElement(ItemAwareElement dataElementReference) {
-    	assert dataElementReference instanceof DataObjectReference || dataElementReference instanceof DataStoreReference;
+    	assert isDataElementReference(dataElementReference);
     	if(dataElementReference instanceof DataObjectReference) {
     		return ((DataObjectReference) dataElementReference).getDataObject();
     	} else {
@@ -154,17 +154,21 @@ public class Utils {
 	public static ItemAwareElement dataElementReferenceOf(DataAssociation assoc) {
     	BaseElement source = getSource(assoc);
     	BaseElement target = getTarget(assoc);
-        ItemAwareElement dataElementReference = (ItemAwareElement) (source instanceof DataObjectReference || source instanceof DataStoreReference ? source : target);
+        ItemAwareElement dataElementReference = (ItemAwareElement) (isDataElementReference(source) ? source : target);
         assert dataElementReference != null;
         return dataElementReference;
 	}
 	
 	public static Stream<String> dataElementStates(ItemAwareElement dataElementReference) {
-		assert dataElementReference instanceof DataObjectReference || dataElementReference instanceof DataStoreReference;
+		assert isDataElementReference(dataElementReference);
 		return Optional.ofNullable(dataElementReference.getDataState())
         		.map(DataState::getName)
         		.map(stateName -> dataObjectStateToNetColors(stateName))
         		.orElse(Stream.of((String)null));
+	}
+	
+	public static boolean isDataElementReference(BaseElement dataElementReference) {
+		return dataElementReference instanceof DataObjectReference || dataElementReference instanceof DataStoreReference;
 	}
 	
 	/**
