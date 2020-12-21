@@ -36,6 +36,7 @@ import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.Transition;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
 

@@ -16,6 +16,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.AssociationsProvider;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
 
 public class AssociationTests extends ModelStructureTests {
 	

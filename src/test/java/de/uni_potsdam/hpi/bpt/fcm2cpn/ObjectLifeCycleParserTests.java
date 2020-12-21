@@ -4,23 +4,27 @@ import static org.junit.jupiter.api.Assertions.*;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.*;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
+import org.junit.jupiter.api.Test;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycleParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
 public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	
 	private ObjectLifeCycle[] olcs;
 	@Override
-	protected void compileModel(String modelName) {
+	public void compileModel(String modelName) {
 		super.compileModel(modelName);
 		this.olcs = ObjectLifeCycleParser.getOLCs(dataModel, bpmn);
 	}    
@@ -63,6 +67,15 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 			assertTrue(anyActivityCanTakeThisTransition, "There is no activity which changes state of '"+dataObject+"' from "+states.first.getStateName()+" to "+states.second.getStateName());
 		});
 	}
+	
+
+//	@Test
+//	@ModelsToTest("NoIOSpecification")
+//	public void testOLCIsCreatedWithoutIOSpecification() {
+//		ObjectLifeCycle olc = olcFor(normalizeElementName("A"));
+//		assertEquals(new HashSet<>(Arrays.asList(olc.getState("Y").get())), olc.getState("X").get().getSuccessors(),
+//				"OLC Transition for activity without IO Specification was not created.");
+//	}
 	
 	
 //=========== Utility ================

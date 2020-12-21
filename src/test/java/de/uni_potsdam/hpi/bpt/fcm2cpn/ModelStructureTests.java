@@ -4,9 +4,6 @@ import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
 import java.io.File;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,8 +18,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -47,22 +42,15 @@ import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.Transition;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DynamicContainer;
-import org.junit.jupiter.api.DynamicNode;
-import org.junit.jupiter.api.TestFactory;
-import org.junit.jupiter.api.TestInfo;
-import org.junit.platform.commons.annotation.Testable;
-import org.junit.platform.commons.util.ReflectionUtils;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ArgumentTreeTests;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelConsumerTestMixin;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
-public abstract class ModelStructureTests {
+//TODO Model structure is quite generic, the class hierarchy naming should show that compiled cpn model structure is meant
+public abstract class ModelStructureTests implements ModelConsumerTestMixin {
 
 	public String model;
 	public BpmnModelInstance bpmn;
@@ -527,26 +515,9 @@ public abstract class ModelStructureTests {
 	
 	
 //======= Infrastructure ========
-	@BeforeEach
-	public void compileModelToTest(TestInfo info) {
-		//If there is a method level annotation, assume it's a single test
-		info.getTestMethod()
-			.map(testMethod -> testMethod.getAnnotation(ModelsToTest.class))
-			.map(ModelsToTest::value)
-			.ifPresent(modelsToTest -> {
-		        compileModel(modelsToTest[0]);
-			});
-		
-		//If there a model parameter in test name, it's a parameterized test
-		Pattern p = Pattern.compile("model=\"(.*)\"");
-		Matcher m = p.matcher(info.getDisplayName());
-		if(m.find()) {
-			String modelToTest = m.group(1);
-			compileModel(modelToTest);
-		}
-	}
 	
-	protected void compileModel(String modelName) {
+	@Override
+	public void compileModel(String modelName) {
 		model = modelName;
 		bpmn = Bpmn.readModelFromFile(new File("./src/test/resources/"+model+".bpmn"));
 
@@ -560,11 +531,8 @@ public abstract class ModelStructureTests {
         petrinet = CompilerApp.translateBPMN2CPN(bpmn, Optional.of(dataModel)); 
 
 	}
-	
-	@Retention(RetentionPolicy.RUNTIME)
-	@Testable
-	protected static @interface TestWithAllModels {}
-	
+
+	@Override
 	public Stream<String> allModels() {
 		return Stream.of(
 			"Simple", 
@@ -580,23 +548,6 @@ public abstract class ModelStructureTests {
 			"TwoEventsInSuccessionRegression"
 		);
 	}
-	
-	
-	@TestFactory
-	public Stream<DynamicContainer> forEachModel() {
-		List<Method> methodsToTest = Arrays.stream(getClass().getMethods()).filter(method -> method.isAnnotationPresent(TestWithAllModels.class)).collect(Collectors.toList());
-		Stream<String> modelsToTest = allModels();
-//			Optional.of(getClass())
-//				.map(clazz -> clazz.getAnnotation(ModelsToTest.class))
-//				.map(ModelsToTest::value)
-//				.stream()
-//				.flatMap(Arrays::stream);
-		return modelsToTest.map(model -> {
-			ModelStructureTests instance = ReflectionUtils.newInstance(getClass());
-			instance.compileModel(model);
-			Stream<DynamicNode> tests = methodsToTest.stream().map(method -> ArgumentTreeTests.runMethodWithAllParameterCombinations(instance, method));
-			return DynamicContainer.dynamicContainer("Model: "+model, tests);
-		});
-	}
+
 
 }
