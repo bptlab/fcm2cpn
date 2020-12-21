@@ -24,8 +24,8 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	
 	private ObjectLifeCycle[] olcs;
 	@Override
-	public void compileModel(String modelName) {
-		super.compileModel(modelName);
+	public void compileModel() {
+		super.compileModel();
 		this.olcs = ObjectLifeCycleParser.getOLCs(dataModel, bpmn);
 	}    
 	
@@ -48,7 +48,7 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 				if(!inputState.equals(outputState)) {
 					ObjectLifeCycle olc = olcFor(object);
 					assertTrue(olc.getState(inputState.get()).get().getSuccessors().contains(olc.getState(outputState.get()).get()), 
-							"Olc does not support lifecycle transition ("+inputState+" -> "+outputState+") for data object "+object+" which is definied by activity "+activity.getName());
+							"Olc does not support lifecycle transition ("+inputState.get()+" -> "+outputState.get()+") for data object "+object+" which is definied by activity "+activity.getName());
 				}
 			}
 		});

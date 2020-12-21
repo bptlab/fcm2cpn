@@ -1,11 +1,14 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils;
 
+import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.camunda.bpm.model.bpmn.Bpmn;
+import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicContainer;
 import org.junit.jupiter.api.DynamicNode;
@@ -13,23 +16,45 @@ import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.platform.commons.util.ReflectionUtils;
 
-public interface ModelConsumerTestMixin {
+public abstract class ModelConsumerTest {
 	
-	public void compileModel(String model);
+	public String modelName;
+	public BpmnModelInstance bpmn;
 	
-	public default Stream<String> allModels() {
-		return Stream.empty();
+	protected void loadModel(String modelName) {
+		this.modelName = modelName;
+
+		bpmn = Bpmn.readModelFromFile(new File(resourcePath()+modelName+".bpmn"));
+	}
+	protected abstract void compileModel();
+	
+	public Stream<String> allModels() {
+		return Stream.of(
+			"Simple", 
+			"SimpleWithStates", 
+			"SimpleWithEvents", 
+			"SimpleWithGateways", 
+			"SimpleWithDataStore", 
+			"TranslationJob",
+			"Associations",
+			"TransputSets",
+			"ConferenceSimplified",
+			"conference_fragments_knowledge_intensive",
+			"TwoEventsInSuccessionRegression",
+			"NoIOSpecification"
+		);
 	}
 	
 	@BeforeEach
-	public default void compileModelToTest(TestInfo info) {
+	public void compileModelToTest(TestInfo info) {
 		//TODO what if modelstotest has multiple parameters?
 		//If there is a method level annotation, assume it's a single test
 		info.getTestMethod()
 			.map(testMethod -> testMethod.getAnnotation(ModelsToTest.class))
 			.map(ModelsToTest::value)
 			.ifPresent(modelsToTest -> {
-		        compileModel(modelsToTest[0]);
+				loadModel(modelsToTest[0]);
+		        compileModel();
 			});
 		
 		//If there a model parameter in test name, it's a parameterized test
@@ -43,15 +68,20 @@ public interface ModelConsumerTestMixin {
 
 	
 	@TestFactory
-	public default Stream<DynamicContainer> forEachModel() {
+	public Stream<DynamicContainer> forEachModel() {
 		List<Method> methodsToTest = Arrays.stream(getClass().getMethods()).filter(method -> method.isAnnotationPresent(TestWithAllModels.class)).collect(Collectors.toList());
-		Stream<String> modelsToTest = allModels();
+		Stream<String> modelsToTest = allModels().distinct();
 		return modelsToTest.map(model -> {
-			ModelConsumerTestMixin instance = ReflectionUtils.newInstance(getClass());
-			instance.compileModel(model);
+			ModelConsumerTest instance = ReflectionUtils.newInstance(getClass());
+			instance.loadModel(model);
+			instance.compileModel();
 			Stream<DynamicNode> tests = methodsToTest.stream().map(method -> ArgumentTreeTests.runMethodWithAllParameterCombinations(instance, method));
 			return DynamicContainer.dynamicContainer("Model: "+model, tests);
 		});
+	}
+	
+	protected String resourcePath() {
+		return "./src/test/resources/";
 	}
 
 }

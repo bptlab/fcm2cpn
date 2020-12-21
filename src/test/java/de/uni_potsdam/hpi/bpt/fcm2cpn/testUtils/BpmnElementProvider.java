@@ -18,11 +18,11 @@ public class BpmnElementProvider implements ArgumentsProvider, AnnotationConsume
 
 	@Override
 	public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
-		return elements((ModelStructureTests)context.getTestInstance().get(), elementClass)
+		return elements((ModelConsumerTest)context.getTestInstance().get(), elementClass)
 			.map(Arguments::of);
 	}
 	
-	public <T extends BaseElement> Stream<T> elements(ModelStructureTests test, Class<T> clazz) {
+	public <T extends BaseElement> Stream<T> elements(ModelConsumerTest test, Class<T> clazz) {
 		return test.bpmn.getModelElementsByType(clazz).stream();
 	}
 

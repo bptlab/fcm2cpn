@@ -45,15 +45,13 @@ import org.cpntools.accesscpn.model.Transition;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelConsumerTestMixin;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelConsumerTest;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 //TODO Model structure is quite generic, the class hierarchy naming should show that compiled cpn model structure is meant
-public abstract class ModelStructureTests implements ModelConsumerTestMixin {
+public abstract class ModelStructureTests extends ModelConsumerTest {
 
-	public String model;
-	public BpmnModelInstance bpmn;
 	public PetriNet petrinet;
 	
 	public DataModel dataModel;
@@ -517,11 +515,8 @@ public abstract class ModelStructureTests implements ModelConsumerTestMixin {
 //======= Infrastructure ========
 	
 	@Override
-	public void compileModel(String modelName) {
-		model = modelName;
-		bpmn = Bpmn.readModelFromFile(new File("./src/test/resources/"+model+".bpmn"));
-
-        File dataModelFile = new File("./src/test/resources/"+model+".uml");
+	public void compileModel() {
+        File dataModelFile = new File("./src/test/resources/"+modelName+".uml");
         if(dataModelFile.exists()) {
         	dataModel = DataModelParser.parse(dataModelFile);
         } else {
@@ -530,23 +525,6 @@ public abstract class ModelStructureTests implements ModelConsumerTestMixin {
         
         petrinet = CompilerApp.translateBPMN2CPN(bpmn, Optional.of(dataModel)); 
 
-	}
-
-	@Override
-	public Stream<String> allModels() {
-		return Stream.of(
-			"Simple", 
-			"SimpleWithStates", 
-			"SimpleWithEvents", 
-			"SimpleWithGateways", 
-			"SimpleWithDataStore", 
-			"TranslationJob",
-			"Associations",
-			"TransputSets",
-			"ConferenceSimplified",
-			"conference_fragments_knowledge_intensive",
-			"TwoEventsInSuccessionRegression"
-		);
 	}
 
 
