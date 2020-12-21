@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_0s3x8hf" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="4.4.0">
+  <bpmn:process id="Process_1pxhzww" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>Flow_1pmrstt</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Activity_165n5ly" name="Activity">
+      <bpmn:incoming>Flow_1pmrstt</bpmn:incoming>
+      <bpmn:outgoing>Flow_0kur6qd</bpmn:outgoing>
+      <bpmn:property id="Property_0fjty8j" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_0q4bdwl">
+        <bpmn:sourceRef>DataObjectReference_0wk8f34</bpmn:sourceRef>
+        <bpmn:targetRef>Property_0fjty8j</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_195knxd">
+        <bpmn:targetRef>DataObjectReference_0eq7x9z</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_1pmrstt" sourceRef="StartEvent_1" targetRef="Activity_165n5ly" />
+    <bpmn:endEvent id="Event_1ifeumb">
+      <bpmn:incoming>Flow_0kur6qd</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0kur6qd" sourceRef="Activity_165n5ly" targetRef="Event_1ifeumb" />
+    <bpmn:dataObjectReference id="DataObjectReference_0wk8f34" name="A" dataObjectRef="DataObject_0yp1in7">
+      <bpmn:dataState id="datastateX" name="X"/>
+    </bpmn:dataObjectReference>
+    <bpmn:dataObject id="DataObject_0yp1in7" name="A"/>
+    <bpmn:dataObjectReference id="DataObjectReference_0eq7x9z" name="A" dataObjectRef="DataObject_0yp1in7">
+      <bpmn:dataState id="datastateY" name="Y"/>
+    </bpmn:dataObjectReference>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1pxhzww">
+      <bpmndi:BPMNEdge id="Flow_1pmrstt_di" bpmnElement="Flow_1pmrstt">
+        <di:waypoint x="215" y="177" />
+        <di:waypoint x="280" y="177" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0kur6qd_di" bpmnElement="Flow_0kur6qd">
+        <di:waypoint x="380" y="177" />
+        <di:waypoint x="452" y="177" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="179" y="159" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_165n5ly_di" bpmnElement="Activity_165n5ly">
+        <dc:Bounds x="280" y="137" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1ifeumb_di" bpmnElement="Event_1ifeumb">
+        <dc:Bounds x="452" y="159" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObjectReference_0wk8f34_di" bpmnElement="DataObjectReference_0wk8f34">
+        <dc:Bounds x="242" y="45" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="257" y="102" width="7" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObjectReference_0eq7x9z_di" bpmnElement="DataObjectReference_0eq7x9z">
+        <dc:Bounds x="382" y="45" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="397" y="102" width="7" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DataInputAssociation_0q4bdwl_di" bpmnElement="DataInputAssociation_0q4bdwl">
+        <di:waypoint x="276" y="95" />
+        <di:waypoint x="304" y="137" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_195knxd_di" bpmnElement="DataOutputAssociation_195knxd">
+        <di:waypoint x="360" y="137" />
+        <di:waypoint x="391" y="95" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

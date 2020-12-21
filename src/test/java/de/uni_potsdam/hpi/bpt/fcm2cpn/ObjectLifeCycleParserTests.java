@@ -69,13 +69,13 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	}
 	
 
-//	@Test
-//	@ModelsToTest("NoIOSpecification")
-//	public void testOLCIsCreatedWithoutIOSpecification() {
-//		ObjectLifeCycle olc = olcFor(normalizeElementName("A"));
-//		assertEquals(new HashSet<>(Arrays.asList(olc.getState("Y").get())), olc.getState("X").get().getSuccessors(),
-//				"OLC Transition for activity without IO Specification was not created.");
-//	}
+	@Test
+	@ModelsToTest("NoIOSpecification")
+	public void testOLCIsCreatedWithoutIOSpecification() {
+		ObjectLifeCycle olc = olcFor(normalizeElementName("A"));
+		assertEquals(new HashSet<>(Arrays.asList(olc.getState("Y").get())), olc.getState("X").get().getSuccessors(),
+				"OLC Transition for activity without IO Specification was not created.");
+	}
 	
 	
 //=========== Utility ================
