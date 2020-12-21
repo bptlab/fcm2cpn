@@ -16,7 +16,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycleParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
-public class OLCParserTests extends ModelStructureTests {
+public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	
 	private ObjectLifeCycle[] olcs;
 	@Override
