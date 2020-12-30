@@ -31,7 +31,7 @@ The CPN has two hierarchy levels: on the top-level all processes and their conne
 ### Assumptions
 
 * We assume that the input is provided as a single BPMN file (you can, for example use the [Signavio](https://academic.signavio.com))
-* We assume that input- and output-sets are not modeled explicitly, but that all possible combinations are desired
+* We assume that, if no input- and output-sets are modeled explicitly, all possible combinations are desired
 * We assume that data stores have a label `objectName[state]` or they are assumed to be in state `BLANK`.
 
 ### Sources

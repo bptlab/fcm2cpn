@@ -1,6 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.normalizeElementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.*;
 
 import java.io.File;
 import java.lang.annotation.Retention;
@@ -8,11 +8,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -28,7 +32,9 @@ import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
+import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
+import org.camunda.bpm.model.bpmn.instance.OutputSet;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.LocalCheckFailed;
@@ -76,7 +82,7 @@ public abstract class ModelStructureTests {
 	public List<String[]> dataObjectAssociations() {
 		List<String> dataObjects = bpmn.getModelElementsByType(DataObject.class).stream()
 				.map(DataObject::getName)
-				.map(CompilerApp::normalizeElementName)
+				.map(Utils::normalizeElementName)
 				.distinct()
 				.collect(Collectors.toList());
 		List<String[]> associated = new ArrayList<>();
@@ -91,34 +97,191 @@ public abstract class ModelStructureTests {
 		return associated;
 	}
 	
-	public boolean reads(Activity activity, String dataObject) {
+	public static Stream<DataObjectReference> readDataObjectRefs(Activity activity) {
 		return activity.getDataInputAssociations().stream()
-			.flatMap(assoc -> assoc.getSources().stream())
-			.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
-			.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
+				.flatMap(assoc -> assoc.getSources().stream())
+				.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
+	}
+	
+	public static Stream<DataObjectReference> writtenDataObjectRefs(Activity activity) {
+		return activity.getDataOutputAssociations().stream()
+				.map(assoc -> assoc.getTarget())
+				.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
+	}
+	
+	public boolean reads(Activity activity, String dataObject) {
+		return readDataObjectRefs(activity)
+				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
 	}
 	
 	public boolean writes(Activity activity, String dataObject) {
-		return activity.getDataOutputAssociations().stream()
-			.map(assoc -> assoc.getTarget())
-			.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast)
-			.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
+		return writtenDataObjectRefs(activity)
+				.anyMatch(each -> normalizeElementName(each.getDataObject().getName()).equals(dataObject));
 	}
 	
-	public Predicate<Arc> hasAssociation(String first, String second) {
-		return arc -> {
-			String inscription = arc.getHlinscription().getText().replace("\n", "").replace("1`", "");
-			String[] tokens = inscription.split("\\+\\+");
-			return Arrays.stream(tokens)
+	public static Map<String, List<String>> dataObjectToStateMap(Stream<DataObjectReference> dataObjectReferences) {
+		return dataObjectReferences
+			.filter(each -> Objects.nonNull(each.getDataState()))
+			.collect(Collectors.groupingBy(
+					each -> normalizeElementName(each.getDataObject().getName()),
+					Collectors.flatMapping(each -> Utils.dataObjectStateToNetColors(each.getDataState().getName()), Collectors.toList())));
+	}
+	
+	public static Set<Pair<Map<String, String>, Map<String, String>>> expectedIOCombinations(Activity activity) {
+		Set<Pair<Map<String, String>, Map<String, String>>> expectedCombinations = new HashSet<>();
+		
+		//Default if no specification: Use all inputs and outputs
+		if(activity.getIoSpecification() == null) {
+			// All read states, grouped by data objects
+			Map<String, List<String>> inputStates = dataObjectToStateMap(readDataObjectRefs(activity));
+			Map<String, List<String>> outputStates = dataObjectToStateMap(writtenDataObjectRefs(activity));
+
+			// All possible combinations, assuming that all possible objects are read and written
+			List<Map<String, String>> possibleInputSets = indexedCombinationsOf(inputStates);
+			List<Map<String, String>> possibleOutputSets = indexedCombinationsOf(outputStates);
+
+			if(possibleInputSets.isEmpty() && !possibleOutputSets.isEmpty()) possibleInputSets.add(Collections.emptyMap());
+			if(possibleOutputSets.isEmpty()&& !possibleInputSets.isEmpty()) possibleOutputSets.add(Collections.emptyMap());
+			for(Map<String, String> inputSet : possibleInputSets) {
+				for(Map<String, String> outputSet : possibleOutputSets) {
+					expectedCombinations.add(new Pair<>(inputSet, new HashMap<>(outputSet)));
+				}
+			}
+		
+		// Else parse io specification
+		} else {
+			Map<String, List<Map<String, String>>> outputSetsToPossibleForms = activity.getIoSpecification().getOutputSets().stream()
+				.collect(Collectors.toMap(OutputSet::getId, outputSet -> {
+					Stream<DataObjectReference> writtenReferences = outputSet.getDataOutputRefs().stream()
+							.map(Utils::getAssociation)
+							.map(DataOutputAssociation::getTarget)
+							.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
+					Map<String, List<String>> outputStates = dataObjectToStateMap(writtenReferences);
+					List<Map<String, String>> possibleForms = indexedCombinationsOf(outputStates);
+					return possibleForms;
+				}));
+			activity.getIoSpecification().getInputSets().stream().forEach(inputSet -> {
+				Stream<DataObjectReference> readReferences = inputSet.getDataInputs().stream()
+						.map(Utils::getAssociation)
+						.flatMap(assoc -> assoc.getSources().stream())
+						.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
+				Map<String, List<String>> inputStates = dataObjectToStateMap(readReferences);
+				List<Map<String, String>> possibleForms = indexedCombinationsOf(inputStates);
+				
+				for(OutputSet associatedOutputSet : inputSet.getOutputSets()) {
+					for(Map<String, String> inputSetForm : possibleForms) {
+						for(Map<String, String> outputSetForm : outputSetsToPossibleForms.get(associatedOutputSet.getId())) {
+							expectedCombinations.add(new Pair<>(inputSetForm, new HashMap<>(outputSetForm)));
+						}
+					}
+				}
+			});
+		}
+
+		//Expect read objects that are not explicitly written to be written back in the same state as they are read
+		for(Pair<Map<String, String>, Map<String, String>> ioConfiguration : expectedCombinations) {
+			Map<String, String> inputSet = ioConfiguration.first;
+			Map<String, String> outputSet = ioConfiguration.second;
+			for(String inputObject : inputSet.keySet()) {
+				if(!outputSet.containsKey(inputObject)) outputSet.put(inputObject, inputSet.get(inputObject));
+			}
+		}
+		
+		return expectedCombinations;
+	}
+	
+	public Set<Pair<Map<String, String>, Map<String, String>>> ioCombinationsInNet(Activity activity) {
+		Set<Pair<Map<String, String>, Map<String, String>>> ioCombinations = new HashSet<>();
+		transitionsFor(activity).forEach(transition -> {
+			Map<String, String> inputs = new HashMap<>();
+			Map<String, String> outputs = new HashMap<>();
+			transition.getTargetArc().stream().forEach(inputArc -> {
+				String dataId = null;
+				String state = null;
+				List<String[]> statements = Arrays.stream(inputArc.getHlinscription().asString().replaceAll("[\\{\\}]", "").split(","))
 					.map(String::trim)
-					.anyMatch(token -> isListInscriptionFor(token, first, second));
+					.map(statement -> statement.split("="))
+					.filter(statement -> statement.length == 2)
+					.collect(Collectors.toList());
+				for(String[] statement : statements) {
+					if(statement[0].trim().equals("id")) dataId = statement[1].trim().replaceAll("Id$", "");
+					if(statement[0].trim().equals("state")) state = statement[1].trim();
+				}
+				if(dataId != null && state != null) inputs.put(dataId, state);
+			});
+			
+			transition.getSourceArc().stream().forEach(outputArc -> {
+				String dataId = null;
+				String state = null;
+				List<String[]> statements = Arrays.stream(outputArc.getHlinscription().asString().replaceAll("[\\{\\}]", "").split(","))
+					.map(String::trim)
+					.map(statement -> statement.split("="))
+					.collect(Collectors.toList());
+				for(String[] statement : statements) {
+					if(statement.length != 2) continue;
+					if(statement[0].trim().equals("id")) dataId = statement[1].trim().replaceAll("Id$", "");
+					if(statement[0].trim().equals("state")) state = statement[1].trim();
+				}
+				if(dataId != null && state != null) outputs.put(dataId, state);
+			});
+			ioCombinations.add(new Pair<Map<String,String>, Map<String,String>>(inputs, outputs));
+		});
+		
+		return ioCombinations;
+	}
+	
+	public static List<Map<String, String>> indexedCombinationsOf(Map<String, List<String>> groups) {
+		//Get defined order into collection
+		List<String> keys = new ArrayList<>(groups.keySet());
+		List<List<String>> combinations = Utils.allCombinationsOf(keys.stream().map(groups::get).collect(Collectors.toList()));
+		
+		//Zip keys with each combination
+		return combinations.stream().map(combination -> {
+			HashMap<String, String> map = new HashMap<>();
+			for(int i = 0; i < keys.size(); i++) {
+				map.put(keys.get(i), combination.get(i));
+			}
+			return map;
+		}).collect(Collectors.toList());
+	}
+	
+	public Predicate<Arc> writesAssociation(String first, String second) {
+		return arc -> {
+			String inscription = arc.getHlinscription().getText();
+			String list = inscription.replace("union assoc", "").trim();
+			return inscription.contains("union assoc") && toList(list).stream().anyMatch(assoc -> isListInscriptionFor(assoc, first, second));
 		};
+	}
+	
+	public boolean hasGuardForAssociation(Transition transition, String first, String second) {
+		String guard = transition.getCondition().getText();
+		String list = guard.replace("contains assoc ", "").trim();
+		return guard.contains("contains assoc") && toList(list).stream().anyMatch(assoc -> isListInscriptionFor(assoc, first, second));
 	}
 	
 	public boolean isListInscriptionFor(String inscription, String... elements) {
 		if(!(inscription.startsWith("[") && inscription.endsWith("]"))) return false;
-		List<String> listElements = Arrays.asList(inscription.substring(1, inscription.length() - 1).split(", "));
+		List<String> listElements = toList(inscription);
 		return listElements.containsAll(Arrays.asList(elements));
+	}
+	
+	public List<String> toList(String inscription) {
+		if(!(inscription.startsWith("[") && inscription.endsWith("]"))) return Collections.emptyList();
+		String body = inscription.substring(1, inscription.length() - 1);
+		List<String> list = new ArrayList<>();
+		String currentElement = "";
+		int currentDepth = 0;
+		for(char c : body.toCharArray()) {
+			if(c == '[') currentDepth++;
+			else if(c == ']') currentDepth--;
+			
+			if(c == ',' && currentDepth == 0) {
+				list.add(currentElement.trim());
+				currentElement = "";
+			} else currentElement += c;
+		}
+		list.add(currentElement.trim());
+		return list;
 	}
 	
 	public <T extends ModelElementInstance> void forEach(Class<T> elementClass, Consumer<? super T> testBody) {
@@ -152,6 +315,10 @@ public abstract class ModelStructureTests {
 	
 	public Stream<Page> pagesNamed(String name) {
 		return petrinet.getPage().stream().filter(page -> page.getName().asString().equals(name));
+	}
+	
+	public Page pageNamed(String name) {
+		return pagesNamed(name).findAny().get();
 	}
 	
 	public Stream<Place> placesNamed(String name) {
@@ -213,18 +380,20 @@ public abstract class ModelStructureTests {
 		});
 	}
 	
-	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, List<String> inputStates, List<String> outputStates) {
+	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, Map<String, String> inputStates, Map<String, String> outputStates) {
 		return activityTransitionsNamed(page, activityName).filter(transition -> {
-			return inputStates.stream().allMatch(inputState -> 
+			return inputStates.entrySet().stream().allMatch(inputObject -> 
 					transition.getTargetArc().stream()
-						.anyMatch(arc -> arc.getHlinscription().asString().contains("state = "+inputState)))
-				&& outputStates.stream().allMatch(outputState -> 
+						.map(arc -> arc.getHlinscription().asString())
+						.anyMatch(inscription -> inscription.contains(inputObject.getKey()+"Id") && inscription.contains("state = "+inputObject.getValue())))
+				&& outputStates.entrySet().stream().allMatch(outputObject -> 
 					transition.getSourceArc().stream()
-						.anyMatch(arc -> arc.getHlinscription().asString().contains("state = "+outputState)));
+						.map(arc -> arc.getHlinscription().asString())
+						.anyMatch(inscription -> inscription.contains(outputObject.getKey()+"Id") && inscription.contains("state = "+outputObject.getValue())));
 		});
 	}
 	
-	public Stream<Transition> transitionsForActivity(Activity activity) {
+	public Stream<Transition> transitionsFor(FlowElement activity) {
 		Page activityPage = pagesNamed(normalizeElementName(activity.getName())).findAny().get();
 		return StreamSupport.stream(activityPage.transition().spliterator(), true);
 	}
@@ -268,7 +437,8 @@ public abstract class ModelStructureTests {
 			"SimpleWithGateways", 
 			"SimpleWithDataStore", 
 			"TranslationJob",
-			"Associations"
+			"Associations",
+			"TransputSets"
 		);
 	}
 	

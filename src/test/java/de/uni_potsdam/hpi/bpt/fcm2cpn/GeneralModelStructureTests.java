@@ -1,18 +1,15 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.elementName;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp.normalizeElementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.Utils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -21,16 +18,15 @@ import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.BoundaryEvent;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
-import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
+import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
-import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.Place;
@@ -38,7 +34,6 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.AssociationsProvider;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 
 
 public class GeneralModelStructureTests extends ModelStructureTests {
@@ -230,45 +225,35 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		});
 	}
 
+	@TestWithAllModels
+	@ForEachBpmn(Activity.class)
+	public void testConsumedDataObjectsAreReproduced(Activity activity) {
+		Set<Pair<Map<String, String>, Map<String, String>>> ioCombinations = ioCombinationsInNet(activity);
+		ioCombinations.forEach(ioCombination -> {
+			Map<String, String> inputs = ioCombination.first;
+			Map<String, String> outputs = ioCombination.second;
+			
+			Set<String> missingWriteBacks = new HashSet<>(inputs.keySet());
+			missingWriteBacks.removeAll(outputs.keySet());
+			assertEquals(Collections.emptySet(), missingWriteBacks, 
+					"Activity \""+elementName(activity)+"\" has a transition that consumes data elements "+missingWriteBacks+" but does not write them back;\n IO is: "+ioCombinations);
+		});
+	}
+
 	
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
-	public void testInputAndOutputCombinations(Activity activity) {
-		Map<String, List<String>> inputStates = new HashMap<>();
-		Map<String, List<String>> outputStates = new HashMap<>();
-		activity.getDataInputAssociations().stream()
-			.flatMap(assoc -> assoc.getSources().stream())
-			.filter(each -> each instanceof DataObjectReference)
-			.map(DataObjectReference.class::cast)
-			.filter(each -> Objects.nonNull(each.getDataState()))
-			.forEach(each -> inputStates
-				.computeIfAbsent(normalizeElementName(each.getDataObject().getName()), $ -> new ArrayList<>())
-				.addAll(CompilerApp.dataObjectStateToNetColors(each.getDataState().getName()).collect(Collectors.toList())));
+	public void testInputAndOutputStateCombinations(Activity activity) {
+		Set<Pair<Map<String, String>, Map<String, String>>> expectedCombinations = expectedIOCombinations(activity);
+		Set<Pair<Map<String, String>, Map<String, String>>> supportedCombinations = ioCombinationsInNet(activity);
 		
-		activity.getDataOutputAssociations().stream()
-			.map(DataOutputAssociation::getTarget)
-			.filter(each -> each instanceof DataObjectReference)
-			.map(DataObjectReference.class::cast)
-			.filter(each -> Objects.nonNull(each.getDataState()))
-			.forEach(each -> outputStates
-				.computeIfAbsent(normalizeElementName(each.getDataObject().getName()), $ -> new ArrayList<>())
-				.addAll(CompilerApp.dataObjectStateToNetColors(each.getDataState().getName()).collect(Collectors.toList())));
+		assertEquals(supportedCombinations, expectedCombinations,
+			"Possible i/o state combinations did not match for activity \""+elementName(activity)+"\":"
+			+ "\n\t Expected but not present: "+expectedCombinations.stream().filter(each -> !supportedCombinations.contains(each)).collect(Collectors.toList())
+			+ "\n\t Present but not Expected: "+supportedCombinations.stream().filter(each -> !expectedCombinations.contains(each)).collect(Collectors.toList())
+			+ "\n"
+		);
 		
-		assumeTrue(!inputStates.isEmpty() || !outputStates.isEmpty(), "Activity has no input or out sets");
-
-		List<List<String>> possibleInputSets = CompilerApp.allCombinationsOf(inputStates.values());
-		List<List<String>> possibleOutputSets = CompilerApp.allCombinationsOf(outputStates.values());
-
-		if(possibleInputSets.isEmpty()) possibleInputSets.add(Collections.emptyList());
-		if(possibleOutputSets.isEmpty()) possibleOutputSets.add(Collections.emptyList());
-
-		Page activityPage = pagesNamed(normalizeElementName(activity.getName())).findAny().get();
-		for(List<String> inputSet : possibleInputSets) {
-			for(List<String> outputSet : possibleOutputSets) {
-				assertEquals(1, activityTransitionsForTransput(activityPage, activity.getName(), inputSet, outputSet).count(), 
-						"There was no arc for activity "+activity.getName()+" with inputs "+inputSet+" and outputs "+outputSet);
-			}
-		}
 	}
 	
 	
@@ -286,10 +271,16 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		assumeFalse(readingElements.isEmpty(), "The data store reference is not read");
 		Place dataStorePlace = dataStorePlacesNamed(normalizeElementName(dataStoreReference.getDataStore().getName())).findAny().get();
 		
-		readingElements.forEach(node -> {
-			String nodeName = node.getAttributeValue("name");
+		readingElements.forEach(element -> {
+			String nodeName = element.getAttributeValue("name");
 			assertEquals(1, arcsToNodeNamed(dataStorePlace, nodeName).count(),
 					"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to node "+nodeName);
+			
+			transitionsFor((FlowElement) element).forEach(readingTransition -> {
+				assertEquals(1, arcsFromNodeNamed(readingTransition, normalizeElementName(dataStoreReference.getName())).count(),
+						"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to node "+nodeName+" in subpage transition");
+			});
+			
 		});	
 	}
 	
@@ -300,10 +291,15 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		assumeFalse(writingElements.isEmpty(), "The data store reference is not written");
 		Place dataStorePlace = dataStorePlacesNamed(normalizeElementName(dataStoreReference.getDataStore().getName())).findAny().get();
 
-		writingElements.forEach(node -> {
-			String nodeName = node.getAttributeValue("name");
+		writingElements.forEach(element -> {
+			String nodeName = element.getAttributeValue("name");
 			assertEquals(1, arcsFromNodeNamed(dataStorePlace, nodeName).count(),
 					"There is not exactly one write arc from node "+nodeName+" to data store reference "+dataStoreReference.getName());
+			
+			transitionsFor((FlowElement) element).forEach(writingTransition -> {
+				assertEquals(1, arcsToNodeNamed(writingTransition, normalizeElementName(dataStoreReference.getName())).count(),
+						"There is not exactly write arc from node "+nodeName+" to data store reference "+dataStoreReference.getName()+" in subpage transition");
+			});
 		});
 	}
 	
@@ -347,8 +343,9 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	public void testDataAssociationsBetweenReadAndWriteAreCreated(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && writes(activity, second), "Activity does not read the first and write the second data object.");
-		transitionsForActivity(activity).forEach(transition -> {
-			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(hasAssociation(first+"Id", second+"Id")).count(),
+		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
+		transitionsFor(activity).forEach(transition -> {
+			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
 				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
 	}
@@ -358,8 +355,9 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	public void testDataAssociationsBetweenParallelWritesAreCreated(String first, String second, Activity activity) {
 		assumeTrue(writes(activity, first) && writes(activity, second), "Activity does not write both data objects.");
-		transitionsForActivity(activity).forEach(transition -> {
-			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(hasAssociation(first+"Id", second+"Id")).count(),
+		assumeFalse(reads(activity, first) && reads(activity, second), "Activity reads both data objects, so an association is already in place");
+		transitionsFor(activity).forEach(transition -> {
+			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
 				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
 	}
@@ -369,20 +367,20 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	public void testAssociationsAreCheckedWhenReading(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && reads(activity, second), "Activity does not read both data objects.");
-		transitionsForActivity(activity).forEach(transition -> {
-			assertEquals(1, arcsFromNodeNamed(transition, "associations").filter(hasAssociation(first+"Id", second+"Id")).count(),
-				"There is not exactly one reading association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
+		transitionsFor(activity).forEach(transition -> {
+			assertTrue(hasGuardForAssociation(transition, first+"Id", second+"Id"),
+				"There is no guard for association when reading objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
 		});
 	}
 	
 	@TestWithAllModels
 	@ArgumentsSource(AssociationsProvider.class)
 	@ForEachBpmn(Activity.class)
-	public void testCheckedAssociationsAreWrittenBack(String first, String second, Activity activity) {
+	public void testCheckedAssociationsAreNotDuplicated(String first, String second, Activity activity) {
 		assumeTrue(reads(activity, first) && reads(activity, second), "Activity does not read both data objects.");
-		transitionsForActivity(activity).forEach(transition -> {
-			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(hasAssociation(first+"Id", second+"Id")).count(),
-				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName()));
+		transitionsFor(activity).forEach(transition -> {
+			assertEquals(0, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
+				"There is a writing association arc for objects "+first+" and "+second+" (which should already be associated) at activity "+normalizeElementName(activity.getName()));
 		});
 	}
 	
@@ -395,9 +393,9 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		assumeFalse(dataModel.isAssociated(dataObjectA, dataObjectB));
 		long numberOfAssociationArcs = petrinet.getPage().stream()
 			.flatMap(page -> page.getArc().stream())
-			.filter(hasAssociation(dataObjectA+"Id", dataObjectB+"Id"))
+			.filter(writesAssociation(dataObjectA+"Id", dataObjectB+"Id"))
 			.count();
-		assertEquals(0, numberOfAssociationArcs, "There are association arcs for data objects "+dataObjectA+" and "+dataObjectB+" though they are not associated");
+		assertEquals(0, numberOfAssociationArcs, "There are association write arcs for data objects "+dataObjectA+" and "+dataObjectB+" though they are not associated");
 	}
 	
 

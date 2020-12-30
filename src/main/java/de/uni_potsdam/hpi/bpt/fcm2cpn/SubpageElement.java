@@ -47,10 +47,27 @@ public class SubpageElement {
 				.collect(Collectors.toList());
 	}
 	
+	public Arc createArcFrom(Place place, Transition transition, String inscription) {
+		assert getSubpageTransitions().contains(transition);
+		return compilerApp.createArc(getPage(), refPlaceFor(place), transition, inscription);
+	}
+	
 	public List<Arc> createArcsTo(Place place, String inscription) {
 		return getSubpageTransitions().stream()
 				.map(transition -> compilerApp.createArc(getPage(), transition, refPlaceFor(place), inscription))
 				.collect(Collectors.toList());
+	}
+	
+	public Arc createArcTo(Place place, Transition transition, String inscription) {
+		assert getSubpageTransitions().contains(transition);
+		return compilerApp.createArc(getPage(), transition, refPlaceFor(place), inscription);
+	}
+	
+	public void createGuards(String guard) {
+		getSubpageTransitions().stream().forEach(transition -> {
+			
+			transition.getCondition().setText(guard);
+		});
 	}
 
 	public Instance getMainTransition() {
