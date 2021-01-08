@@ -7,7 +7,7 @@ import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getReferencedElement;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.splitDataAssociationByState;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +31,7 @@ import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.OutputSet;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 public class ObjectLifeCycleParser {
@@ -53,7 +54,7 @@ public class ObjectLifeCycleParser {
     	determineDataClasses();    	
     	determineStates();
     	determineTransitions();
-        addToEachStateReferencesToAssociatedObjectsThatCanBeCreated();
+        determineUpdateableAssociationsForStates();
         return olcForClass.values().toArray(new ObjectLifeCycle[0]);
     }
 
@@ -122,7 +123,7 @@ public class ObjectLifeCycleParser {
         }
     }
 
-    private void addToEachStateReferencesToAssociatedObjectsThatCanBeCreated() {
+    private void determineUpdateableAssociationsForStates() {
         for (String object : olcForClass.keySet()) {
         	// All associated data objects that have a tighter goal lower bound than lower bound
             List<AssociationEnd> associatedObjectsWithGoalLowerBound = domainModel.getAssociationsForDataObject(object)
@@ -132,37 +133,30 @@ public class ObjectLifeCycleParser {
             
             for (Activity activity : bpmn.getModelElementsByType(Activity.class)) {
                 for (AssociationEnd assocEnd : associatedObjectsWithGoalLowerBound) {
-                    if (!activityCreatesObject(activity, assocEnd.getDataObject())) continue;
-                    //Whenever an object is created, where a tight goal lower bound to exists, TODO
-                    Set<String> requiredStates = getRequiredStates(activity, object);
-                    ObjectLifeCycle olc = olcForClass.get(object);
-                    requiredStates.stream()
-                    	.map(state -> olc.getState(state).get())
-                        .forEach(state -> state.addUpdateableAssociation(assocEnd));
+                	//Whenever the associated object is created ...
+                	for(Pair<InputSet, OutputSet> ioSetsThatCreateObject : ioSetsThatCreateObject(activity, assocEnd.getDataObject())) {
+                        InputSet inputSet = ioSetsThatCreateObject.first;
+                        
+                        // ... and the base object is read, which means that a new association is created ...
+                        Set<String> readStates = inputSet.getDataInputs().stream()
+                                .filter(input -> getDataObjectName(input).equals(object))
+                                .flatMap(input -> getDataObjectStates(input).stream())
+                                .collect(Collectors.toSet());
+
+                        // ... the state in which the base object is read can update the association
+                        ObjectLifeCycle olc = olcForClass.get(object);
+                        readStates.forEach(readState -> olc.getState(readState).get().addUpdateableAssociation(assocEnd));
+                	}
                 }
             }
         }
     }
 
-    //Returns for one inputset of a certain activity the states that a dataobject is read 
-    private static Set<String> getRequiredStates(Activity activity, String dataObject) {
-        // TODO generalize to consider I-O-relation
-        IoSpecification io = activity.getIoSpecification();
-        
-        Collection<InputSet> inputSets = activity.getIoSpecification().getInputSets();
-        for (InputSet inputSet : inputSets) {
-            Collection<DataInput> inputs = inputSet.getDataInputs();
-            //Return breaks for loop!
-            return inputs.stream()
-                    .filter(input -> getDataObjectName(input).equals(dataObject))
-                    .flatMap(input -> getDataObjectStates(input).stream())
-                    .collect(Collectors.toSet());
-        }
-        return new HashSet<>(0);
-    }
 
-    private static boolean activityCreatesObject(Activity activity, String object) {
+    private static List<Pair<InputSet, OutputSet>> ioSetsThatCreateObject(Activity activity, String object) {
+    	//TODO consider collection / non-collection read/write
         IoSpecification io = activity.getIoSpecification();
+        List<Pair<InputSet, OutputSet>> ioSetsThatCreateObject = new ArrayList<>();
         for (OutputSet outputSet : io.getOutputSets()) {
             for (InputSet inputSet : outputSet.getInputSetRefs()) {
 	            boolean writesObject = outputSet.getDataOutputRefs().stream()
@@ -171,10 +165,10 @@ public class ObjectLifeCycleParser {
             	boolean readsObject = inputSet.getDataInputs().stream()
             			.map(ObjectLifeCycleParser::getDataObjectName)
                         .anyMatch(readObject -> readObject.equals(object));
-            	if(writesObject && !readsObject) return true;
+            	if(writesObject && !readsObject) ioSetsThatCreateObject.add(new Pair<>(inputSet, outputSet));
             }
         }
-        return false;
+        return ioSetsThatCreateObject;
     }
 
     private static String getDataObjectName(DataInput iRef) {
