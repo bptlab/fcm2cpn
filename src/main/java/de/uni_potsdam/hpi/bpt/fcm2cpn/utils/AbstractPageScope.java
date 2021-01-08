@@ -10,6 +10,10 @@ import org.cpntools.accesscpn.model.RefPlace;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.accesscpn.model.util.BuildCPNUtil;
 
+/**
+ * Interface with default utility methods. For compiler components that work in the scope of one cpn page.
+ *
+ */
 public interface AbstractPageScope {
 	
 	public BuildCPNUtil builder();
@@ -24,7 +28,6 @@ public interface AbstractPageScope {
     public default Place createPlace(String name, String type) {
     	return builder().addPlace(getPage(), name, type);
     }
-    
     
     public default Place createPlace(String name, String type, String initialMarking) {
     	return builder().addPlace(getPage(), name, type, initialMarking);
