@@ -85,6 +85,7 @@ public class ObjectLifeCycleParser {
         	for(OutputSet outputSet : inputSet.getOutputSets()) {
                 //Determine in which states which object appears at the current io set combination
         		
+        		//Map from data objects to states that they are read in the io spec
                 Map<String, Set<String>> inputStatesForObject = new HashMap<>();
                 for (DataInput input : inputSet.getDataInputs()) {
                     String inputName = getDataObjectName(input);
@@ -93,7 +94,8 @@ public class ObjectLifeCycleParser {
                     	.computeIfAbsent(inputName, s -> new HashSet<>())
                     	.addAll(inputStates);
                 }
-                
+
+        		//Map from data objects to states that they are written in the io spec
             	Map<String, Set<String>> outputStatesForObject = new HashMap<>();
                 for (DataOutput oRef : outputSet.getDataOutputRefs()) {
                     String outputName = getDataObjectName(oRef);
@@ -122,33 +124,38 @@ public class ObjectLifeCycleParser {
 
     private void addToEachStateReferencesToAssociatedObjectsThatCanBeCreated() {
         for (String object : olcForClass.keySet()) {
-            List<AssociationEnd> relevantAssociatedObjects = domainModel.getAssociations().stream()
-                    .filter(a -> a.first.getDataObject().equals(object) || a.second.getDataObject().equals(object))
-                    .map(a -> a.first.getDataObject().equals(object) ? a.second : a.first)
-                    .filter(e -> e.getGoalLowerBound() > e.getLowerBound())
+        	// All associated data objects that have a tighter goal lower bound than lower bound
+            List<AssociationEnd> associatedObjectsWithGoalLowerBound = domainModel.getAssociationsForDataObject(object)
+                    .map(assoc -> assoc.getOtherEnd(object))
+                    .filter(end -> end.getGoalLowerBound() > end.getLowerBound())
                     .collect(Collectors.toList());
+            
             for (Activity activity : bpmn.getModelElementsByType(Activity.class)) {
-                for (AssociationEnd assocEnd : relevantAssociatedObjects) {
+                for (AssociationEnd assocEnd : associatedObjectsWithGoalLowerBound) {
                     if (!activityCreatesObject(activity, assocEnd.getDataObject())) continue;
+                    //Whenever an object is created, where a tight goal lower bound to exists, TODO
                     Set<String> requiredStates = getRequiredStates(activity, object);
                     ObjectLifeCycle olc = olcForClass.get(object);
-                    olc.getStates().stream()
-                            .filter(state -> requiredStates.contains(state.getStateName()))
-                            .forEach(state -> state.addUpdateableAssociation(assocEnd));
+                    requiredStates.stream()
+                    	.map(state -> olc.getState(state).get())
+                        .forEach(state -> state.addUpdateableAssociation(assocEnd));
                 }
             }
         }
     }
 
+    //Returns for one inputset of a certain activity the states that a dataobject is read 
     private static Set<String> getRequiredStates(Activity activity, String dataObject) {
         // TODO generalize to consider I-O-relation
         IoSpecification io = activity.getIoSpecification();
+        
         Collection<InputSet> inputSets = activity.getIoSpecification().getInputSets();
         for (InputSet inputSet : inputSets) {
             Collection<DataInput> inputs = inputSet.getDataInputs();
+            //Return breaks for loop!
             return inputs.stream()
-                    .filter(i -> getDataObjectName(i).equals(dataObject))
-                    .flatMap(i -> getDataObjectStates(i).stream())
+                    .filter(input -> getDataObjectName(input).equals(dataObject))
+                    .flatMap(input -> getDataObjectStates(input).stream())
                     .collect(Collectors.toSet());
         }
         return new HashSet<>(0);
@@ -156,18 +163,15 @@ public class ObjectLifeCycleParser {
 
     private static boolean activityCreatesObject(Activity activity, String object) {
         IoSpecification io = activity.getIoSpecification();
-        Collection<OutputSet> outputSets = io.getOutputSets();
-        for (OutputSet outputSet : outputSets) {
-            Collection<DataOutput> outputs = outputSet.getDataOutputRefs();
-            Set<String> objectsWritten =  outputs.stream().map(o -> getDataObjectName(o)).collect(Collectors.toSet());
-            if (!objectsWritten.contains(object)) continue;
-            Collection<InputSet> inputSets = outputSet.getInputSetRefs();
-            for (InputSet inputSet : inputSets) {
-                if (inputSet.getDataInputs().stream()
-                        .map(input -> getDataObjectName(input))
-                        .noneMatch(name -> name.equals(object))) {
-                    return true;
-                }
+        for (OutputSet outputSet : io.getOutputSets()) {
+            for (InputSet inputSet : outputSet.getInputSetRefs()) {
+	            boolean writesObject = outputSet.getDataOutputRefs().stream()
+	            		.map(ObjectLifeCycleParser::getDataObjectName)
+	            		.anyMatch(writtenObject -> writtenObject.equals(object));
+            	boolean readsObject = inputSet.getDataInputs().stream()
+            			.map(ObjectLifeCycleParser::getDataObjectName)
+                        .anyMatch(readObject -> readObject.equals(object));
+            	if(writesObject && !readsObject) return true;
             }
         }
         return false;

@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class DataModel {
 	
@@ -54,6 +55,11 @@ public class DataModel {
 
 	public Set<Association> getAssociations() {
 		return associations;
+	}
+	
+	public Stream<Association> getAssociationsForDataObject(String dataObject) {
+		return getAssociations().stream()
+				.filter(assoc -> assoc.containsDataObject(dataObject));
 	}
 	
 }

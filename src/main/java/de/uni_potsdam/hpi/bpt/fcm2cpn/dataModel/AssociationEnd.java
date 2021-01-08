@@ -45,4 +45,8 @@ public class AssociationEnd {
 	public String toString() {
 		return "("+lowerBound+".."+(upperBound == UNLIMITED ? "*" : upperBound)+" "+dataObject+")";
 	}
+	
+	public boolean isForDataObject(String dataObject) {
+		return this.dataObject.equalsIgnoreCase(dataObject);
+	}
 }

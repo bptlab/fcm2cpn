@@ -8,15 +8,29 @@ public class Association extends Pair<AssociationEnd, AssociationEnd> {
 
 	public Association(AssociationEnd first, AssociationEnd second) {
 		super(first, second);
+		assert(first != second);
 	}
 	
 	public boolean associates(String dataObjectA, String dataObjectB) {
-		return (dataObjectA.equalsIgnoreCase(first.getDataObject()) && dataObjectB.equalsIgnoreCase(second.getDataObject())) ||
-		(dataObjectA.equalsIgnoreCase(second.getDataObject()) && dataObjectB.equalsIgnoreCase(first.getDataObject()));
+		return first.isForDataObject(dataObjectA) && second.isForDataObject(dataObjectB) ||
+				first.isForDataObject(dataObjectB) && second.isForDataObject(dataObjectA);
+	}
+	
+	private Stream<AssociationEnd> endsFor(String dataObject) {
+		return stream().filter(end -> end.isForDataObject(dataObject));
+	}
+	
+	public boolean containsDataObject(String dataObject) {
+		return endsFor(dataObject).count() > 0;
 	}
 	
 	public AssociationEnd getEnd(String dataObject) {
-		return stream().filter(end -> end.getDataObject().equalsIgnoreCase(dataObject)).findAny().get();
+		return endsFor(dataObject).findAny().get();
+	}
+	
+	public AssociationEnd getOtherEnd(String dataObject) {
+		AssociationEnd end = getEnd(dataObject);
+		return stream().filter(otherEnd -> !(otherEnd == end)).findAny().get();
 	}
 	
 	public Stream<AssociationEnd> stream() {

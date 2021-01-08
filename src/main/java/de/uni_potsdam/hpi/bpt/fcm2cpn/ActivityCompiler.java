@@ -150,6 +150,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
         transputSetIndex++;
     }
 	
+    
     private void associateDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
 
     	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = determineAssociationsToWrite(readDataObjects, writtenDataObjects, readContext, writeContext);
@@ -303,13 +304,12 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 			assert(inputStates.size() <= 1);
 			assert(outputStates.size() <= 1);
 			ObjectLifeCycle olc = parent.olcFor(stateChange);
-			// if (olc.isEmpty()) continue;
 			for (String inputState : inputStates) {
 				ObjectLifeCycle.State istate = olc.getState(inputState).get();
 				if (istate.getUpdateableAssociations().isEmpty()) continue;
-				//if(1 * 1 == 1) throw new RuntimeException("This is never called");
 				for (String outputState : outputStates) {
 					ObjectLifeCycle.State ostate = olc.getState(outputState).get();
+					// For each updateable association that is in input state but not in output state
 					for (AssociationEnd assocEnd : istate.getUpdateableAssociations()) {
 						if (!ostate.getUpdateableAssociations().contains(assocEnd)) {
 							// TODO: generalize: look at all possible successor states
@@ -319,6 +319,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 									readDataObjects.stream().noneMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject())))) {
 								goalLowerBound--;
 							}
+							//If element is just created or if the goalLowerBound is not tight
 							if (!readDataObjects.contains(stateChange) || goalLowerBound <= lowerBound) continue;
 							String newGuard;
 							if (readContext.get(stateChange).stream().anyMatch(StatefulDataAssociation::isCollection)) {
