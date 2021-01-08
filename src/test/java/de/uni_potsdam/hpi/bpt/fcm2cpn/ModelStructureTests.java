@@ -22,8 +22,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.camunda.bpm.model.bpmn.Bpmn;
-import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
@@ -509,15 +507,18 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	
 	@Override
 	public void compileModel() {
+		parseDataModel();        
+        petrinet = CompilerApp.translateBPMN2CPN(bpmn, Optional.of(dataModel)); 
+
+	}
+	
+	protected void parseDataModel() {
         File dataModelFile = new File("./src/test/resources/"+modelName+".uml");
         if(dataModelFile.exists()) {
         	dataModel = DataModelParser.parse(dataModelFile);
         } else {
             dataModel = DataModel.none();
         }
-        
-        petrinet = CompilerApp.translateBPMN2CPN(bpmn, Optional.of(dataModel)); 
-
 	}
 
 

@@ -25,7 +25,8 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	private ObjectLifeCycle[] olcs;
 	@Override
 	public void compileModel() {
-		super.compileModel();
+		BpmnPreprocessor.process(bpmn);
+		parseDataModel();
 		this.olcs = ObjectLifeCycleParser.getOLCs(dataModel, bpmn);
 	}    
 	
