@@ -5,7 +5,6 @@ import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -93,7 +92,6 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	public void testEachCreationLeadsToUpdateableAssociations(String first, String second, Activity activity) {
 		Association assoc = dataModel.getAssociation(first, second).get();
 		AssociationEnd relevantEnd = assoc.getEnd(second);
-		assumeTrue(relevantEnd.getGoalLowerBound() > relevantEnd.getLowerBound(), second+" has no tight goal lower bound towards "+first);
 		
 		ioAssociationCombinations(activity).stream()
 			.filter(ioCombination -> createsAssociationBetween(ioCombination, first, second))
@@ -119,8 +117,6 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 		olc.getStates().forEach(state -> {
 			state.getUpdateableAssociations().forEach(relevantEnd -> {
 				String otherDataObject = relevantEnd.getDataObject();
-				assertTrue(relevantEnd.getGoalLowerBound() > relevantEnd.getLowerBound(), 
-						otherDataObject+" has no tight goal lower bound towards "+dataObjectName+" but the latter has an updateable association to it.");
 				assertTrue(activities.stream()
 					.flatMap(activity -> ioAssociationCombinations(activity).stream())
 					.filter(ioCombination -> createsAssociationBetween(ioCombination, dataObjectName, otherDataObject))

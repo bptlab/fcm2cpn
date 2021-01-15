@@ -125,10 +125,9 @@ public class ObjectLifeCycleParser {
 
     private void determineUpdateableAssociationsForStates() {
         for (String object : olcForClass.keySet()) {
-        	// All associated data objects that have a tighter goal lower bound than lower bound
+        	// All associated data objects 
             List<AssociationEnd> associatedObjectsWithGoalLowerBound = domainModel.getAssociationsForDataObject(object)
                     .map(assoc -> assoc.getOtherEnd(object))
-                    .filter(end -> end.getGoalLowerBound() > end.getLowerBound())
                     .collect(Collectors.toList());
             
             for (Activity activity : bpmn.getModelElementsByType(Activity.class)) {
