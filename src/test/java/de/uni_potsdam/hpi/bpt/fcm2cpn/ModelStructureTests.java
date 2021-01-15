@@ -140,9 +140,12 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		return ioSet.second.stream().anyMatch(each -> each.dataElementName().equals(dataObject) && !each.isCollection());
 	}
 	
-	@Deprecated//TODO: attention for the collection cases
 	public boolean creates(DataObjectIOSet ioSet, String dataObject) {
-		return writes(ioSet, dataObject) && !reads(ioSet, dataObject);
+		return (writesAsNonCollection(ioSet, dataObject) && !readsAsNonCollection(ioSet, dataObject)) || (writesAsCollection(ioSet, dataObject) && !readsAsCollection(ioSet, dataObject));
+	}
+	
+	public boolean createsAssociationBetween(DataObjectIOSet ioCombination, String first, String second) {
+		return reads(ioCombination, first) && creates(ioCombination, second);
 	}
 	
 	public static Map<String, List<String>> dataObjectToStateMap(Stream<DataObjectReference> dataObjectReferences) {
