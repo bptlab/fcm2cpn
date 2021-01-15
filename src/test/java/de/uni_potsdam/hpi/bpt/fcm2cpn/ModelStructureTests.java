@@ -141,7 +141,8 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	}
 	
 	public boolean creates(DataObjectIOSet ioSet, String dataObject) {
-		return (writesAsNonCollection(ioSet, dataObject) && !readsAsNonCollection(ioSet, dataObject)) || (writesAsCollection(ioSet, dataObject) && !readsAsCollection(ioSet, dataObject));
+		//TODO return (writesAsNonCollection(ioSet, dataObject) && !readsAsNonCollection(ioSet, dataObject)) || (writesAsCollection(ioSet, dataObject) && !readsAsCollection(ioSet, dataObject));
+		return writes(ioSet, dataObject) && !reads(ioSet, dataObject);
 	}
 	
 	public boolean createsAssociationBetween(DataObjectIOSet ioCombination, String first, String second) {
