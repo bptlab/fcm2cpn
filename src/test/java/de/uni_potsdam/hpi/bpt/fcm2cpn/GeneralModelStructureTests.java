@@ -199,42 +199,42 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(DataObjectReference.class)
 	public void testReadDataObjectsAreConsumed(DataObjectReference dataObjectReference) {
-		List<ModelElementInstance> readingElements = readingElements(dataObjectReference);
+		List<FlowElement> readingElements = readingElements(dataObjectReference);
 		assumeFalse(readingElements.isEmpty(), "The data object reference is not read");
 		Place dataObjectPlace = dataObjectPlacesNamed(normalizeElementName(dataObjectReference.getDataObject().getName())).findAny().get();
 		
 		readingElements.forEach(node -> {
-			String nodeName = node.getAttributeValue("name");
-			assertEquals(1, arcsToNodeNamed(dataObjectPlace, nodeName).count(),
-					"There is not exactly one read arc from data object reference "+dataObjectReference.getName()+" to node "+nodeName);
+			String elementName = elementName(node);
+			assertEquals(1, arcsToNodeNamed(dataObjectPlace, elementName).count(),
+					"There is not exactly one read arc from data object reference "+dataObjectReference.getName()+" to node "+elementName);
 		});	
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(DataObjectReference.class)
 	public void testWrittenDataObjectsAreProduced(DataObjectReference dataObjectReference) {
-		List<ModelElementInstance> writingElements = writingElements(dataObjectReference);
+		List<FlowElement> writingElements = writingElements(dataObjectReference);
 		assumeFalse(writingElements.isEmpty(), "The data object reference is not written");
 		Place dataObjectPlace = dataObjectPlacesNamed(normalizeElementName(dataObjectReference.getDataObject().getName())).findAny().get();
 
-		writingElements.forEach(node -> {
-			String nodeName = node.getAttributeValue("name");
-			assertEquals(1, arcsFromNodeNamed(dataObjectPlace, nodeName).count(),
-					"There is not exactly one write arc from node "+nodeName+" to data object reference "+dataObjectReference.getName());
+		writingElements.forEach(writingElement -> {
+			String elementName = elementName(writingElement);
+			assertEquals(1, arcsFromNodeNamed(dataObjectPlace, elementName).count(),
+					"There is not exactly one write arc from node "+elementName+" to data object reference "+dataObjectReference.getName());
 		});
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(DataObjectReference.class)
 	public void testReadDataObjectsAreWrittenBack(DataObjectReference dataObjectReference) {
-		List<ModelElementInstance> readingElements = readingElements(dataObjectReference);
+		List<FlowElement> readingElements = readingElements(dataObjectReference);
 		assumeFalse(readingElements.isEmpty(), "The data object reference is not read");
 		Place dataObjectPlace = dataObjectPlacesNamed(normalizeElementName(dataObjectReference.getDataObject().getName())).findAny().get();
 		
 		readingElements.forEach(node -> {
-			String nodeName = node.getAttributeValue("name");
-			assertEquals(1, arcsFromNodeNamed(dataObjectPlace, nodeName).count(),
-					"There is not exactly one write back arc from reading node "+nodeName+" to data object reference "+dataObjectReference.getName());
+			String elementName = elementName(node);
+			assertEquals(1, arcsFromNodeNamed(dataObjectPlace, elementName).count(),
+					"There is not exactly one write back arc from reading node "+elementName+" to data object reference "+dataObjectReference.getName());
 		});
 	}
 
@@ -289,18 +289,18 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(DataStoreReference.class)
 	public void testReadDataStoresAreConsumed(DataStoreReference dataStoreReference) {
-		List<ModelElementInstance> readingElements = readingElements(dataStoreReference);
+		List<FlowElement> readingElements = readingElements(dataStoreReference);
 		assumeFalse(readingElements.isEmpty(), "The data store reference is not read");
 		Place dataStorePlace = dataStorePlacesNamed(normalizeElementName(dataStoreReference.getDataStore().getName())).findAny().get();
 		
 		readingElements.forEach(element -> {
-			String nodeName = element.getAttributeValue("name");
-			assertEquals(1, arcsToNodeNamed(dataStorePlace, nodeName).count(),
-					"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to node "+nodeName);
+			String elementName = element.getAttributeValue("name");
+			assertEquals(1, arcsToNodeNamed(dataStorePlace, elementName).count(),
+					"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to node "+elementName);
 			
 			transitionsFor((FlowElement) element).forEach(readingTransition -> {
 				assertEquals(1, arcsFromNodeNamed(readingTransition, normalizeElementName(dataStoreReference.getName())).count(),
-						"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to node "+nodeName+" in subpage transition");
+						"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to node "+elementName+" in subpage transition");
 			});
 			
 		});	
@@ -309,18 +309,18 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(DataStoreReference.class)
 	public void testWrittenDataStoresAreProduced(DataStoreReference dataStoreReference) {
-		List<ModelElementInstance> writingElements = writingElements(dataStoreReference);
+		List<FlowElement> writingElements = writingElements(dataStoreReference);
 		assumeFalse(writingElements.isEmpty(), "The data store reference is not written");
 		Place dataStorePlace = dataStorePlacesNamed(normalizeElementName(dataStoreReference.getDataStore().getName())).findAny().get();
 
 		writingElements.forEach(element -> {
-			String nodeName = element.getAttributeValue("name");
-			assertEquals(1, arcsFromNodeNamed(dataStorePlace, nodeName).count(),
-					"There is not exactly one write arc from node "+nodeName+" to data store reference "+dataStoreReference.getName());
+			String elementName = element.getAttributeValue("name");
+			assertEquals(1, arcsFromNodeNamed(dataStorePlace, elementName).count(),
+					"There is not exactly one write arc from node "+elementName+" to data store reference "+dataStoreReference.getName());
 			
 			transitionsFor((FlowElement) element).forEach(writingTransition -> {
 				assertEquals(1, arcsToNodeNamed(writingTransition, normalizeElementName(dataStoreReference.getName())).count(),
-						"There is not exactly write arc from node "+nodeName+" to data store reference "+dataStoreReference.getName()+" in subpage transition");
+						"There is not exactly write arc from node "+elementName+" to data store reference "+dataStoreReference.getName()+" in subpage transition");
 			});
 		});
 	}
@@ -328,28 +328,28 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(DataStoreReference.class)
 	public void testReadDataStoresAreWrittenBack(DataStoreReference dataStoreReference) {
-		List<ModelElementInstance> readingElements = readingElements(dataStoreReference);
+		List<FlowElement> readingElements = readingElements(dataStoreReference);
 		assumeFalse(readingElements.isEmpty(), "The data Store reference is not read");
 		Place dataStorePlace = dataStorePlacesNamed(normalizeElementName(dataStoreReference.getDataStore().getName())).findAny().get();
 		
 		readingElements.forEach(node -> {
-			String nodeName = node.getAttributeValue("name");
-			assertEquals(1, arcsFromNodeNamed(dataStorePlace, nodeName).count(),
-					"There is not exactly one write back arc from reading node "+nodeName+" to data Store reference "+dataStoreReference.getName());
+			String elementName = elementName(node);
+			assertEquals(1, arcsFromNodeNamed(dataStorePlace, elementName).count(),
+					"There is not exactly one write back arc from reading node "+elementName+" to data Store reference "+dataStoreReference.getName());
 		});
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(DataStoreReference.class)
 	public void testWrittenDataStoresAreReadFirst(DataStoreReference dataStoreReference) {
-		List<ModelElementInstance> writingElements = writingElements(dataStoreReference);
+		List<FlowElement> writingElements = writingElements(dataStoreReference);
 		assumeFalse(writingElements.isEmpty(), "The data store reference is not written");
 		Place dataStorePlace = dataStorePlacesNamed(normalizeElementName(dataStoreReference.getDataStore().getName())).findAny().get();
 		
 		writingElements.forEach(node -> {
-			String nodeName = node.getAttributeValue("name");
-			assertEquals(1, arcsToNodeNamed(dataStorePlace, nodeName).count(),
-					"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to writing node "+nodeName);
+			String elementName = elementName(node);
+			assertEquals(1, arcsToNodeNamed(dataStorePlace, elementName).count(),
+					"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to writing node "+elementName);
 		});
 	}
 	

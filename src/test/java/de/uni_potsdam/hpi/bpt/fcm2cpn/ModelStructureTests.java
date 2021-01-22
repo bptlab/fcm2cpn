@@ -58,18 +58,20 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	
 	public ObjectLifeCycle[] olcs;
 	
-	public List<ModelElementInstance> readingElements(ItemAwareElement dataElementReference) {
+	public List<FlowElement> readingElements(ItemAwareElement dataElementReference) {
 		return bpmn.getModelElementsByType(DataInputAssociation.class).stream()
 				.filter(assoc -> assoc.getSources().contains(dataElementReference))
 				.map(DataInputAssociation::getParentElement)
+				.map(FlowElement.class::cast)
 				.collect(Collectors.toList());
 	}
 	
-	public List<ModelElementInstance> writingElements(ItemAwareElement dataElementReference) {
+	public List<FlowElement> writingElements(ItemAwareElement dataElementReference) {
 		return bpmn.getModelElementsByType(DataOutputAssociation.class).stream()
-			.filter(assoc -> assoc.getTarget().equals(dataElementReference))
-			.map(DataOutputAssociation::getParentElement)
-			.collect(Collectors.toList());
+				.filter(assoc -> assoc.getTarget().equals(dataElementReference))
+				.map(DataOutputAssociation::getParentElement)
+				.map(FlowElement.class::cast)
+				.collect(Collectors.toList());
 	}
 	
 	public List<String[]> dataObjectAssociations() {
