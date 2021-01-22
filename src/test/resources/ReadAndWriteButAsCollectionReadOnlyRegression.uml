@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<uml:Model xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" xmlns:uml="http://www.eclipse.org/uml2/5.0.0/UML" xmi:id="_F41lMFyfEeulpbAc0yFNRg" name="ReadAndWriteButAsCollectionReadOnlyRegression">
+  <packageImport xmi:type="uml:PackageImport" xmi:id="_GAHR4FyfEeulpbAc0yFNRg">
+    <importedPackage xmi:type="uml:Model" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#_0"/>
+  </packageImport>
+  <packagedElement xmi:type="uml:Class" xmi:id="_HuAXEFyfEeulpbAc0yFNRg" name="A"/>
+  <packagedElement xmi:type="uml:Class" xmi:id="_IY6VQFyfEeulpbAc0yFNRg" name="B"/>
+  <packagedElement xmi:type="uml:Association" xmi:id="_c3LJMFyfEeulpbAc0yFNRg" memberEnd="_c3QBsFyfEeulpbAc0yFNRg _c3R24FyfEeulpbAc0yFNRg">
+    <eAnnotations xmi:type="ecore:EAnnotation" xmi:id="_c3M-YFyfEeulpbAc0yFNRg" source="org.eclipse.papyrus">
+      <details xmi:type="ecore:EStringToStringMapEntry" xmi:id="_c3M-YVyfEeulpbAc0yFNRg" key="nature" value="UML_Nature"/>
+    </eAnnotations>
+    <ownedComment xmi:type="uml:Comment" xmi:id="_URHiYCV1Eeu_voEvxjYgGw" annotatedElement="_c3QBsFyfEeulpbAc0yFNRg">
+      <body>goalLowerBound: 2</body>
+    </ownedComment>
+    <ownedEnd xmi:type="uml:Property" xmi:id="_c3QBsFyfEeulpbAc0yFNRg" name="b" type="_IY6VQFyfEeulpbAc0yFNRg" association="_c3LJMFyfEeulpbAc0yFNRg">
+      <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_wYsbgFy0EeulpbAc0yFNRg"/>
+      <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_wY5P0Fy0EeulpbAc0yFNRg" value="2"/>
+    </ownedEnd>
+    <ownedEnd xmi:type="uml:Property" xmi:id="_c3R24FyfEeulpbAc0yFNRg" name="a" type="_HuAXEFyfEeulpbAc0yFNRg" association="_c3LJMFyfEeulpbAc0yFNRg">
+    </ownedEnd>
+  </packagedElement>
+  <packagedElement xmi:type="uml:Class" xmi:id="_wqreAFyhEeulpbAc0yFNRg" name="C"/>
+  <packagedElement xmi:type="uml:Association" xmi:id="_y2DJYFyhEeulpbAc0yFNRg" memberEnd="_y2EXgFyhEeulpbAc0yFNRg _y2EXgVyhEeulpbAc0yFNRg">
+    <eAnnotations xmi:type="ecore:EAnnotation" xmi:id="_y2DwcFyhEeulpbAc0yFNRg" source="org.eclipse.papyrus">
+      <details xmi:type="ecore:EStringToStringMapEntry" xmi:id="_y2DwcVyhEeulpbAc0yFNRg" key="nature" value="UML_Nature"/>
+    </eAnnotations>
+    <ownedEnd xmi:type="uml:Property" xmi:id="_y2EXgFyhEeulpbAc0yFNRg" name="b" type="_IY6VQFyfEeulpbAc0yFNRg" association="_y2DJYFyhEeulpbAc0yFNRg"/>
+    <ownedEnd xmi:type="uml:Property" xmi:id="_y2EXgVyhEeulpbAc0yFNRg" name="c" type="_wqreAFyhEeulpbAc0yFNRg" association="_y2DJYFyhEeulpbAc0yFNRg"/>
+  </packagedElement>
+  <packagedElement xmi:type="uml:Association" xmi:id="_02QtoFyhEeulpbAc0yFNRg" memberEnd="_02RUsVyhEeulpbAc0yFNRg _02R7wFyhEeulpbAc0yFNRg">
+    <eAnnotations xmi:type="ecore:EAnnotation" xmi:id="_02QtoVyhEeulpbAc0yFNRg" source="org.eclipse.papyrus">
+      <details xmi:type="ecore:EStringToStringMapEntry" xmi:id="_02RUsFyhEeulpbAc0yFNRg" key="nature" value="UML_Nature"/>
+    </eAnnotations>
+    <ownedEnd xmi:type="uml:Property" xmi:id="_02RUsVyhEeulpbAc0yFNRg" name="a" type="_HuAXEFyfEeulpbAc0yFNRg" association="_02QtoFyhEeulpbAc0yFNRg"/>
+    <ownedEnd xmi:type="uml:Property" xmi:id="_02R7wFyhEeulpbAc0yFNRg" name="c" type="_wqreAFyhEeulpbAc0yFNRg" association="_02QtoFyhEeulpbAc0yFNRg"/>
+  </packagedElement>
+</uml:Model>
