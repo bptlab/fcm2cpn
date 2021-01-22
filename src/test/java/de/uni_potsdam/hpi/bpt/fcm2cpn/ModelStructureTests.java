@@ -43,6 +43,8 @@ import org.cpntools.accesscpn.model.Transition;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycleParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelConsumerTest;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
@@ -53,6 +55,8 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	public PetriNet petrinet;
 	
 	public DataModel dataModel;
+	
+	public ObjectLifeCycle[] olcs;
 	
 	public List<ModelElementInstance> readingElements(ItemAwareElement dataElementReference) {
 		return bpmn.getModelElementsByType(DataInputAssociation.class).stream()
@@ -239,6 +243,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		return ioCombinations;
 	}
 	
+	//TODO duplicate to activityTransitionsForTransput ?
 	public Optional<Transition> transitionForIoCombination(Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioCombination, Activity activity) {
 		return transitionsFor(activity)
 			.filter(transition -> ioCombinationOfTransition(transition).equals(ioCombination))
@@ -513,7 +518,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	public void compileModel() {
 		parseDataModel();        
         petrinet = CompilerApp.translateBPMN2CPN(bpmn, Optional.of(dataModel)); 
-
+        parseOLCs();
 	}
 	
 	protected void parseDataModel() {
@@ -524,6 +529,17 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
             dataModel = DataModel.none();
         }
 	}
+	
+	protected void parseOLCs() {
+		this.olcs = ObjectLifeCycleParser.getOLCs(dataModel, bpmn);
+	}
+	
+	protected ObjectLifeCycle olcFor(String dataObject) {
+    	return Arrays.stream(olcs)
+    			.filter(olc -> olc.getClassName().equals(dataObject))
+    			.findAny()
+    			.get();
+    }
 
 
 }

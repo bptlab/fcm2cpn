@@ -34,8 +34,9 @@ import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.Transition;
-import org.junit.jupiter.api.Assertions;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
@@ -436,8 +437,50 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	/**@see BpmnPreprocessorTests#testModelsAreMarkedAsPreprocessed()*/
 	@TestWithAllModels
 	public void testModelsArePreprocessed() {
-		Assertions.assertEquals("true", bpmn.getDocumentElement().getAttributeValue("de.uni_potsdam.hpi.bpt.fcm2cpn.preprocessed"),
+		assertEquals("true", bpmn.getDocumentElement().getAttributeValue("de.uni_potsdam.hpi.bpt.fcm2cpn.preprocessed"),
 				"Model "+modelName+" was not marked as preprocessed");
+	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(Activity.class)
+	public void testGoalCardinalitiesAreCheckedOnStateChange(Activity activity) {
+		ioAssociationCombinations(activity).stream().forEach(ioSet-> {
+			var stateMap = ioAssociationsToStateMaps(ioSet);
+			Transition transition = transitionForIoCombination(stateMap, activity).get();
+			
+			var dataObjectStateChanges = ioSet.first.stream().map(input -> 
+				new Pair<>(input, 
+				ioSet.second.stream().filter(output -> 
+					output.dataElementName().equals(input.dataElementName()) && output.isCollection() == input.isCollection()
+					&& !output.getStateName().equals(input.getStateName())).findAny())
+			)
+			.filter(stateChange -> stateChange.second.isPresent())
+			.map(stateChange -> new Pair<>(stateChange.first, stateChange.second.get()));
+			
+			var dataObjectStateChangesWithReducedUpdateability = dataObjectStateChanges.flatMap(stateChange -> {
+				ObjectLifeCycle olc = olcFor(stateChange.first.dataElementName());
+				Set<AssociationEnd> removedUpdateableAssociations = new HashSet<>(olc.getState(stateChange.first.getStateName().get()).get().getUpdateableAssociations());
+				removedUpdateableAssociations.removeAll(olc.getState(stateChange.second.getStateName().get()).get().getUpdateableAssociations());
+				return removedUpdateableAssociations.stream().map(removedAssoc -> new Pair<>(stateChange, removedAssoc));
+			});
+			
+			var dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds = dataObjectStateChangesWithReducedUpdateability
+					.filter(x -> x.second.getGoalLowerBound() > x.second.getLowerBound());
+			
+			dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds.forEach(x -> {
+				var stateChange = x.first;
+				var removedAssociation = x.second;
+				String dataObjectName = stateChange.first.dataElementName();
+				assertTrue(transition.getCondition().getText().contains(ActivityCompiler.GOAL_CARDINALITY), 
+						"Activity transition "+transition.getName().asString()+" for io set "+ioSet+" does not check for goal lower bound between "+dataObjectName+" and "+removedAssociation.getDataObject()
+						+" although "+dataObjectName+" changes state from "+stateChange.first.getStateName()+" to "+stateChange.second.getStateName()+" where no new associations can be created");
+				//TODO actually check for correct statement when goal cardinalities are implemented
+			});
+		});
+	}
+	
+	public void testCheckedGoalCardinalitiesComeFromStateChange() {
+		//TODO can only be created when goal cardinalities are implemented
 	}
 
 }

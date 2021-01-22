@@ -45,6 +45,9 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 	private boolean hasCreatedArcToAssocPlace = false;
 	private boolean hasCreatedArcFromAssocPlace = false;
 	
+	/** Placeholder until goal cardinalities are implemented */
+	public static final String GOAL_CARDINALITY = "(*goal cardinality*)";
+	
 
 	public ActivityCompiler(CompilerApp parent, Activity activity) {
 		super(parent, activity);
@@ -168,9 +171,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 		}
 
 		// Add guards for goal cardinalities
-		if (!stateChangesToPerform.isEmpty()) {
-			addGuardsForStateChanges(stateChangesToPerform, transition, readDataObjects, writtenDataObjects, readContext, writeContext);
-		}
+		addGuardsForStateChanges(stateChangesToPerform, transition, readDataObjects, writtenDataObjects, readContext, writeContext);
 		
 		Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkedAssociations = checkAssociationsOfReadDataObjects(transition, readDataObjects, readContext);
 		
@@ -323,9 +324,9 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 							if (!readDataObjects.contains(stateChange) || goalLowerBound <= lowerBound) continue;
 							String newGuard;
 							if (readContext.get(stateChange).stream().anyMatch(StatefulDataAssociation::isCollection)) {
-								newGuard = "(List.all (fn oId => (enforceLowerBound oId " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ")) (List.map (fn obj => #id obj) " + stateChange.dataElementList() + ")) (*goal cardinality*)";
+								newGuard = "(List.all (fn oId => (enforceLowerBound oId " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ")) (List.map (fn obj => #id obj) " + stateChange.dataElementList() + ")) "+GOAL_CARDINALITY;
 							} else {
-								newGuard = "(enforceLowerBound " + stateChange.dataElementId() + " " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ") (*goal cardinality*)";
+								newGuard = "(enforceLowerBound " + stateChange.dataElementId() + " " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ") "+GOAL_CARDINALITY;
 							}
 							addGuardCondition(transition, newGuard);
 						}

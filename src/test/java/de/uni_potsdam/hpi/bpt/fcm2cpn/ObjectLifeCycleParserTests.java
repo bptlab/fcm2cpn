@@ -32,12 +32,11 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
 public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	
-	private ObjectLifeCycle[] olcs;
 	@Override
 	public void compileModel() {
 		BpmnPreprocessor.process(bpmn);
 		parseDataModel();
-		this.olcs = ObjectLifeCycleParser.getOLCs(dataModel, bpmn);
+		parseOLCs();
 	}    
 	
 	
@@ -131,13 +130,6 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	
 	
 //=========== Utility ================
-	
-	public ObjectLifeCycle olcFor(String dataObject) {
-    	return Arrays.stream(olcs)
-    			.filter(olc -> olc.getClassName().equals(dataObject))
-    			.findAny()
-    			.get();
-    }
 	
 	public void forEachOLCTransition(BiConsumer<ObjectLifeCycle, Pair<ObjectLifeCycle.State, ObjectLifeCycle.State>> consumer) {
 		for(ObjectLifeCycle olc : olcs) {
