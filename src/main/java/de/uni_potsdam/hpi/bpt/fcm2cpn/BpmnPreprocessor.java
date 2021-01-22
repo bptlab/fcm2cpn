@@ -1,17 +1,23 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
+import java.util.Objects;
+
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.impl.instance.DataInputRefs;
 import org.camunda.bpm.model.bpmn.impl.instance.DataOutputRefs;
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.DataInput;
+import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutput;
+import org.camunda.bpm.model.bpmn.instance.DataState;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.InputSet;
 import org.camunda.bpm.model.bpmn.instance.IoSpecification;
 import org.camunda.bpm.model.bpmn.instance.OutputSet;
 
 public class BpmnPreprocessor {
+	
+	public static final String BLANK_STATE = "BLANK_";
 	
 	private BpmnModelInstance bpmn;
 	
@@ -25,6 +31,7 @@ public class BpmnPreprocessor {
 	
 	private void process() {
 		ensureIOSpecifications();
+		ensureDataObjectStates();
 		markAsPreprocessed();
 	}
 
@@ -71,6 +78,16 @@ public class BpmnPreprocessor {
 					}
 				});
 
+			});
+	}
+	
+	private void ensureDataObjectStates() {
+		bpmn.getModelElementsByType(DataObjectReference.class).stream()
+			.filter(dataObjectReference -> Objects.isNull(dataObjectReference.getDataState()))
+			.forEach(dataObjectReference -> {
+				DataState newState = bpmn.newInstance(DataState.class, "blankState_generated_"+dataObjectReference.getId());
+				newState.setName(BLANK_STATE);
+				dataObjectReference.setDataState(newState);
 			});
 	}
 
