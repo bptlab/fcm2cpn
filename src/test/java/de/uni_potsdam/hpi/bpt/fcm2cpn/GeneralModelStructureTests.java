@@ -463,8 +463,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		});
 		
 		var dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds = dataObjectStateChangesWithReducedUpdateability
-				.peek(System.out::println)
-				.filter(x -> x.second.getGoalLowerBound() > x.second.getLowerBound());
+				.filter(x -> x.second.hasTightGoalLowerBound());
 		
 		dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds.forEach(x -> {
 			var stateChange = x.first;

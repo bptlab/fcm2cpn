@@ -36,6 +36,10 @@ public class AssociationEnd {
 	public int getGoalLowerBound() {
 		return goalLowerBound;
 	}
+	
+	public boolean hasTightGoalLowerBound() {
+		return goalLowerBound > lowerBound;
+	}
 
 	public void setGoalLowerBound(int goalLowerBound) {
 		this.goalLowerBound = goalLowerBound;
@@ -43,7 +47,7 @@ public class AssociationEnd {
 
 	@Override
 	public String toString() {
-		return "("+lowerBound+".."+(upperBound == UNLIMITED ? "*" : upperBound)+" "+dataObject+")";
+		return "("+lowerBound+(hasTightGoalLowerBound() ? "g"+goalLowerBound : "")+".."+(upperBound == UNLIMITED ? "*" : upperBound)+" "+dataObject+")";
 	}
 	
 	public boolean isForDataObject(String dataObject) {

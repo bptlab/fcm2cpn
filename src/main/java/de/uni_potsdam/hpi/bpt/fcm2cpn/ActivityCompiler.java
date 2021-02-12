@@ -153,21 +153,31 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
     }
 	
     
+    /**Alias class for better readability*/
+    private class StateChange extends Pair<StatefulDataAssociation<DataInputAssociation, DataObjectReference>, StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> {
+		public StateChange(StatefulDataAssociation<DataInputAssociation, DataObjectReference> first, StatefulDataAssociation<DataOutputAssociation, DataObjectReference> second) {
+			super(first, second);
+			assert first.equalsDataElementAndCollection(second);
+		}
+		
+		public DataObjectWrapper dataObject() {
+			assert parent.wrapperFor(first).equals(parent.wrapperFor(second));
+			return (DataObjectWrapper) parent.wrapperFor(first);
+		}
+	}
+    
     private void associateDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
 
     	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = determineAssociationsToWrite(readDataObjects, writtenDataObjects, readContext, writeContext);
     	
-    	Set<DataObjectWrapper> stateChangesToPerform = new HashSet<>();
-		for(DataObjectWrapper writtenObject : writtenDataObjects) {
-			for(DataObjectWrapper readObject : readDataObjects) {
-				if (writtenObject.equals(readObject) &&
-						(readContext.get(readObject).stream().anyMatch(StatefulDataAssociation::isCollection) == writeContext.get(writtenObject).stream().anyMatch(StatefulDataAssociation::isCollection))) {
-					//TODO there might be case where data object is read as collection and as normal, but only written as normal. 
-					//Then the guard returns false, but should be true.
-					stateChangesToPerform.add(readObject);
-				}
-			}
-		}
+    	Set<StateChange> stateChangesToPerform = new HashSet<>();
+    	readContext.values().stream().flatMap(List::stream).forEach(input -> {
+        	writeContext.values().stream().flatMap(List::stream).forEach(output -> {
+        		if(input.equalsDataElementAndCollection(output) && !input.getStateName().equals(output.getStateName())) {
+        			stateChangesToPerform.add(new StateChange(input, output));
+        		}
+        	});
+    	});
 
 		// Add guards for goal cardinalities
 		addGuardsForStateChanges(stateChangesToPerform, transition, readDataObjects, writtenDataObjects, readContext, writeContext);
@@ -291,42 +301,40 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 		return associationsToWrite;
     }
     
-    private void addGuardsForStateChanges(Set<DataObjectWrapper> stateChangesToPerform, Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
-		for (DataObjectWrapper stateChange : stateChangesToPerform) {
-			Set<String> inputStates = readContext.get(stateChange).stream()
-				.map(obj -> obj.getStateName())
-				.collect(Collectors.toSet());
-			Set<String> outputStates = writeContext.get(stateChange).stream()
-				.map(obj -> obj.getStateName())
-				.collect(Collectors.toSet());
-			assert(inputStates.size() <= 1);
-			assert(outputStates.size() <= 1);
-			ObjectLifeCycle olc = parent.olcFor(stateChange);
-			for (String inputState : inputStates) {
-				ObjectLifeCycle.State istate = olc.getState(inputState).get();
-				if (istate.getUpdateableAssociations().isEmpty()) continue;
-				for (String outputState : outputStates) {
-					ObjectLifeCycle.State ostate = olc.getState(outputState).get();
-					// For each updateable association that is in input state but not in output state
-					for (AssociationEnd assocEnd : istate.getUpdateableAssociations()) {
-						if (!ostate.getUpdateableAssociations().contains(assocEnd)) {
-							// TODO: generalize: look at all possible successor states
-							int goalLowerBound = assocEnd.getGoalLowerBound();
-							int lowerBound = assocEnd.getLowerBound();
-							if (writtenDataObjects.stream().anyMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject()))) &&
-									readDataObjects.stream().noneMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject())))) {
-								goalLowerBound--;
-							}
-							//If element is just created or if the goalLowerBound is not tight
-							if (!readDataObjects.contains(stateChange) || goalLowerBound <= lowerBound) continue;
-							String newGuard;
-							if (readContext.get(stateChange).stream().anyMatch(StatefulDataAssociation::isCollection)) {
-								newGuard = "(List.all (fn oId => (enforceLowerBound oId " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ")) (List.map (fn obj => #id obj) " + stateChange.dataElementList() + ")) "+GOAL_CARDINALITY;
-							} else {
-								newGuard = "(enforceLowerBound " + stateChange.dataElementId() + " " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ") "+GOAL_CARDINALITY;
-							}
-							addGuardCondition(transition, newGuard);
+    private void addGuardsForStateChanges(Set<StateChange> stateChangesToPerform, Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
+		
+    	for (StateChange stateChange : stateChangesToPerform) {
+			String inputState = stateChange.first.getStateName();
+			String outputState = stateChange.second.getStateName();
+			
+			ObjectLifeCycle olc = parent.olcFor(stateChange.dataObject());
+			ObjectLifeCycle.State istate = olc.getState(inputState).get();
+			if (istate.getUpdateableAssociations().isEmpty()) continue;
+			ObjectLifeCycle.State ostate = olc.getState(outputState).get();
+			// For each updateable association that is in input state but not in output state
+			for (AssociationEnd assocEnd : istate.getUpdateableAssociations()) {
+				if (!ostate.getUpdateableAssociations().contains(assocEnd)) {
+
+					
+					// TODO: generalize: look at all possible successor states
+					
+					//If the second object is just created, then an additional assoc is created, so the checked goal lower bound must be lower
+					int goalLowerBound = assocEnd.getGoalLowerBound();
+					int lowerBound = assocEnd.getLowerBound();
+					if (writtenDataObjects.stream().anyMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject()))) &&
+							readDataObjects.stream().noneMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject())))) {
+						goalLowerBound--;
+					}
+					
+					if (goalLowerBound > lowerBound) {
+						String newGuard;
+						if (stateChange.first.isCollection()) {
+							newGuard = "(List.all (fn oId => (enforceLowerBound oId " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ")) (List.map (fn obj => #id obj) " + stateChange.dataObject().dataElementList() + ")) "+GOAL_CARDINALITY;
+						} else {
+							newGuard = "(enforceLowerBound " + stateChange.dataObject().dataElementId() + " " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ") "+GOAL_CARDINALITY;
 						}
+						System.out.println(newGuard);
+						addGuardCondition(transition, newGuard);
 					}
 				}
 			}
@@ -354,7 +362,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 				.distinct()
 				.collect(Collectors.toList())
 				.toString();
-			transition.getCondition().setText("[" + guard + "]");
+			addGuardCondition(transition, guard);
 		}
 		
 		return associationsToCheck;
