@@ -44,6 +44,7 @@ import org.cpntools.accesscpn.model.Transition;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle.State;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycleParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelConsumerTest;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
@@ -134,6 +135,11 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		return ioSet.first.stream().anyMatch(each -> each.dataElementName().equals(dataObject) && !each.isCollection());
 	}
 	
+	public boolean readsInState(DataObjectIOSet ioSet, String dataObject, State state) {
+		return ioSet.first.stream().anyMatch(each -> each.dataElementName().equals(dataObject) 
+				&& state.getOLC().getState(each.getStateName().get()).get().equals(state));
+	}
+	
 	public boolean writes(DataObjectIOSet ioSet, String dataObject) {
 		return ioSet.second.stream().anyMatch(each -> each.dataElementName().equals(dataObject));
 	}
@@ -144,6 +150,11 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	
 	public boolean writesAsNonCollection(DataObjectIOSet ioSet, String dataObject) {
 		return ioSet.second.stream().anyMatch(each -> each.dataElementName().equals(dataObject) && !each.isCollection());
+	}
+	
+	public boolean writesInState(DataObjectIOSet ioSet, String dataObject, State state) {
+		return ioSet.second.stream().anyMatch(each -> each.dataElementName().equals(dataObject) 
+				&& state.getOLC().getState(each.getStateName().get()).get().equals(state));
 	}
 	
 	public boolean creates(DataObjectIOSet ioSet, String dataObject) {
@@ -187,16 +198,16 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	@SuppressWarnings("unchecked")
 	public static Set<DataObjectIOSet> ioAssociationCombinations(Activity activity) {
 		return statelessAssociationCombinations(activity).stream().flatMap(ioAssociationCombination -> {
-			Map<String, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> inputStates = ioAssociationCombination.first.stream()
+			Map<Pair<String, Boolean>, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> inputStates = ioAssociationCombination.first.stream()
 					.flatMap(Utils::splitDataAssociationByState)
 					.filter(StatefulDataAssociation::isDataObjectReference)
 					.map(assoc -> (StatefulDataAssociation<DataInputAssociation, DataObjectReference>) assoc)
-					.collect(Collectors.groupingBy(StatefulDataAssociation::dataElementName));
-			Map<String, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> outputStates = ioAssociationCombination.second.stream()
+					.collect(Collectors.groupingBy(StatefulDataAssociation::dataElementNameAndCollection));
+			Map<Pair<String, Boolean>, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> outputStates = ioAssociationCombination.second.stream()
 					.flatMap(Utils::splitDataAssociationByState)
 					.filter(StatefulDataAssociation::isDataObjectReference)
 					.map(assoc -> (StatefulDataAssociation<DataOutputAssociation, DataObjectReference>) assoc)
-					.collect(Collectors.groupingBy(StatefulDataAssociation::dataElementName));
+					.collect(Collectors.groupingBy(StatefulDataAssociation::dataElementNameAndCollection));
 
 			List<List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> possibleInputForms = Utils.allCombinationsOf(inputStates.values());
 			List<List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> possibleOutputForms = Utils.allCombinationsOf(outputStates.values());
@@ -211,50 +222,50 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		.collect(Collectors.toSet());
 	}
 	
-	public static Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioAssociationsToStateMaps(DataObjectIOSet ioAssociations) {
-		Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioConfiguration = new Pair<>(
+	public static Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>> ioAssociationsToStateMaps(DataObjectIOSet ioAssociations) {
+		Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>> ioConfiguration = new Pair<>(
 				ioAssociations.first.stream()
-					.collect(Collectors.toMap(StatefulDataAssociation::dataElementName, StatefulDataAssociation::getStateName)),
+					.collect(Collectors.toMap(StatefulDataAssociation::dataElementNameAndCollection, StatefulDataAssociation::getStateName)),
 				ioAssociations.second.stream()
-					.collect(Collectors.toMap(StatefulDataAssociation::dataElementName, StatefulDataAssociation::getStateName)));	
+					.collect(Collectors.toMap(StatefulDataAssociation::dataElementNameAndCollection, StatefulDataAssociation::getStateName)));	
 
 		//Expect read objects that are not explicitly written to be written back in the same state as they are read
 		for(StatefulDataAssociation<DataInputAssociation, DataObjectReference> inputAssoc : ioAssociations.first) {
-			if(ioAssociations.second.stream().noneMatch(outputAssoc -> outputAssoc.dataElementName().equals(inputAssoc.dataElementName()) && outputAssoc.isCollection() == inputAssoc.isCollection())) 
-				ioConfiguration.second.put(inputAssoc.dataElementName(), inputAssoc.getStateName());
+			if(ioAssociations.second.stream().noneMatch(inputAssoc::equalsDataElementAndCollection))
+				ioConfiguration.second.put(inputAssoc.dataElementNameAndCollection(), inputAssoc.getStateName());
 		}
 		
 		return ioConfiguration;
 	}
 	
-	public static Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> expectedIOCombinations(Activity activity) {
+	public static Set<Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>> expectedIOCombinations(Activity activity) {
 		return ioAssociationCombinations(activity).stream()
 				.map(ModelStructureTests::ioAssociationsToStateMaps).collect(Collectors.toSet());
 	}
 	
-	public static Stream<Pair<String, Optional<String>>> expectedCreatedObjects(Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioCombination) {
+	public static Stream<Pair<Pair<String, Boolean>, Optional<String>>> expectedCreatedObjects(Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>> ioCombination) {
 		return ioCombination.second.entrySet().stream()
 			.filter(idAndState -> !ioCombination.first.containsKey(idAndState.getKey()))
 			.map(entry -> new Pair<>(entry.getKey(), entry.getValue()));
 	}
 	
-	public Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> ioCombinationsInNet(Activity activity) {
-		Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> ioCombinations = new HashSet<>();
+	public Set<Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>> ioCombinationsInNet(Activity activity) {
+		Set<Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>> ioCombinations = new HashSet<>();
 		transitionsFor(activity).forEach(transition -> 
 			ioCombinations.add(ioCombinationOfTransition(transition)));
 		return ioCombinations;
 	}
 	
 	//TODO duplicate to activityTransitionsForTransput ?
-	public Optional<Transition> transitionForIoCombination(Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioCombination, Activity activity) {
+	public Optional<Transition> transitionForIoCombination(Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>> ioCombination, Activity activity) {
 		return transitionsFor(activity)
 			.filter(transition -> ioCombinationOfTransition(transition).equals(ioCombination))
 			.findAny();
 	}
 	
-	public Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> ioCombinationOfTransition(Transition transition) {
-		Map<String, Optional<String>> inputs = new HashMap<>();
-		Map<String, Optional<String>> outputs = new HashMap<>();
+	public Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>> ioCombinationOfTransition(Transition transition) {
+		Map<Pair<String, Boolean>, Optional<String>> inputs = new HashMap<>();
+		Map<Pair<String, Boolean>, Optional<String>> outputs = new HashMap<>();
 		transition.getTargetArc().stream()
 			.map(inputArc -> inputArc.getHlinscription().asString())
 			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> inputs.put(idAndState.first, idAndState.second)));
@@ -262,12 +273,13 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		transition.getSourceArc().stream()
 			.map(outputArc -> outputArc.getHlinscription().asString())
 			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> outputs.put(idAndState.first, idAndState.second)));
-		return new Pair<Map<String,Optional<String>>, Map<String,Optional<String>>>(inputs, outputs);
+		return new Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>(inputs, outputs);
 	}
 	
-	public static Optional<Pair<String, Optional<String>>> parseCreatedTokenIdAndState(String inscription, Transition transition) {
+	public static Optional<Pair<Pair<String, Boolean>, Optional<String>>> parseCreatedTokenIdAndState(String inscription, Transition transition) {
 		String dataId = null;
 		String state = null;
+		boolean isCollection = false;
 
 		int startIndex = inscription.indexOf("{");
 		int endIndex = inscription.indexOf("}");
@@ -283,6 +295,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 					if(statement[0].trim().equals("state")) state = statement[1].trim();
 				}
 		} else if(inscription.contains("_list")) {
+			isCollection = true;
 			String[] tokens = inscription.split(" ");
 			if(tokens.length == 3 && tokens[0].equals("mapState") && tokens[1].endsWith("_list")) {
 				dataId = tokens[1].replaceAll("_list$", "");
@@ -295,7 +308,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 					.findAny().orElse(null);
 			}
 		}
-		if(dataId != null) return Optional.of(new Pair<>(dataId, Optional.ofNullable(state)));
+		if(dataId != null) return Optional.of(new Pair<>(new Pair<>(dataId, isCollection), Optional.ofNullable(state)));
 		else return Optional.empty();
 	}
 	

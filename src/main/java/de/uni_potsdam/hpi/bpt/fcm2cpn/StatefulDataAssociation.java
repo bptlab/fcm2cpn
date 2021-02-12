@@ -10,6 +10,7 @@ import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 public class StatefulDataAssociation<AssociationType extends DataAssociation, DataElement extends ItemAwareElement> {
@@ -33,6 +34,14 @@ public class StatefulDataAssociation<AssociationType extends DataAssociation, Da
 
 	public DataElement getDataElement() {
 		return dataElement;
+	}
+	
+	public Pair<String, Boolean> dataElementNameAndCollection() {
+		return new Pair<>(dataElementName(), isCollection());
+	}
+	
+	public boolean equalsDataElementAndCollection(StatefulDataAssociation<?, ?> otherAssoc) {
+		return this.dataElementNameAndCollection().equals(otherAssoc.dataElementNameAndCollection());
 	}
 	
 	public String dataElementName() {

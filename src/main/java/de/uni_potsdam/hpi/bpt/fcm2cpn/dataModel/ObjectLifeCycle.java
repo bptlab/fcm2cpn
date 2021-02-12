@@ -31,7 +31,7 @@ public class ObjectLifeCycle {
     }
     
 
-    public static class State {
+    public class State {
         protected final String stateName;
         protected final Set<State> successors;
         /**Association where the cardinality can still change when a data object is in this state*/
@@ -78,6 +78,10 @@ public class ObjectLifeCycle {
         @Override
         public String toString() {
         	return "State("+stateName+", -> "+successors.stream().map(State::getStateName).collect(Collectors.toList())+")";
+        }
+        
+        public ObjectLifeCycle getOLC() {
+        	return ObjectLifeCycle.this;
         }
     }
 }

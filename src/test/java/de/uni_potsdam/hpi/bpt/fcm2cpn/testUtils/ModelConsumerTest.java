@@ -41,8 +41,8 @@ public abstract class ModelConsumerTest {
 			"ConferenceSimplified",
 			"conference_fragments_knowledge_intensive",
 			"TwoEventsInSuccessionRegression",
-			"NoIOSpecification",
-			"ReadAndWriteButAsCollectionReadOnlyRegression"
+			"NoIOSpecification"/*,
+			"ReadAndWriteButAsCollectionReadOnlyRegression"*/
 		);
 	}
 	

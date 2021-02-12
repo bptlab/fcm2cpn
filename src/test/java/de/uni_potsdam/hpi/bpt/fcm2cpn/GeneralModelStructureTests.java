@@ -28,7 +28,6 @@ import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
-import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Page;
@@ -241,12 +240,12 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testConsumedDataObjectsAreReproduced(Activity activity) {
-		Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> ioCombinations = ioCombinationsInNet(activity);
+		Set<Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>> ioCombinations = ioCombinationsInNet(activity);
 		ioCombinations.forEach(ioCombination -> {
-			Map<String, Optional<String>> inputs = ioCombination.first;
-			Map<String, Optional<String>> outputs = ioCombination.second;
+			Map<Pair<String, Boolean>, Optional<String>> inputs = ioCombination.first;
+			Map<Pair<String, Boolean>, Optional<String>> outputs = ioCombination.second;
 			
-			Set<String> missingWriteBacks = new HashSet<>(inputs.keySet());
+			Set<Pair<String, Boolean>> missingWriteBacks = new HashSet<>(inputs.keySet());
 			missingWriteBacks.removeAll(outputs.keySet());
 			assertEquals(Collections.emptySet(), missingWriteBacks, 
 					"Activity \""+elementName(activity)+"\" has a transition that consumes data elements "+missingWriteBacks+" but does not write them back;\n IO is: "+ioCombinations);
@@ -257,8 +256,8 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testInputAndOutputStateCombinations(Activity activity) {
-		Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> expectedCombinations = expectedIOCombinations(activity);
-		Set<Pair<Map<String, Optional<String>>, Map<String, Optional<String>>>> supportedCombinations = ioCombinationsInNet(activity);
+		Set<Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>> expectedCombinations = expectedIOCombinations(activity);
+		Set<Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>> supportedCombinations = ioCombinationsInNet(activity);
 		
 		assertEquals(supportedCombinations, expectedCombinations,
 			"Possible i/o state combinations did not match for activity \""+elementName(activity)+"\":"
@@ -273,7 +272,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
 	public void testEachIOSetIsMappedToTransition(Activity activity,  DataObjectIOSet ioSet) {
-		Pair<Map<String, Optional<String>>, Map<String, Optional<String>>> stateMap = ioAssociationsToStateMaps(ioSet);
+		Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>> stateMap = ioAssociationsToStateMaps(ioSet);
 		assertTrue(transitionForIoCombination(stateMap, activity).isPresent(), 
 				"No transition for ioSet "+stateMap+" of activity "+elementName(activity));		
 	}
@@ -369,7 +368,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 						.map(arc -> arc.getHlinscription().getText())
 						.filter(inscription -> {
 							String[] split = inscription.split("\\^\\^");
-							return split.length == 2 && split[0].equals("registry") && toSet(split[1]).contains(createdObject.first+"Id");
+							return split.length == 2 && split[0].equals("registry") && toSet(split[1]).contains(createdObject.first.first+"Id");
 						})
 						.count(),
 					"There is not exactly one arc that registers creation "+createdObject+" in transition "+transition.getName().getText());
@@ -399,7 +398,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		expectedIOCombinations(activity).forEach(ioCombination -> {
 			Transition transition = transitionForIoCombination(ioCombination, activity).get();
 			expectedCreatedObjects(ioCombination).forEach(createdObject -> {
-				String objectId = createdObject.first;
+				String objectId = createdObject.first.first;
 				assertEquals(1, arcsFromNodeNamed(transition, objectId+"Count")
 						.map(arc -> arc.getHlinscription().getText())
 						.filter((objectId+"Count")::equals)
@@ -443,39 +442,39 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
-	public void testGoalCardinalitiesAreCheckedOnStateChange(Activity activity) {
-		ioAssociationCombinations(activity).stream().forEach(ioSet-> {
-			var stateMap = ioAssociationsToStateMaps(ioSet);
-			Transition transition = transitionForIoCombination(stateMap, activity).get();
-			
-			var dataObjectStateChanges = ioSet.first.stream().map(input -> 
-				new Pair<>(input, 
-				ioSet.second.stream().filter(output -> 
-					output.dataElementName().equals(input.dataElementName()) && output.isCollection() == input.isCollection()
-					&& !output.getStateName().equals(input.getStateName())).findAny())
-			)
-			.filter(stateChange -> stateChange.second.isPresent())
-			.map(stateChange -> new Pair<>(stateChange.first, stateChange.second.get()));
-			
-			var dataObjectStateChangesWithReducedUpdateability = dataObjectStateChanges.flatMap(stateChange -> {
-				ObjectLifeCycle olc = olcFor(stateChange.first.dataElementName());
-				Set<AssociationEnd> removedUpdateableAssociations = new HashSet<>(olc.getState(stateChange.first.getStateName().get()).get().getUpdateableAssociations());
-				removedUpdateableAssociations.removeAll(olc.getState(stateChange.second.getStateName().get()).get().getUpdateableAssociations());
-				return removedUpdateableAssociations.stream().map(removedAssoc -> new Pair<>(stateChange, removedAssoc));
-			});
-			
-			var dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds = dataObjectStateChangesWithReducedUpdateability
-					.filter(x -> x.second.getGoalLowerBound() > x.second.getLowerBound());
-			
-			dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds.forEach(x -> {
-				var stateChange = x.first;
-				var removedAssociation = x.second;
-				String dataObjectName = stateChange.first.dataElementName();
-				assertTrue(transition.getCondition().getText().contains(ActivityCompiler.GOAL_CARDINALITY), 
-						"Activity transition "+transition.getName().asString()+" for io set "+ioSet+" does not check for goal lower bound between "+dataObjectName+" and "+removedAssociation.getDataObject()
-						+" although "+dataObjectName+" changes state from "+stateChange.first.getStateName()+" to "+stateChange.second.getStateName()+" where no new associations can be created");
-				//TODO actually check for correct statement when goal cardinalities are implemented
-			});
+	@ForEachIOSet
+	public void testGoalCardinalitiesAreCheckedOnStateChange(Activity activity,  DataObjectIOSet ioSet) {
+		var stateMap = ioAssociationsToStateMaps(ioSet);
+		Transition transition = transitionForIoCombination(stateMap, activity).get();
+		
+		var dataObjectStateChanges = ioSet.first.stream().map(input -> 
+			new Pair<>(input, 
+			ioSet.second.stream().filter(output -> 
+				output.dataElementName().equals(input.dataElementName()) && output.isCollection() == input.isCollection()
+				&& !output.getStateName().equals(input.getStateName())).findAny())
+		)
+		.filter(stateChange -> stateChange.second.isPresent())
+		.map(stateChange -> new Pair<>(stateChange.first, stateChange.second.get()));
+		
+		var dataObjectStateChangesWithReducedUpdateability = dataObjectStateChanges.flatMap(stateChange -> {
+			ObjectLifeCycle olc = olcFor(stateChange.first.dataElementName());
+			Set<AssociationEnd> removedUpdateableAssociations = new HashSet<>(olc.getState(stateChange.first.getStateName().get()).get().getUpdateableAssociations());
+			removedUpdateableAssociations.removeAll(olc.getState(stateChange.second.getStateName().get()).get().getUpdateableAssociations());
+			return removedUpdateableAssociations.stream().map(removedAssoc -> new Pair<>(stateChange, removedAssoc));
+		});
+		
+		var dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds = dataObjectStateChangesWithReducedUpdateability
+				.peek(System.out::println)
+				.filter(x -> x.second.getGoalLowerBound() > x.second.getLowerBound());
+		
+		dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds.forEach(x -> {
+			var stateChange = x.first;
+			var removedAssociation = x.second;
+			String dataObjectName = stateChange.first.dataElementName();
+			assertTrue(transition.getCondition().getText().contains(ActivityCompiler.GOAL_CARDINALITY), 
+					"Activity transition "+transition.getName().asString()+" for io set "+ioSet+" does not check for goal lower bound between "+dataObjectName+" and "+removedAssociation.getDataObject()
+					+" although "+dataObjectName+" changes state from "+stateChange.first.getStateName()+" to "+stateChange.second.getStateName()+" where no new associations can be created");
+			//TODO actually check for correct statement when goal cardinalities are implemented
 		});
 	}
 	
