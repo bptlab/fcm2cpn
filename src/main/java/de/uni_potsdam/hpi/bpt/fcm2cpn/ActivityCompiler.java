@@ -61,7 +61,6 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
         inputtingTransitions = element.getDataInputAssociations().stream()
         		.flatMap(Utils::splitDataAssociationByState)
         		.collect(Collectors.toMap(Function.identity(), x -> new ArrayList<>()));
-        
         // All possible combinations of input and output sets, either defined by io-specification or *all* possible combinations are used
         for (Pair<InputSetWrapper, OutputSetWrapper> transputSet : transputSets()) {
         	compileTransputsSet(transputSet);
@@ -79,18 +78,18 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
         
         // Output sets mapped to data assocs and split by "|" state shortcuts
     	Map<OutputSet, List<OutputSetWrapper>> translatedOutputSets = ioSpecification.getOutputSets().stream().collect(Collectors.toMap(Function.identity(), outputSet -> {
-            Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataOutputAssociation, ?>>> outputsPerObject = outputSet.getDataOutputRefs().stream()
+            Map<Pair<DataElementWrapper<?,?>, Boolean>, List<StatefulDataAssociation<DataOutputAssociation, ?>>> outputsPerObject = outputSet.getDataOutputRefs().stream()
             		.map(Utils::getAssociation)
             		.flatMap(Utils::splitDataAssociationByState)
-            		.collect(Collectors.groupingBy(parent::wrapperFor));
+            		.collect(Collectors.groupingBy(assoc -> new Pair<>(parent.wrapperFor(assoc), assoc.isCollection())));
             return allCombinationsOf(outputsPerObject.values()).stream().map(OutputSetWrapper::new).collect(Collectors.toList());
         }));
     	
     	ioSpecification.getInputSets().forEach(inputSet -> {
-            Map<DataElementWrapper<?,?>, List<StatefulDataAssociation<DataInputAssociation, ?>>> inputsPerObject = inputSet.getDataInputs().stream()
+            Map<Pair<DataElementWrapper<?,?>, Boolean>, List<StatefulDataAssociation<DataInputAssociation, ?>>> inputsPerObject = inputSet.getDataInputs().stream()
             		.map(Utils::getAssociation)
             		.flatMap(Utils::splitDataAssociationByState)
-            		.collect(Collectors.groupingBy(parent::wrapperFor));
+            		.collect(Collectors.groupingBy(assoc -> new Pair<>(parent.wrapperFor(assoc), assoc.isCollection())));
             List<InputSetWrapper> translatedInputSets = allCombinationsOf(inputsPerObject.values()).stream().map(InputSetWrapper::new).collect(Collectors.toList());
             for(OutputSet outputSet : inputSet.getOutputSets()) {
             	for(OutputSetWrapper translatedOutputSet : translatedOutputSets.get(outputSet)) {
