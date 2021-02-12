@@ -10,8 +10,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.support.AnnotationConsumer;
 
-import de.uni_potsdam.hpi.bpt.fcm2cpn.ModelStructureTests;
-
 public class BpmnElementProvider implements ArgumentsProvider, AnnotationConsumer<ForEachBpmn>, ArgumentContextNameResolver {
 	
 	private Class<? extends BaseElement> elementClass;
