@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
@@ -50,13 +49,13 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
 	public void testAllTransitionsByActivityArePossible(Activity activity, DataObjectIOSet ioSet) {
-		Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>> ioCombination = ioAssociationsToStateMaps(ioSet);
+		Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioCombination = ioAssociationsToStateMaps(ioSet);
 		ioCombination.first.forEach((object, inputState) -> {
-			Optional<String> outputState = ioCombination.second.get(object);// All read objects are written back, so this is never null
+			String outputState = ioCombination.second.get(object);// All read objects are written back, so this is never null
 			if(!inputState.equals(outputState)) {
 				ObjectLifeCycle olc = olcFor(object.first);
-				assertTrue(olc.getState(inputState.get()).get().getSuccessors().contains(olc.getState(outputState.get()).get()), 
-						"Olc does not support lifecycle transition ("+inputState.get()+" -> "+outputState.get()+") for data object "+object+" which is definied by activity "+activity.getName());
+				assertTrue(olc.getState(inputState).get().getSuccessors().contains(olc.getState(outputState).get()), 
+						"Olc does not support lifecycle transition ("+inputState+" -> "+outputState+") for data object "+object+" which is definied by activity "+activity.getName());
 			}
 		});
 	}
@@ -67,8 +66,8 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 			String dataObject = olc.getClassName();
 			boolean anyActivityCanTakeThisTransition = bpmn.getModelElementsByType(Activity.class).stream().anyMatch(activity -> {
 				return ioAssociationCombinations(activity).stream().anyMatch(ioSet -> 
-				ioSet.first.stream().anyMatch(inputAssoc -> inputAssoc.dataElementName().equals(dataObject) && states.first.getStateName().equals(inputAssoc.getStateName().orElse(null)))
-				&& ioSet.second.stream().anyMatch(outputAssoc -> outputAssoc.dataElementName().equals(dataObject) && states.second.getStateName().equals(outputAssoc.getStateName().orElse(null)))
+				ioSet.first.stream().anyMatch(inputAssoc -> inputAssoc.dataElementName().equals(dataObject) && states.first.getStateName().equals(inputAssoc.getStateName()))
+				&& ioSet.second.stream().anyMatch(outputAssoc -> outputAssoc.dataElementName().equals(dataObject) && states.second.getStateName().equals(outputAssoc.getStateName()))
 				);
 			});
 			assertTrue(anyActivityCanTakeThisTransition, "There is no activity which changes state of '"+dataObject+"' from "+states.first.getStateName()+" to "+states.second.getStateName());
@@ -95,13 +94,11 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 			.filter(ioCombination -> createsAssociationBetween(ioCombination, first, second))
 			.forEach(ioCombination -> {
 				var stateMap = ioAssociationsToStateMaps(ioCombination);
-				Optional<String> readStateName = stateMap.first.getOrDefault(new Pair<>(first, false), stateMap.first.get(new Pair<>(first, true)));
-				if(readStateName.isPresent()) {
-					State readState = olcFor(first).getState(readStateName.get()).get();
-					assertTrue(readState.getUpdateableAssociations().contains(relevantEnd), 
-							"Association between "+first+" and "+second+" is created in one IO-Set of activity "+elementName(activity)
-									+ ", but not marked in state "+readState.getStateName()+" of "+first);
-				}
+				String readStateName = stateMap.first.getOrDefault(new Pair<>(first, false), stateMap.first.get(new Pair<>(first, true)));
+				State readState = olcFor(first).getState(readStateName).get();
+				assertTrue(readState.getUpdateableAssociations().contains(relevantEnd), 
+						"Association between "+first+" and "+second+" is created in one IO-Set of activity "+elementName(activity)
+								+ ", but not marked in state "+readState.getStateName()+" of "+first);
 			});
 	}
 	

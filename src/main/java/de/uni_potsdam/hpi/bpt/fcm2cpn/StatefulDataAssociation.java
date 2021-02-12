@@ -1,7 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import java.util.Objects;
-import java.util.Optional;
 
 import org.camunda.bpm.model.bpmn.instance.DataAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
@@ -14,13 +13,13 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 public class StatefulDataAssociation<AssociationType extends DataAssociation, DataElement extends ItemAwareElement> {
-	private final Optional<String> stateName;
+	private final String stateName;
 	private final DataElement dataElement;//DataObjectReference or DataStoreReference
 	private final AssociationType bpmnAssociation;//DataInputAssociation or DataOutputAssociation
 	private final boolean isCollection;
 	public StatefulDataAssociation(AssociationType bpmnAssociation, String stateName, DataElement dataElement, boolean isCollection) {
 		this.bpmnAssociation = bpmnAssociation;
-		this.stateName = Optional.ofNullable(stateName);
+		this.stateName = stateName;
 		this.dataElement = dataElement;
 		this.isCollection = isCollection;
 		
@@ -28,7 +27,7 @@ public class StatefulDataAssociation<AssociationType extends DataAssociation, Da
 		assert isInput() ^ isOutput();
 	}
 	
-	public Optional<String> getStateName() {
+	public String getStateName() {
 		return stateName;
 	}
 
@@ -90,6 +89,6 @@ public class StatefulDataAssociation<AssociationType extends DataAssociation, Da
 	
 	@Override
 	public String toString() {
-		return this.getClass().getSimpleName()+"("+dataElement.getAttributeValue("name")+", "+stateName.orElse(null)+")";
+		return this.getClass().getSimpleName()+"("+dataElement.getAttributeValue("name")+", "+stateName+")";
 	}
 }

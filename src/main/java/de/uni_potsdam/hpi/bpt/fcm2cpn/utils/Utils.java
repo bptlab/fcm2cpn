@@ -23,6 +23,7 @@ import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.xml.ModelInstance;
 import org.cpntools.accesscpn.model.Transition;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.BpmnPreprocessor;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
 
 public class Utils {
@@ -164,7 +165,7 @@ public class Utils {
 		return Optional.ofNullable(dataElementReference.getDataState())
         		.map(DataState::getName)
         		.map(stateName -> dataObjectStateToNetColors(stateName))
-        		.orElse(Stream.of((String)null));
+        		.orElse(Stream.of(BpmnPreprocessor.BLANK_STATE));
 	}
 	
 	public static boolean isDataElementReference(BaseElement dataElementReference) {

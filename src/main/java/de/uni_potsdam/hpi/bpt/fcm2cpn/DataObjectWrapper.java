@@ -39,7 +39,7 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 
 	@Override
 	public String annotationForDataFlow(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc) {
-        String stateString = assoc.getStateName().map(x -> ", state = "+x).orElse("");
+        String stateString = ", state = "+assoc.getStateName();
         String caseId = compilerApp.caseId();
         if(!assoc.isCollection()) {
             return "{id = "+dataElementId()+" , "+caseId+" = "+caseId+stateString+"}";
@@ -47,7 +47,7 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
         	if(assoc.isInput() || assoc.getStateName().isEmpty()) {
         		return dataElementList();
         	} else {
-        		return "mapState "+dataElementList()+" "+assoc.getStateName().get();
+        		return "mapState "+dataElementList()+" "+assoc.getStateName();
         	}
         }
         
@@ -55,7 +55,7 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 
 	@Override
 	public String collectionCreationGuard(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc) {
-		String stateString = assoc.getStateName().map(x -> ", state = "+x).orElse("");
+        String stateString = ", state = "+assoc.getStateName();
 		String caseId = compilerApp.caseId();
 		String className = normalizedName;
 		String identifyingObjectId = compilerApp.getDataObjectCollectionIdentifier((Activity) otherEnd, this).dataElementId();

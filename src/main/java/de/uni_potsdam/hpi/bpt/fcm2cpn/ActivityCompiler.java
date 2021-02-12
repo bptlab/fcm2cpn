@@ -295,13 +295,11 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
     private void addGuardsForStateChanges(Set<DataObjectWrapper> stateChangesToPerform, Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
 		for (DataObjectWrapper stateChange : stateChangesToPerform) {
 			Set<String> inputStates = readContext.get(stateChange).stream()
-				.map(obj -> obj.getStateName().orElse(null))
-				.filter(Objects::nonNull)
+				.map(obj -> obj.getStateName())
 				.collect(Collectors.toSet());
 			Set<String> outputStates = writeContext.get(stateChange).stream()
-					.map(obj -> obj.getStateName().orElse(null))
-					.filter(Objects::nonNull)
-					.collect(Collectors.toSet());
+				.map(obj -> obj.getStateName())
+				.collect(Collectors.toSet());
 			assert(inputStates.size() <= 1);
 			assert(outputStates.size() <= 1);
 			ObjectLifeCycle olc = parent.olcFor(stateChange);

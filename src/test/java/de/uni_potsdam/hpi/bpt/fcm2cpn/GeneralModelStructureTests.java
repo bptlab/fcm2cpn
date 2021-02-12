@@ -11,7 +11,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -240,10 +239,10 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testConsumedDataObjectsAreReproduced(Activity activity) {
-		Set<Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>> ioCombinations = ioCombinationsInNet(activity);
+		Set<Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>>> ioCombinations = ioCombinationsInNet(activity);
 		ioCombinations.forEach(ioCombination -> {
-			Map<Pair<String, Boolean>, Optional<String>> inputs = ioCombination.first;
-			Map<Pair<String, Boolean>, Optional<String>> outputs = ioCombination.second;
+			Map<Pair<String, Boolean>, String> inputs = ioCombination.first;
+			Map<Pair<String, Boolean>, String> outputs = ioCombination.second;
 			
 			Set<Pair<String, Boolean>> missingWriteBacks = new HashSet<>(inputs.keySet());
 			missingWriteBacks.removeAll(outputs.keySet());
@@ -256,8 +255,8 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testInputAndOutputStateCombinations(Activity activity) {
-		Set<Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>> expectedCombinations = expectedIOCombinations(activity);
-		Set<Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>> supportedCombinations = ioCombinationsInNet(activity);
+		Set<Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>>> expectedCombinations = expectedIOCombinations(activity);
+		Set<Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>>> supportedCombinations = ioCombinationsInNet(activity);
 		
 		assertEquals(supportedCombinations, expectedCombinations,
 			"Possible i/o state combinations did not match for activity \""+elementName(activity)+"\":"
@@ -272,7 +271,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
 	public void testEachIOSetIsMappedToTransition(Activity activity,  DataObjectIOSet ioSet) {
-		Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>> stateMap = ioAssociationsToStateMaps(ioSet);
+		Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> stateMap = ioAssociationsToStateMaps(ioSet);
 		assertTrue(transitionForIoCombination(stateMap, activity).isPresent(), 
 				"No transition for ioSet "+stateMap+" of activity "+elementName(activity));		
 	}
@@ -458,8 +457,8 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		
 		var dataObjectStateChangesWithReducedUpdateability = dataObjectStateChanges.flatMap(stateChange -> {
 			ObjectLifeCycle olc = olcFor(stateChange.first.dataElementName());
-			Set<AssociationEnd> removedUpdateableAssociations = new HashSet<>(olc.getState(stateChange.first.getStateName().get()).get().getUpdateableAssociations());
-			removedUpdateableAssociations.removeAll(olc.getState(stateChange.second.getStateName().get()).get().getUpdateableAssociations());
+			Set<AssociationEnd> removedUpdateableAssociations = new HashSet<>(olc.getState(stateChange.first.getStateName()).get().getUpdateableAssociations());
+			removedUpdateableAssociations.removeAll(olc.getState(stateChange.second.getStateName()).get().getUpdateableAssociations());
 			return removedUpdateableAssociations.stream().map(removedAssoc -> new Pair<>(stateChange, removedAssoc));
 		});
 		

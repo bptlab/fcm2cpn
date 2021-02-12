@@ -137,7 +137,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	
 	public boolean readsInState(DataObjectIOSet ioSet, String dataObject, State state) {
 		return ioSet.first.stream().anyMatch(each -> each.dataElementName().equals(dataObject) 
-				&& state.getOLC().getState(each.getStateName().get()).get().equals(state));
+				&& state.getOLC().getState(each.getStateName()).get().equals(state));
 	}
 	
 	public boolean writes(DataObjectIOSet ioSet, String dataObject) {
@@ -154,7 +154,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	
 	public boolean writesInState(DataObjectIOSet ioSet, String dataObject, State state) {
 		return ioSet.second.stream().anyMatch(each -> each.dataElementName().equals(dataObject) 
-				&& state.getOLC().getState(each.getStateName().get()).get().equals(state));
+				&& state.getOLC().getState(each.getStateName()).get().equals(state));
 	}
 	
 	public boolean creates(DataObjectIOSet ioSet, String dataObject) {
@@ -222,8 +222,8 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		.collect(Collectors.toSet());
 	}
 	
-	public static Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>> ioAssociationsToStateMaps(DataObjectIOSet ioAssociations) {
-		Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>> ioConfiguration = new Pair<>(
+	public static Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioAssociationsToStateMaps(DataObjectIOSet ioAssociations) {
+		Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioConfiguration = new Pair<>(
 				ioAssociations.first.stream()
 					.collect(Collectors.toMap(StatefulDataAssociation::dataElementNameAndCollection, StatefulDataAssociation::getStateName)),
 				ioAssociations.second.stream()
@@ -238,34 +238,34 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		return ioConfiguration;
 	}
 	
-	public static Set<Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>> expectedIOCombinations(Activity activity) {
+	public static Set<Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>>> expectedIOCombinations(Activity activity) {
 		return ioAssociationCombinations(activity).stream()
 				.map(ModelStructureTests::ioAssociationsToStateMaps).collect(Collectors.toSet());
 	}
 	
-	public static Stream<Pair<Pair<String, Boolean>, Optional<String>>> expectedCreatedObjects(Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>> ioCombination) {
+	public static Stream<Pair<Pair<String, Boolean>, String>> expectedCreatedObjects(Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioCombination) {
 		return ioCombination.second.entrySet().stream()
 			.filter(idAndState -> !ioCombination.first.containsKey(idAndState.getKey()))
 			.map(entry -> new Pair<>(entry.getKey(), entry.getValue()));
 	}
 	
-	public Set<Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>> ioCombinationsInNet(Activity activity) {
-		Set<Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>> ioCombinations = new HashSet<>();
+	public Set<Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>>> ioCombinationsInNet(Activity activity) {
+		Set<Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>>> ioCombinations = new HashSet<>();
 		transitionsFor(activity).forEach(transition -> 
 			ioCombinations.add(ioCombinationOfTransition(transition)));
 		return ioCombinations;
 	}
 	
 	//TODO duplicate to activityTransitionsForTransput ?
-	public Optional<Transition> transitionForIoCombination(Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>> ioCombination, Activity activity) {
+	public Optional<Transition> transitionForIoCombination(Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioCombination, Activity activity) {
 		return transitionsFor(activity)
 			.filter(transition -> ioCombinationOfTransition(transition).equals(ioCombination))
 			.findAny();
 	}
 	
-	public Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>> ioCombinationOfTransition(Transition transition) {
-		Map<Pair<String, Boolean>, Optional<String>> inputs = new HashMap<>();
-		Map<Pair<String, Boolean>, Optional<String>> outputs = new HashMap<>();
+	public Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioCombinationOfTransition(Transition transition) {
+		Map<Pair<String, Boolean>, String> inputs = new HashMap<>();
+		Map<Pair<String, Boolean>, String> outputs = new HashMap<>();
 		transition.getTargetArc().stream()
 			.map(inputArc -> inputArc.getHlinscription().asString())
 			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> inputs.put(idAndState.first, idAndState.second)));
@@ -273,10 +273,10 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		transition.getSourceArc().stream()
 			.map(outputArc -> outputArc.getHlinscription().asString())
 			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> outputs.put(idAndState.first, idAndState.second)));
-		return new Pair<Map<Pair<String, Boolean>, Optional<String>>, Map<Pair<String, Boolean>, Optional<String>>>(inputs, outputs);
+		return new Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>>(inputs, outputs);
 	}
 	
-	public static Optional<Pair<Pair<String, Boolean>, Optional<String>>> parseCreatedTokenIdAndState(String inscription, Transition transition) {
+	public static Optional<Pair<Pair<String, Boolean>, String>> parseCreatedTokenIdAndState(String inscription, Transition transition) {
 		String dataId = null;
 		String state = null;
 		boolean isCollection = false;
@@ -308,7 +308,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 					.findAny().orElse(null);
 			}
 		}
-		if(dataId != null) return Optional.of(new Pair<>(new Pair<>(dataId, isCollection), Optional.ofNullable(state)));
+		if(dataId != null) return Optional.of(new Pair<>(new Pair<>(dataId, isCollection), state));
 		else return Optional.empty();
 	}
 	
