@@ -25,6 +25,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.AssociationsProvider;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
 public class ObjectLifeCycleParserTests extends ModelStructureTests {
@@ -48,9 +49,9 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
 	public void testAllTransitionsByActivityArePossible(Activity activity, DataObjectIOSet ioSet) {
-		Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioCombination = ioAssociationsToStateMaps(ioSet);
-		ioCombination.first.forEach((object, inputState) -> {
-			String outputState = ioCombination.second.get(object);// All read objects are written back, so this is never null
+		Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioStateMap = ioAssociationsToStateMaps(ioSet);
+		ioStateMap.first.forEach((object, inputState) -> {
+			String outputState = ioStateMap.second.get(object);// All read objects are written back, so this is never null
 			if(!inputState.equals(outputState)) {
 				ObjectLifeCycle olc = olcFor(object.first);
 				assertTrue(olc.getState(inputState).get().getSuccessors().contains(olc.getState(outputState).get()), 
@@ -90,9 +91,9 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 		AssociationEnd relevantEnd = assoc.getEnd(second);
 		
 		ioAssociationCombinations(activity).stream()
-			.filter(ioCombination -> createsAssociationBetween(ioCombination, first, second))
-			.forEach(ioCombination -> {
-				var stateMap = ioAssociationsToStateMaps(ioCombination);
+			.filter(ioSet -> ioSet.createsAssociationBetween(first, second) && ioSet.creates(second))
+			.forEach(ioSet -> {
+				var stateMap = ioAssociationsToStateMaps(ioSet);
 				String readStateName = stateMap.first.getOrDefault(new Pair<>(first, false), stateMap.first.get(new Pair<>(first, true)));
 				State readState = olcFor(first).getState(readStateName).get();
 				assertTrue(readState.getUpdateableAssociations().contains(relevantEnd), 
@@ -113,9 +114,9 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 				String otherDataObject = relevantEnd.getDataObject();
 				assertTrue(activities.stream()
 					.flatMap(activity -> ioAssociationCombinations(activity).stream())
-					.filter(ioCombination -> createsAssociationBetween(ioCombination, dataObjectName, otherDataObject))
+					.filter(ioSet -> ioSet.createsAssociationBetween( dataObjectName, otherDataObject))
 					
-					.anyMatch(ioCombination -> readsInState(ioCombination, dataObjectName, state)),
+					.anyMatch(ioSet -> ioSet.readsInState( dataObjectName, state)),
 					
 					dataObjectName+" state "+state+" has an updateable association to "+otherDataObject
 					+", but there is no IO combination of any activity that creates an association while "+dataObjectName+" is in that state");

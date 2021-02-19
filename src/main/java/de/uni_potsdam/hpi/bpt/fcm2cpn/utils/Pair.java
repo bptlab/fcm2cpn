@@ -1,6 +1,5 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.utils;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 public class Pair<S,T> {
@@ -37,11 +36,6 @@ public class Pair<S,T> {
 		if (getClass() != obj.getClass()) return false;
 		Pair<?, ?> other = (Pair<?, ?>) obj;
 		return Objects.equals(first, other.first) && Objects.equals(second, other.second);
-	}
-	
-	//TODO unused
-	public int indexOf(Object o) {
-		return Arrays.asList(first, second).indexOf(o);
 	}
 	
 	public Object otherElement(Object o) {

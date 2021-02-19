@@ -43,9 +43,9 @@ import org.cpntools.accesscpn.model.Transition;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle.State;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycleParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelConsumerTest;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
@@ -109,60 +109,6 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 				.filter(each -> each instanceof DataObjectReference).map(DataObjectReference.class::cast);
 	}
 	
-	public boolean associationShouldAlreadyBeInPlace(DataObjectIOSet ioSet, String firstDataObject, String secondDataObject) {
-		return reads(ioSet, firstDataObject) && reads(ioSet, secondDataObject) 
-				&& (!writes(ioSet, firstDataObject) || 
-						readsAsCollection(ioSet, firstDataObject) == writesAsCollection(ioSet, firstDataObject)
-						&& readsAsNonCollection(ioSet, firstDataObject) == writesAsNonCollection(ioSet, firstDataObject)
-					)
-				&& (!writes(ioSet, secondDataObject) ||
-						readsAsCollection(ioSet, secondDataObject) == writesAsCollection(ioSet, secondDataObject) 
-						&& readsAsNonCollection(ioSet, secondDataObject) == writesAsNonCollection(ioSet, secondDataObject)
-					);
-	}
-	
-	public boolean reads(DataObjectIOSet ioSet, String dataObject) {
-		return ioSet.first.stream().anyMatch(each -> each.dataElementName().equals(dataObject));
-	}
-	
-	public boolean readsAsCollection(DataObjectIOSet ioSet, String dataObject) {
-		return ioSet.first.stream().anyMatch(each -> each.dataElementName().equals(dataObject) && each.isCollection());
-	}
-	
-	public boolean readsAsNonCollection(DataObjectIOSet ioSet, String dataObject) {
-		return ioSet.first.stream().anyMatch(each -> each.dataElementName().equals(dataObject) && !each.isCollection());
-	}
-	
-	public boolean readsInState(DataObjectIOSet ioSet, String dataObject, State state) {
-		return ioSet.first.stream().anyMatch(each -> each.dataElementName().equals(dataObject) 
-				&& state.getOLC().getState(each.getStateName()).get().equals(state));
-	}
-	
-	public boolean writes(DataObjectIOSet ioSet, String dataObject) {
-		return ioSet.second.stream().anyMatch(each -> each.dataElementName().equals(dataObject));
-	}
-	
-	public boolean writesAsCollection(DataObjectIOSet ioSet, String dataObject) {
-		return ioSet.second.stream().anyMatch(each -> each.dataElementName().equals(dataObject) && each.isCollection());
-	}
-	
-	public boolean writesAsNonCollection(DataObjectIOSet ioSet, String dataObject) {
-		return ioSet.second.stream().anyMatch(each -> each.dataElementName().equals(dataObject) && !each.isCollection());
-	}
-	
-	public boolean writesInState(DataObjectIOSet ioSet, String dataObject, State state) {
-		return ioSet.second.stream().anyMatch(each -> each.dataElementName().equals(dataObject) 
-				&& state.getOLC().getState(each.getStateName()).get().equals(state));
-	}
-	
-	public boolean creates(DataObjectIOSet ioSet, String dataObject) {
-		//TODO return (writesAsNonCollection(ioSet, dataObject) && !readsAsNonCollection(ioSet, dataObject)) || (writesAsCollection(ioSet, dataObject) && !readsAsCollection(ioSet, dataObject));
-		return writes(ioSet, dataObject) && !reads(ioSet, dataObject);
-	}
-	
-	public boolean createsAssociationBetween(DataObjectIOSet ioCombination, String first, String second) {
-		return reads(ioCombination, first) && creates(ioCombination, second);
-	}
 	
 	public static Map<String, List<String>> dataObjectToStateMap(Stream<DataObjectReference> dataObjectReferences) {
 		return dataObjectReferences
@@ -170,13 +116,6 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 			.collect(Collectors.groupingBy(
 					each -> elementName(each.getDataObject()),
 					Collectors.flatMapping(each -> Utils.dataObjectStateToNetColors(each.getDataState().getName()), Collectors.toList())));
-	}
-	
-	//Alias class to avoid really long type parameters
-	protected static class DataObjectIOSet extends Pair<List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> {
-		public DataObjectIOSet(List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>> first, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> second) {
-			super(first, second);
-		}
 	}
 	
 	public static Set<Pair<List<DataInputAssociation>, List<DataOutputAssociation>>> statelessAssociationCombinations(Activity activity) {

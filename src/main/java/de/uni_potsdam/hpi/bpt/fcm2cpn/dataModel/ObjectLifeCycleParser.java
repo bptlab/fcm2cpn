@@ -139,7 +139,7 @@ public class ObjectLifeCycleParser {
                                 .flatMap(input -> getDataObjectStates(input).stream())
                                 .collect(Collectors.toSet());
 
-                        // ... the state in which the base object is read can update the association
+                        // ... the state in which the base object is read can update the association cardinality
                         ObjectLifeCycle olc = olcForClass.get(object);
                         readStates.forEach(readState -> olc.getState(readState).get().addUpdateableAssociation(assocEnd));
                 	}
@@ -157,10 +157,10 @@ public class ObjectLifeCycleParser {
             for (InputSet inputSet : outputSet.getInputSetRefs()) {
 	            boolean writesObject = outputSet.getDataOutputRefs().stream()
 	            		.map(ObjectLifeCycleParser::getDataObjectName)
-	            		.anyMatch(writtenObject -> writtenObject.equals(object));
+	            		.anyMatch(object::equals);
             	boolean readsObject = inputSet.getDataInputs().stream()
             			.map(ObjectLifeCycleParser::getDataObjectName)
-                        .anyMatch(readObject -> readObject.equals(object));
+	            		.anyMatch(object::equals);
             	if(writesObject && !readsObject) ioSetsThatCreateObject.add(new Pair<>(inputSet, outputSet));
             }
         }

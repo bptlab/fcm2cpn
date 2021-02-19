@@ -16,6 +16,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.AssociationsProvider;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIOSet;
 
 public class AssociationTests extends ModelStructureTests {
 	
@@ -32,8 +33,8 @@ public class AssociationTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
 	public void testDataAssociationsBetweenReadAndWriteAreCreated(String first, String second, Activity activity, DataObjectIOSet ioSet) {
-		assumeTrue(reads(ioSet, first) && writes(ioSet, second), "Activity does not read the first and write the second data object.");
-		assumeFalse(associationShouldAlreadyBeInPlace(ioSet, first, second), "Activity reads both data objects in the same collection/non-collection way as they are written, so an association is already in place");
+		assumeTrue(ioSet.reads(first) && ioSet.writes(second), "Activity does not read the first and write the second data object.");
+		assumeFalse(ioSet.associationShouldAlreadyBeInPlace(first, second), "Activity reads both data objects in the same collection/non-collection way as they are written, so an association is already in place");
 		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		if(arcsFromNodeNamed(transition, first).count() != 0 && arcsToNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
@@ -47,8 +48,8 @@ public class AssociationTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
 	public void testDataAssociationsBetweenParallelWritesAreCreated(String first, String second, Activity activity, DataObjectIOSet ioSet) {
-		assumeTrue(writes(ioSet, first) && writes(ioSet, second), "Activity does not write both data objects.");
-		assumeFalse(associationShouldAlreadyBeInPlace(ioSet, first, second), "Activity reads both data objects in the same collection/non-collection way as they are written, so an association is already in place");
+		assumeTrue(ioSet.writes(first) && ioSet.writes(second), "Activity does not write both data objects.");
+		assumeFalse(ioSet.associationShouldAlreadyBeInPlace(first, second), "Activity reads both data objects in the same collection/non-collection way as they are written, so an association is already in place");
 		
 		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
@@ -63,7 +64,7 @@ public class AssociationTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
 	public void testAssociationsAreCheckedWhenReading(String first, String second, Activity activity, DataObjectIOSet ioSet) {
-		assumeTrue(reads(ioSet, first) && reads(ioSet, second), "Activity does not read both data objects.");
+		assumeTrue(ioSet.reads(first) && ioSet.reads(second), "Activity does not read both data objects.");
 		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		if(arcsFromNodeNamed(transition, first).count() != 0 && arcsFromNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
@@ -77,8 +78,8 @@ public class AssociationTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
 	public void testCheckedAssociationsAreNotDuplicated(String first, String second, Activity activity, DataObjectIOSet ioSet) {
-		assumeTrue(reads(ioSet, first) && reads(ioSet, second), "Activity does not read both data objects.");
-		assumeTrue(associationShouldAlreadyBeInPlace(ioSet, first, second), "A new association should be created.");
+		assumeTrue(ioSet.reads(first) && ioSet.reads(second), "Activity does not read both data objects.");
+		assumeTrue(ioSet.associationShouldAlreadyBeInPlace(first, second), "A new association should be created.");
 		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		assertEquals(0, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
@@ -107,7 +108,7 @@ public class AssociationTests extends ModelStructureTests {
 		Association assoc = dataModel.getAssociation(first, second).get();
 		int upperBound = assoc.getEnd(second).getUpperBound();
 		assumeTrue(upperBound > 1 && upperBound != AssociationEnd.UNLIMITED, "No upper limit that has to be checked");//TODO will 1:1 need to be checked?
-		assumeTrue(creates(ioSet, second) && (writes(ioSet, first) || reads(ioSet, first)), "Association is not created in this activity");
+		assumeTrue(ioSet.creates(second) && (ioSet.writes(first) || ioSet.reads(first)), "Association is not created in this activity");
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		if(arcsFromNodeNamed(transition, first).count() != 0) {//If the object is just created, no upper bound checking is needed
 			assertEquals(1, guardsOf(transition).filter(guard -> guard.equals("(enforceUpperBound "+first+"Id "+second+" assoc "+upperBound+")")).count(),
@@ -123,7 +124,7 @@ public class AssociationTests extends ModelStructureTests {
 		Association assoc = dataModel.getAssociation(first, second).get();
 		int lowerBound = assoc.getEnd(second).getLowerBound();
 		assumeTrue(lowerBound > 1, "No lower bound that has to be checked");
-		assumeTrue(reads(ioSet, second) && (writes(ioSet, first) || reads(ioSet, first)), "Association is not created in this activity");
+		assumeTrue(ioSet.reads(second) && (ioSet.writes(first) || ioSet.reads(first)), "Association is not created in this activity");
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		if(arcsFromNodeNamed(transition, first).count() != 0 || arcsToNodeNamed(transition, first).count() != 0) {//Object might not be part of transition i/o set
 			assertEquals(1, guardsOf(transition).filter(guard -> {
@@ -131,7 +132,7 @@ public class AssociationTests extends ModelStructureTests {
 				String afterIdentifier = "Id "+second+" assoc "+lowerBound+")";
 				if(!(guard.startsWith(beforeIdentifier) && guard.endsWith(afterIdentifier))) return false;
 				String identifier = guard.replace(beforeIdentifier, "").replace(afterIdentifier, "");
-				return reads(ioSet, identifier) && dataModel.getAssociation(identifier, second).map(idAssoc -> idAssoc.getEnd(identifier).getUpperBound() == 1).orElse(false);
+				return ioSet.reads(identifier) && dataModel.getAssociation(identifier, second).map(idAssoc -> idAssoc.getEnd(identifier).getUpperBound() == 1).orElse(false);
 			}).count(),
 					"There is not exactly one guard for lower limit of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");
 		}

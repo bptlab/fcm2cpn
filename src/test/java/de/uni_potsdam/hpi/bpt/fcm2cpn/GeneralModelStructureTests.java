@@ -37,6 +37,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
 
