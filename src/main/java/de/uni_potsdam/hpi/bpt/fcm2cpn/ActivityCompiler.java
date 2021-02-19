@@ -140,7 +140,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
                 .filter(object -> !readObjects.contains(object) || (readContext.get(object).stream().allMatch(StatefulDataAssociation::isCollection) && !writeContext.get(object).stream().allMatch(StatefulDataAssociation::isCollection)))
                 .collect(Collectors.toSet());
 
-        Transition subpageTransition = elementPage.createTransition(element.getName() + "_" + transputSetIndex);
+        Transition subpageTransition = elementPage.createTransition(elementName(element) + "_" + transputSetIndex);
         attachObjectCreationCounters(subpageTransition, createdObjects);
         createCreationRegistrationArcs(subpageTransition, createdObjects);
         
@@ -249,7 +249,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 							DataObjectWrapper identifier = parent.getDataObjectCollectionIdentifier(element, collectionDataObject);
 							if(!parent.getDataModel().getAssociation(identifier.getNormalizedName(), singleObject.getNormalizedName())
 									.map(linkingAssoc -> linkingAssoc.first.getUpperBound() <= 1 && linkingAssoc.second.getUpperBound() <= 1)
-									.orElse(false)) throw new ModelValidationException("Identifier data object "+identifier.getNormalizedName()+" for list data object "+collectionDataObject.getNormalizedName()+" is not associated 1 to 1 with "+singleObject.getNormalizedName()+" in activity "+normalizeElementName(elementName(element)));
+									.orElse(false)) throw new ModelValidationException("Identifier data object "+identifier.getNormalizedName()+" for list data object "+collectionDataObject.getNormalizedName()+" is not associated 1 to 1 with "+singleObject.getNormalizedName()+" in activity "+elementName(element));
 
 							int lowerBound = assoc.getEnd(collectionDataObject.getNormalizedName()).getLowerBound();
 							//TODO new guard

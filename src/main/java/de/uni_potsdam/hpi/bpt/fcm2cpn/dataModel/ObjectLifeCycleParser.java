@@ -4,7 +4,6 @@ import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.dataElementReferenceOf;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getAssociation;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getReferencedElement;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.splitDataAssociationByState;
 
 import java.util.ArrayList;
@@ -59,14 +58,13 @@ public class ObjectLifeCycleParser {
 
 	private void determineDataClasses() {
         bpmn.getModelElementsByType(DataObject.class).stream()
-	    	.map(DataObject::getName)
-	    	.map(Utils::normalizeElementName)
+	    	.map(Utils::elementName)
 	    	.forEach(className -> olcForClass.put(className, new ObjectLifeCycle(className)));
     }
 	
     private void determineStates() {
     	bpmn.getModelElementsByType(DataObjectReference.class).forEach(dataObjectRef -> {
-            ObjectLifeCycle olc = olcForClass.get(normalizeElementName(elementName(getReferencedElement(dataObjectRef))));
+            ObjectLifeCycle olc = olcForClass.get(elementName(getReferencedElement(dataObjectRef)));
     		Utils.dataElementStates(dataObjectRef)
 	    		.filter(Objects::nonNull)
 	    		.filter(stateName -> olc.getState(stateName).isEmpty())
@@ -172,13 +170,13 @@ public class ObjectLifeCycleParser {
     private static String getDataObjectName(DataInput iRef) {
         DataInputAssociation inputAssoc = getAssociation(iRef);
         ItemAwareElement dataElement = getReferencedElement(inputAssoc.getSources().stream().findAny().get());
-        return normalizeElementName(elementName(dataElement));
+        return elementName(dataElement);
     }
     
     private static String getDataObjectName(DataOutput oRef) {
         DataOutputAssociation outputAssoc = getAssociation(oRef);
         ItemAwareElement dataElement = getReferencedElement(dataElementReferenceOf(outputAssoc));
-        return normalizeElementName(elementName(dataElement));
+        return elementName(dataElement);
     }
 
     private static Set<String> getDataObjectStates(DataInput iRef) {

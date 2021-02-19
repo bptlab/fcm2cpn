@@ -28,7 +28,7 @@ public class StartEventCompiler extends FlowElementCompiler<StartEvent> {
     	String name = elementName(element);
     	Transition subpageTransition = elementPage.createTransition(name);
         
-        Place caseTokenPlace = elementPage.createPlace("Case Count", "INT", "1`0");
+        Place caseTokenPlace = elementPage.createPlace("Case_Count", "INT", "1`0");
         elementPage.createArc(caseTokenPlace, subpageTransition, "count");
         elementPage.createArc(subpageTransition, caseTokenPlace, "count + 1");
 

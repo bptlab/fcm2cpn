@@ -16,10 +16,10 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 
 public class ExplicitModelStructureTests extends ModelStructureTests {
 
-	private static final String ACTIVITYNAME = "One";
-	private static final String STARTEVENTNAME = "Case\nStarted";
-	private static final String FIRSTDATAOBJECTNAME = "A";
-	private static final String SECONDDATAOBJECTNAME = "B";
+	private static final String ACTIVITYNAME = normalizeElementName("One");
+	private static final String STARTEVENTNAME = normalizeElementName("Case\nStarted");
+	private static final String FIRSTDATAOBJECTNAME = normalizeElementName("A");
+	private static final String SECONDDATAOBJECTNAME = normalizeElementName("B");
 
 	@Test
 	public void testAlwaysTrue() {
@@ -36,7 +36,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@ModelsToTest("Simple")
 	public void testFirstPageIsMainPage() {
 		Page mainPage = petrinet.getPage().get(0);
-		assertEquals("Main Page", mainPage.getName().asString());
+		assertEquals("Main_Page", mainPage.getName().asString());
 	}
 	
 	@Test

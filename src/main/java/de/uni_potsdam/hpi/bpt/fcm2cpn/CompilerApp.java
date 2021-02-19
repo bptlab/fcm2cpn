@@ -20,7 +20,6 @@ package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.dataObjectStateToNetColors;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -212,7 +211,7 @@ public class CompilerApp implements AbstractPageScope {
         petriNet = builder.createPetriNet();
         petriNet.setName(ModelFactory.INSTANCE.createName());
         petriNet.getName().setText("Compiled BPMN Model");
-        mainPage = createPage("Main Page");
+        mainPage = createPage("Main_Page");
         initializeDefaultColorSets();
         initializeDefaultVariables();
         initializeUtilityFunctions();
@@ -230,7 +229,7 @@ public class CompilerApp implements AbstractPageScope {
         CPNEnum typeEnum = CpntypesFactory.INSTANCE.createCPNEnum();
         Collection<DataObject> dataTypes = bpmn.getModelElementsByType(DataObject.class);
         dataTypes.stream()
-        	.map(each -> normalizeElementName(each.getName()))
+        	.map(Utils::elementName)
         	.distinct()
             .forEach(typeEnum::addValue);
         if(dataTypes.isEmpty()) typeEnum.addValue("NO_TYPES");
@@ -334,12 +333,12 @@ public class CompilerApp implements AbstractPageScope {
 
     	Collection<DataObject> dataObjects = bpmn.getModelElementsByType(DataObject.class);
         dataObjects.forEach(each -> dataObjectsNamesToWrappers
-        		.computeIfAbsent(normalizeElementName(each.getName()), normalizedName -> new DataObjectWrapper(this, normalizedName))
+        		.computeIfAbsent(elementName(each), normalizedName -> new DataObjectWrapper(this, normalizedName))
         		.addMappedElement(each));
         
         Collection<DataObjectReference> dataObjectRefs = bpmn.getModelElementsByType(DataObjectReference.class);
         dataObjectRefs.forEach(each -> dataObjectsNamesToWrappers
-        		.get(normalizeElementName(each.getDataObject().getName()))
+        		.get(elementName(each.getDataObject()))
         		.addMappedReference(each));
         
         dataObjectWrappers = dataObjectsNamesToWrappers.values();
@@ -350,11 +349,11 @@ public class CompilerApp implements AbstractPageScope {
         
         Collection<DataStore> dataStores = bpmn.getModelElementsByType(DataStore.class);
         dataStores.forEach(each -> dataStoreNamesToWrappers
-        		.computeIfAbsent(normalizeElementName(each.getName()), normalizedName -> new DataStoreWrapper(this, normalizedName))
+        		.computeIfAbsent(elementName(each), normalizedName -> new DataStoreWrapper(this, normalizedName))
         		.addMappedElement(each));
         Collection<DataStoreReference> dataStoreRefs = bpmn.getModelElementsByType(DataStoreReference.class);
         dataStoreRefs.forEach(each -> dataStoreNamesToWrappers
-        		.get(normalizeElementName(each.getDataStore().getName()))
+        		.get(elementName(each.getDataStore()))
         		.addMappedReference(each));
         
         dataStoreWrappers = dataStoreNamesToWrappers.values();
@@ -519,7 +518,7 @@ public class CompilerApp implements AbstractPageScope {
     
     public SubpageElement createSubpage(FlowElement element) {
     	String name = elementName(element);
-    	Page activityPage = createPage(normalizeElementName(name));
+    	Page activityPage = createPage(name);
         Instance mainPageTransition = createSubpageTransition(name, activityPage);
         SubpageElement subpage = new SubpageElement(this, activityPage, mainPageTransition);
         subpages.put(element, subpage);

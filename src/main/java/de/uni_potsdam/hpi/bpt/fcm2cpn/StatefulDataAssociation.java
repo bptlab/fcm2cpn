@@ -44,7 +44,7 @@ public class StatefulDataAssociation<AssociationType extends DataAssociation, Da
 	}
 	
 	public String dataElementName() {
-		return Utils.normalizeElementName(Utils.elementName(Utils.getReferencedElement(dataElement)));
+		return Utils.elementName(Utils.getReferencedElement(dataElement));
 	}
 
 	public AssociationType getBpmnAssociation() {
