@@ -1,7 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -77,8 +76,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	
 	public List<String[]> dataObjectAssociations() {
 		List<String> dataObjects = bpmn.getModelElementsByType(DataObject.class).stream()
-				.map(DataObject::getName)
-				.map(Utils::normalizeElementName)
+				.map(Utils::elementName)
 				.distinct()
 				.collect(Collectors.toList());
 		List<String[]> associated = new ArrayList<>();
@@ -170,7 +168,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		return dataObjectReferences
 			.filter(each -> Objects.nonNull(each.getDataState()))
 			.collect(Collectors.groupingBy(
-					each -> normalizeElementName(each.getDataObject().getName()),
+					each -> elementName(each.getDataObject()),
 					Collectors.flatMapping(each -> Utils.dataObjectStateToNetColors(each.getDataState().getName()), Collectors.toList())));
 	}
 	
@@ -526,7 +524,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	}
 	
 	public Stream<Transition> transitionsFor(FlowElement activityOrStartEvent) {
-		Page activityPage = pagesNamed(normalizeElementName(elementName(activityOrStartEvent))).findAny().get();
+		Page activityPage = pagesNamed(elementName(activityOrStartEvent)).findAny().get();
 		return StreamSupport.stream(activityPage.transition().spliterator(), false);
 	}
 	

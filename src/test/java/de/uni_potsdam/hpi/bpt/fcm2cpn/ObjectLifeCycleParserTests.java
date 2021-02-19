@@ -14,7 +14,6 @@ import java.util.function.BiConsumer;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
-import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -41,7 +40,7 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(DataObject.class)
 	public void testOLCsAreComplete(DataObject dataObject) {
-		String className = normalizeElementName(dataObject.getName());
+		String className = elementName(dataObject);
 		assertNotNull(olcFor(className), "No OLC for "+className+" exists.");
 	}
 	
@@ -55,7 +54,7 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 			if(!inputState.equals(outputState)) {
 				ObjectLifeCycle olc = olcFor(object.first);
 				assertTrue(olc.getState(inputState).get().getSuccessors().contains(olc.getState(outputState).get()), 
-						"Olc does not support lifecycle transition ("+inputState+" -> "+outputState+") for data object "+object+" which is definied by activity "+activity.getName());
+						"Olc does not support lifecycle transition ("+inputState+" -> "+outputState+") for data object "+object+" which is definied by activity "+elementName(activity));
 			}
 		});
 	}
@@ -105,7 +104,7 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(DataObject.class)
 	public void testEachUpdateableAssociationsComesFromCreation(DataObject dataObject) {
-		String dataObjectName = normalizeElementName(elementName((ItemAwareElement)dataObject));
+		String dataObjectName = elementName(dataObject);
 		ObjectLifeCycle olc = olcFor(dataObjectName);
 		Collection<Activity> activities = bpmn.getModelElementsByType(Activity.class);
 		

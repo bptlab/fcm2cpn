@@ -29,7 +29,7 @@
             <dataOutputRefs>sid-1cf362ba-da9f-43df-91ca-8c2cba8ee296</dataOutputRefs>
          </outputSet>
       </startEvent>
-      <task completionQuantity="1" id="sid-33EDA893-9947-4935-8E49-13ACC1970005" isForCompensation="false" name="Review" startQuantity="1">
+      <task completionQuantity="1" id="sid-33EDA893-9947-4935-8E49-13ACC1970005" isForCompensation="false" name="Review Paper" startQuantity="1">
          <extensionElements>
             <signavio:signavioMetaData metaKey="bgcolor" metaValue="#ffffcc"/>
             <signavio:signavioMetaData metaKey="bordercolor" metaValue="#000000"/>

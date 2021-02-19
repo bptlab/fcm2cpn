@@ -1,7 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -51,7 +50,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	public void testFirstPageIsMainPage() {
 		Page mainPage = petrinet.getPage().get(0);
-		assertEquals("Main Page", mainPage.getName().asString());
+		assertEquals("Main_Page", mainPage.getName().asString());
 	}
 	
 	@TestWithAllModels
@@ -71,21 +70,21 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testActivityTransitionIsCreated(Activity activity) {
-		assertEquals(1, instancesNamed(activity.getName()).count(), 
-				"There is not exactly one sub page transition for activity "+activity.getName());
+		assertEquals(1, instancesNamed(elementName(activity)).count(), 
+				"There is not exactly one sub page transition for activity "+elementName(activity));
 	}
 		
 	@TestWithAllModels
 	@ForEachBpmn(StartEvent.class)
 	public void testStartEventSubPageIsCreated(StartEvent startEvent) {
-		assertEquals(1, pagesNamed(normalizeElementName(elementName(startEvent))).count(), 
+		assertEquals(1, pagesNamed(elementName(startEvent)).count(), 
 				"There is not exactly one sub page for start event "+elementName(startEvent));
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(BoundaryEvent.class)
 	public void testBoundaryEventSubPageIsCreated(BoundaryEvent boundaryEvent) {
-		assertEquals(1, pagesNamed(normalizeElementName(elementName(boundaryEvent))).count(), 
+		assertEquals(1, pagesNamed(elementName(boundaryEvent)).count(), 
 				"There is not exactly one sub page for boundary event "+elementName(boundaryEvent));
 	}
 	
@@ -94,7 +93,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testBoundaryEventCancelsTaskExecution(BoundaryEvent boundaryEvent) {
 		assumeTrue(boundaryEvent.cancelActivity());
 		Instance eventTransition = instancesNamed(elementName(boundaryEvent)).findAny().get();
-		String canceledActivityName = boundaryEvent.getAttachedTo().getName();
+		String canceledActivityName = elementName(boundaryEvent.getAttachedTo());
 		Instance canceledActivityTransition = instancesNamed(canceledActivityName).findAny().get();
 		
 		Set<Place> activityConsumedControlFlow = canceledActivityTransition.getTargetArc().stream()
@@ -123,8 +122,8 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testActivitySubPageIsCreated(Activity activity) {
-		assertEquals(1, pagesNamed(normalizeElementName(activity.getName())).count(), 
-				"There is not exactly one sub page for activity "+activity.getName());
+		assertEquals(1, pagesNamed(elementName(activity)).count(), 
+				"There is not exactly one sub page for activity "+elementName(activity));
 	}
 
 	@TestWithAllModels
@@ -172,7 +171,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(ParallelGateway.class)
 	public void testParallelGatewaySubPageIsCreated(ParallelGateway gateway) {
-		assertEquals(1, pagesNamed(normalizeElementName(elementName(gateway))).count(), 
+		assertEquals(1, pagesNamed(elementName(gateway)).count(), 
 				"There is not exactly one sub page for parallel gateway "+elementName(gateway));
 	}
 
@@ -191,8 +190,8 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(DataObject.class)
 	public void testDataObjectPlacesAreCreated(DataObject dataObject) {
-		assertEquals(1, dataObjectPlacesNamed(normalizeElementName(dataObject.getName())).count(), 
-			"There is not exactly one place for data object "+dataObject.getName());
+		assertEquals(1, dataObjectPlacesNamed(elementName(dataObject)).count(), 
+			"There is not exactly one place for data object "+elementName(dataObject));
 	}
 	
 	@TestWithAllModels
@@ -200,12 +199,12 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testReadDataObjectsAreConsumed(DataObjectReference dataObjectReference) {
 		List<FlowElement> readingElements = readingElements(dataObjectReference);
 		assumeFalse(readingElements.isEmpty(), "The data object reference is not read");
-		Place dataObjectPlace = dataObjectPlacesNamed(normalizeElementName(dataObjectReference.getDataObject().getName())).findAny().get();
+		Place dataObjectPlace = dataObjectPlacesNamed(elementName(dataObjectReference.getDataObject())).findAny().get();
 		
 		readingElements.forEach(node -> {
 			String elementName = elementName(node);
 			assertEquals(1, arcsToNodeNamed(dataObjectPlace, elementName).count(),
-					"There is not exactly one read arc from data object reference "+dataObjectReference.getName()+" to node "+elementName);
+					"There is not exactly one read arc from data object reference "+elementName(dataObjectReference)+" to node "+elementName);
 		});	
 	}
 	
@@ -214,12 +213,12 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testWrittenDataObjectsAreProduced(DataObjectReference dataObjectReference) {
 		List<FlowElement> writingElements = writingElements(dataObjectReference);
 		assumeFalse(writingElements.isEmpty(), "The data object reference is not written");
-		Place dataObjectPlace = dataObjectPlacesNamed(normalizeElementName(dataObjectReference.getDataObject().getName())).findAny().get();
+		Place dataObjectPlace = dataObjectPlacesNamed(elementName(dataObjectReference.getDataObject())).findAny().get();
 
 		writingElements.forEach(writingElement -> {
 			String elementName = elementName(writingElement);
 			assertEquals(1, arcsFromNodeNamed(dataObjectPlace, elementName).count(),
-					"There is not exactly one write arc from node "+elementName+" to data object reference "+dataObjectReference.getName());
+					"There is not exactly one write arc from node "+elementName+" to data object reference "+elementName(dataObjectReference));
 		});
 	}
 	
@@ -228,12 +227,12 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testReadDataObjectsAreWrittenBack(DataObjectReference dataObjectReference) {
 		List<FlowElement> readingElements = readingElements(dataObjectReference);
 		assumeFalse(readingElements.isEmpty(), "The data object reference is not read");
-		Place dataObjectPlace = dataObjectPlacesNamed(normalizeElementName(dataObjectReference.getDataObject().getName())).findAny().get();
+		Place dataObjectPlace = dataObjectPlacesNamed(elementName(dataObjectReference.getDataObject())).findAny().get();
 		
 		readingElements.forEach(node -> {
 			String elementName = elementName(node);
 			assertEquals(1, arcsFromNodeNamed(dataObjectPlace, elementName).count(),
-					"There is not exactly one write back arc from reading node "+elementName+" to data object reference "+dataObjectReference.getName());
+					"There is not exactly one write back arc from reading node "+elementName+" to data object reference "+elementName(dataObjectReference));
 		});
 	}
 
@@ -281,7 +280,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(DataStore.class)
 	public void testDataStorePlacesAreCreated(DataStore dataStore) {
-		assertEquals(1, dataStorePlacesNamed(normalizeElementName(dataStore.getName())).count(), 
+		assertEquals(1, dataStorePlacesNamed(elementName(dataStore)).count(), 
 			"There is not exactly one place for data store "+dataStore.getName());
 	}
 	
@@ -290,16 +289,16 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testReadDataStoresAreConsumed(DataStoreReference dataStoreReference) {
 		List<FlowElement> readingElements = readingElements(dataStoreReference);
 		assumeFalse(readingElements.isEmpty(), "The data store reference is not read");
-		Place dataStorePlace = dataStorePlacesNamed(normalizeElementName(dataStoreReference.getDataStore().getName())).findAny().get();
+		Place dataStorePlace = dataStorePlacesNamed(elementName(dataStoreReference.getDataStore())).findAny().get();
 		
 		readingElements.forEach(element -> {
-			String elementName = element.getAttributeValue("name");
+			String elementName = elementName(element);
 			assertEquals(1, arcsToNodeNamed(dataStorePlace, elementName).count(),
-					"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to node "+elementName);
+					"There is not exactly one read arc from data store reference "+elementName(dataStoreReference)+" to node "+elementName);
 			
 			transitionsFor((FlowElement) element).forEach(readingTransition -> {
-				assertEquals(1, arcsFromNodeNamed(readingTransition, normalizeElementName(dataStoreReference.getName())).count(),
-						"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to node "+elementName+" in subpage transition");
+				assertEquals(1, arcsFromNodeNamed(readingTransition, elementName(dataStoreReference)).count(),
+						"There is not exactly one read arc from data store reference "+elementName(dataStoreReference)+" to node "+elementName+" in subpage transition");
 			});
 			
 		});	
@@ -310,16 +309,16 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testWrittenDataStoresAreProduced(DataStoreReference dataStoreReference) {
 		List<FlowElement> writingElements = writingElements(dataStoreReference);
 		assumeFalse(writingElements.isEmpty(), "The data store reference is not written");
-		Place dataStorePlace = dataStorePlacesNamed(normalizeElementName(dataStoreReference.getDataStore().getName())).findAny().get();
+		Place dataStorePlace = dataStorePlacesNamed(elementName(dataStoreReference.getDataStore())).findAny().get();
 
 		writingElements.forEach(element -> {
-			String elementName = element.getAttributeValue("name");
+			String elementName = elementName(element);
 			assertEquals(1, arcsFromNodeNamed(dataStorePlace, elementName).count(),
-					"There is not exactly one write arc from node "+elementName+" to data store reference "+dataStoreReference.getName());
+					"There is not exactly one write arc from node "+elementName+" to data store reference "+elementName(dataStoreReference));
 			
 			transitionsFor((FlowElement) element).forEach(writingTransition -> {
-				assertEquals(1, arcsToNodeNamed(writingTransition, normalizeElementName(dataStoreReference.getName())).count(),
-						"There is not exactly write arc from node "+elementName+" to data store reference "+dataStoreReference.getName()+" in subpage transition");
+				assertEquals(1, arcsToNodeNamed(writingTransition, elementName(dataStoreReference)).count(),
+						"There is not exactly write arc from node "+elementName+" to data store reference "+elementName(dataStoreReference)+" in subpage transition");
 			});
 		});
 	}
@@ -329,12 +328,12 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testReadDataStoresAreWrittenBack(DataStoreReference dataStoreReference) {
 		List<FlowElement> readingElements = readingElements(dataStoreReference);
 		assumeFalse(readingElements.isEmpty(), "The data Store reference is not read");
-		Place dataStorePlace = dataStorePlacesNamed(normalizeElementName(dataStoreReference.getDataStore().getName())).findAny().get();
+		Place dataStorePlace = dataStorePlacesNamed(elementName(dataStoreReference.getDataStore())).findAny().get();
 		
 		readingElements.forEach(node -> {
 			String elementName = elementName(node);
 			assertEquals(1, arcsFromNodeNamed(dataStorePlace, elementName).count(),
-					"There is not exactly one write back arc from reading node "+elementName+" to data Store reference "+dataStoreReference.getName());
+					"There is not exactly one write back arc from reading node "+elementName+" to data Store reference "+elementName(dataStoreReference));
 		});
 	}
 	
@@ -343,12 +342,12 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testWrittenDataStoresAreReadFirst(DataStoreReference dataStoreReference) {
 		List<FlowElement> writingElements = writingElements(dataStoreReference);
 		assumeFalse(writingElements.isEmpty(), "The data store reference is not written");
-		Place dataStorePlace = dataStorePlacesNamed(normalizeElementName(dataStoreReference.getDataStore().getName())).findAny().get();
+		Place dataStorePlace = dataStorePlacesNamed(elementName(dataStoreReference.getDataStore())).findAny().get();
 		
 		writingElements.forEach(node -> {
 			String elementName = elementName(node);
 			assertEquals(1, arcsToNodeNamed(dataStorePlace, elementName).count(),
-					"There is not exactly one read arc from data store reference "+dataStoreReference.getName()+" to writing node "+elementName);
+					"There is not exactly one read arc from data store reference "+elementName(dataStoreReference)+" to writing node "+elementName);
 		});
 	}
 	

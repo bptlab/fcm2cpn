@@ -1,7 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -39,7 +38,7 @@ public class AssociationTests extends ModelStructureTests {
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		if(arcsFromNodeNamed(transition, first).count() != 0 && arcsToNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
 			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
-			"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
+			"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+elementName(activity)+" transition "+transition.getName().toString());
 		}
 	}
 	
@@ -55,7 +54,7 @@ public class AssociationTests extends ModelStructureTests {
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		if(arcsToNodeNamed(transition, first).count() != 0 && arcsToNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
 				assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
-			"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
+			"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+elementName(activity)+" transition "+transition.getName().toString());
 		}
 	}
 	
@@ -69,7 +68,7 @@ public class AssociationTests extends ModelStructureTests {
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		if(arcsFromNodeNamed(transition, first).count() != 0 && arcsFromNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
 			assertTrue(hasGuardForAssociation(transition, first, second),
-					"There is no guard for association when reading objects "+first+" and "+second+" at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
+					"There is no guard for association when reading objects "+first+" and "+second+" at activity "+elementName(activity)+" transition "+transition.getName().toString());
 		}	
 	}
 	
@@ -83,15 +82,15 @@ public class AssociationTests extends ModelStructureTests {
 		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		assertEquals(0, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
-			"There is a writing association arc for objects "+first+" and "+second+" (which should already be associated) at activity "+normalizeElementName(activity.getName())+" transition "+transition.getName().toString());
+			"There is a writing association arc for objects "+first+" and "+second+" (which should already be associated) at activity "+elementName(activity)+" transition "+transition.getName().toString());
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(DataObject.class)
 	@ForEachBpmn(DataObject.class)
 	public void testNoAssociationsForUnassociatedDataObjects(DataObject first, DataObject second) {
-		String dataObjectA = normalizeElementName(first.getName());
-		String dataObjectB = normalizeElementName(second.getName());
+		String dataObjectA = elementName(first);
+		String dataObjectB = elementName(second);
 		assumeFalse(dataModel.isAssociated(dataObjectA, dataObjectB));
 		long numberOfAssociationArcs = petrinet.getPage().stream()
 			.flatMap(page -> page.getArc().stream())

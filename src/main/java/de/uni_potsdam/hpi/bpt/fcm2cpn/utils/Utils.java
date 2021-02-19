@@ -29,32 +29,28 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
 public class Utils {
 	
 	/**
-	 * Determines a name for a bpmn element, uses id as substitute if no name is available
+	 * Determines a name for a bpmn element and normalizes it, uses id as substitute if no name is available
 	 */
-	public static String elementName(FlowElement element) {
-    	String name = element.getName();
-    	if(name == null || name.equals("")) name = element.getId();
-    	return name;
-	}
-	
-	/**
-	 * Extends {@link #elementName(FlowElement)} to work for objects like datastores
-	 */
-	public static String elementName(ItemAwareElement element) {
+	public static String elementName(BaseElement element) {
+		String name;
 		if(element instanceof FlowElement) {
-			return elementName((FlowElement)element);
+	    	name = ((FlowElement)element).getName();
 		} else {
-	    	String name = element.getAttributeValue("name");
-	    	if(name == null || name.equals("")) name = element.getId();
-	    	return name;
+	    	name = element.getAttributeValue("name");
 		}
+    	if(name == null || name.equals("")) name = element.getId();
+    	return normalizeElementName(name);
 	}
 	
 	/**
-	 * Makes element names usable as page ids, but also allows to equalize names with excess whitespaces
+	 * Makes element names usable as page ids, but also allows to equalize names with excess whitespaces <br>
+	 * Removes all whitespaces to simplify further processing of the resulting net
 	 */
     public static String normalizeElementName(String name) {
-    	return name.replace('\n', ' ').trim().toLowerCase();
+    	return name
+    			.replace('\n', ' ').trim()
+    			.replaceAll("\\s","_")
+    			.toLowerCase();
     }
     
     /**
