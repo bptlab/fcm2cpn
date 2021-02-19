@@ -40,7 +40,7 @@ public class DataModelParserTests {
 	@Test
 	public void testParsedMultiplicities() {
 		Association abAssoc = dataModel.getAssociation("a", "b").get();
-		assertEquals(1, abAssoc.getEnd("a").getLowerBound());
+		assertEquals(0, abAssoc.getEnd("a").getLowerBound());
 		assertEquals(1, abAssoc.getEnd("a").getUpperBound());
 		assertEquals(1, abAssoc.getEnd("b").getLowerBound());
 		assertEquals(1, abAssoc.getEnd("b").getUpperBound());

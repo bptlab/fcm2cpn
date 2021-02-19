@@ -10,7 +10,9 @@
       <details xmi:type="ecore:EStringToStringMapEntry" xmi:id="_KKpdwe90EeqJh7Ruk3Fq0A" key="nature" value="UML_Nature"/>
     </eAnnotations>
     <ownedEnd xmi:type="uml:Property" xmi:id="_KKqE0O90EeqJh7Ruk3Fq0A" type="_Q_DKwO9pEeqJh7Ruk3Fq0A" association="_KKo2sO90EeqJh7Ruk3Fq0A"/>
-    <ownedEnd xmi:type="uml:Property" xmi:id="_KKqE0e90EeqJh7Ruk3Fq0A" type="_Ql7gIO9pEeqJh7Ruk3Fq0A" association="_KKo2sO90EeqJh7Ruk3Fq0A"/>
+    <ownedEnd xmi:type="uml:Property" xmi:id="_KKqE0e90EeqJh7Ruk3Fq0A" type="_Ql7gIO9pEeqJh7Ruk3Fq0A" association="_KKo2sO90EeqJh7Ruk3Fq0A">
+      <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_qelB8HK3Eeusoay6rodWVg"/>
+    </ownedEnd>
   </packagedElement>
   <packagedElement xmi:type="uml:Class" xmi:id="_QHGOEO90EeqJh7Ruk3Fq0A" name="C"/>
   <packagedElement xmi:type="uml:Class" xmi:id="_SBznQO90EeqJh7Ruk3Fq0A" name="D"/>
