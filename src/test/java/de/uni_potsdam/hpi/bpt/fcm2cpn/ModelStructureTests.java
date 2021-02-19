@@ -464,17 +464,21 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	}
 	
 	public Node nodeFor(String element) {
-		return allNodes()
+		return allMainPageNodes()
 			.filter(node -> element.equals(node.getName().asString()))
 			.findAny()
 			.get();
 	}
 	
-	public Stream<Node> allNodes() {
+	public Stream<Node> allMainPageNodes() {
+		return allNodes(mainPage());
+	}
+	
+	public Stream<Node> allNodes(Page page) {
 		return Stream.of(
-				StreamSupport.stream(mainPage().place().spliterator(), false), 
-				StreamSupport.stream(mainPage().transition().spliterator(), false),
-				StreamSupport.stream(mainPage().instance().spliterator(), false)
+				StreamSupport.stream(page.place().spliterator(), false), 
+				StreamSupport.stream(page.transition().spliterator(), false),
+				StreamSupport.stream(page.instance().spliterator(), false)
 		).flatMap(Function.identity());
 	}
 	

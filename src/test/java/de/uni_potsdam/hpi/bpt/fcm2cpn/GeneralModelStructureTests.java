@@ -27,6 +27,7 @@ import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
+import org.cpntools.accesscpn.model.HasName;
 import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Page;
@@ -478,6 +479,20 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	
 	public void testCheckedGoalCardinalitiesComeFromStateChange() {
 		//TODO can only be created when goal cardinalities are implemented
+	}
+	
+	@TestWithAllModels
+	public void testAllCpnIdentifiersHaveNoWhitespace() {
+		Stream<HasName> allNodesInNet = Stream.concat(
+			petrinet.getPage().stream(),
+			petrinet.getPage().stream().flatMap(this::allNodes)
+		);
+		
+		allNodesInNet.forEach(node -> {
+			String name = node.getName().asString();
+			assertEquals(name.replaceAll("\\s",""), name, 
+					"Name \""+name+"\" of node "+node+" contains whitespaces.");
+		});
 	}
 
 }
