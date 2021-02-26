@@ -17,11 +17,11 @@ import org.cpntools.accesscpn.model.Transition;
 public abstract class FlowElementCompiler<T extends FlowElement> {
 	
 	/**The bpmn element that is compiled with this object*/
-	protected T element;
+	protected final T element;
 	/**The compiler that is responsible for the whole bpmn model*/
-	protected CompilerApp parent;
+	protected final CompilerApp parent;
 	/**Handle for target cpn subpage*/
-	protected SubpageElement elementPage;
+	protected final SubpageElement elementPage;
 	
 	public FlowElementCompiler(CompilerApp parent, T element) {
 		this.element = element;
@@ -128,4 +128,8 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
     }
     
     public abstract void compile();
+
+	public T getElement() {
+		return element;
+	}
 }
