@@ -553,6 +553,14 @@ public class CompilerApp implements AbstractPageScope {
 		return "caseId";
 	}
 
+	public Collection<DataObjectWrapper> getDataObjects() {
+		return dataObjectWrappers;
+	}
+	
+	public Collection<DataStoreWrapper> getDataStores() {
+		return dataStoreWrappers;
+	}
+
 	@Override
 	public BuildCPNUtil builder() {
 		return builder;

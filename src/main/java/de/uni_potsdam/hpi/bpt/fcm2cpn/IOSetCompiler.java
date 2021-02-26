@@ -1,14 +1,13 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.addGuardCondition;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,6 +22,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.OutputSetWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectWrapperIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
 public class IOSetCompiler {
@@ -34,12 +34,7 @@ public class IOSetCompiler {
 	
 	private final Activity element;
 	
-	// Temporal
-	Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext;
-	Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext;
-	Set<DataObjectWrapper> readObjects;
-	Set<DataObjectWrapper> writtenObjects;
-	Set<DataObjectWrapper> createdObjects;
+	private DataObjectWrapperIOSet ioSet;
 	
 	/** Comment to show that lower bound check is goal cardinality check.*/
 	public static final String GOAL_CARDINALITY = "(*goal cardinality*)";
@@ -54,24 +49,20 @@ public class IOSetCompiler {
 	}
 	
 	public void compile() {
-        readContext = inputSet.stream()
+        List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>> readDataObjectReferences = inputSet.stream()
         	.filter(StatefulDataAssociation::isDataObjectReference)
         	.map(reference -> (StatefulDataAssociation<DataInputAssociation, DataObjectReference>) reference)
-        	.collect(Collectors.groupingBy(reference -> (DataObjectWrapper) parent.wrapperFor(reference)));
-        readObjects = readContext.keySet();
+        	.collect(Collectors.toList());
         
-        writeContext = outputSet.stream()
-            	.filter(StatefulDataAssociation::isDataObjectReference)
-            	.map(reference -> (StatefulDataAssociation<DataOutputAssociation, DataObjectReference>) reference)
-            	.collect(Collectors.groupingBy(reference -> (DataObjectWrapper) parent.wrapperFor(reference)));
-        writtenObjects = writeContext.keySet();
-            
-        createdObjects = writtenObjects.stream()
-                .filter(object -> !readObjects.contains(object) || (readContext.get(object).stream().allMatch(StatefulDataAssociation::isCollection) && !writeContext.get(object).stream().allMatch(StatefulDataAssociation::isCollection)))
-                .collect(Collectors.toSet());
+        List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> writtenDataObjectReferences = outputSet.stream()
+        	.filter(StatefulDataAssociation::isDataObjectReference)
+        	.map(reference -> (StatefulDataAssociation<DataOutputAssociation, DataObjectReference>) reference)
+        	.collect(Collectors.toList());
         
-        parent.attachObjectCreationCounters(transition, createdObjects);
-        parent.createCreationRegistrationArcs(transition, createdObjects);
+        ioSet = new DataObjectWrapperIOSet(readDataObjectReferences, writtenDataObjectReferences);
+        
+        parent.attachObjectCreationCounters(transition, dataObjectsThat(ioSet::creates));
+        parent.createCreationRegistrationArcs(transition, dataObjectsThat(ioSet::creates));
         associateDataObjects();
 	}
 	
@@ -125,13 +116,13 @@ public class IOSetCompiler {
     	return "assoc" + associationsToWrite.stream()
 			.map(assoc -> {
 				Optional<DataObjectWrapper> collectionDataObject = Stream.of(assoc.first, assoc.second)
-						.filter(dataObject -> readObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
+						.filter(dataObject -> ioSet.readsAsCollection(dataObject))
 						.findAny();
 				boolean listReadSingleObjectCreate = false;
 				if (collectionDataObject.isPresent()) {
 					listReadSingleObjectCreate = Stream.of(assoc.first, assoc.second)
-							.filter(dataObject -> readObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
-							.allMatch(dataObject -> writtenObjects.contains(dataObject) && !writeContext.get(dataObject).stream().allMatch(StatefulDataAssociation::isCollection));
+							.filter(dataObject -> ioSet.readsAsCollection(dataObject))
+							.allMatch(dataObject -> ioSet.writesAsNonCollection(dataObject));
 				}
 				if(!collectionDataObject.isPresent() || listReadSingleObjectCreate) {
 					return "^^["+Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString()+"]";
@@ -154,7 +145,7 @@ public class IOSetCompiler {
 			int limit = end.getUpperBound();
 			DataObjectWrapper otherObject = (DataObjectWrapper) createdAssoc.otherElement(dataObject);
 			
-			if(limit > 1 && limit != AssociationEnd.UNLIMITED && readObjects.contains(otherObject)) {//If the other object is not read, it is just created - and then no bound that is 1 or higher will be violated
+			if(limit > 1 && limit != AssociationEnd.UNLIMITED && ioSet.reads(otherObject)) {//If the other object is not read, it is just created - and then no bound that is 1 or higher will be violated
 				String newGuard = "(enforceUpperBound "+otherObject.dataElementId()+" "+dataObject.namePrefix()+" assoc "+limit+")";
 				addGuardCondition(transition, newGuard);
 			}
@@ -166,7 +157,7 @@ public class IOSetCompiler {
 		//When a collection is read, an identifier determines which elements exactly are read, so the check boils down to checking the number of identifier associations
 		Association dataModelAssoc = parent.parent.getDataModel().getAssociation(createdAssoc.first.getNormalizedName(), createdAssoc.second.getNormalizedName()).get();
 		Stream.of(createdAssoc.first, createdAssoc.second)
-			.filter(dataObject -> readObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
+			.filter(dataObject -> ioSet.readsAsCollection(dataObject))
 			.forEach(collectionDataObject -> {
 				DataObjectWrapper singleObject = (DataObjectWrapper) createdAssoc.otherElement(collectionDataObject);
 				/*Try to use the same identifier that is used for the list*/
@@ -203,21 +194,16 @@ public class IOSetCompiler {
 		//    if another object is written as non-collection
 		// OR if another object was read as non-collection
 		// OR if another object was read as collection
-		for(DataObjectWrapper writtenObject : writtenObjects) {
-			if(
-					(!readContext.containsKey(writtenObject) || readContext.get(writtenObject).stream().allMatch(StatefulDataAssociation::isCollection))
-					&& !writeContext.get(writtenObject).stream().allMatch(StatefulDataAssociation::isCollection)) {
-				for(DataObjectWrapper otherWrittenObject : writtenObjects) {
-					if(!writtenObject.equals(otherWrittenObject) && parent.parent.getDataModel().isAssociated(writtenObject.getNormalizedName(), otherWrittenObject.getNormalizedName())
-							&& !writeContext.get(otherWrittenObject).stream().allMatch(StatefulDataAssociation::isCollection)) {
-						associationsToWrite.add(new Pair<>(writtenObject, otherWrittenObject));
-					}
+		for(DataObjectWrapper createdObject : dataObjectsThat(ioSet::creates)) {
+			for(DataObjectWrapper otherWrittenObject : dataObjectsThat(ioSet::writesAsNonCollection)) {
+				if(!createdObject.equals(otherWrittenObject) && parent.parent.getDataModel().isAssociated(createdObject.getNormalizedName(), otherWrittenObject.getNormalizedName())) {
+					associationsToWrite.add(new Pair<>(createdObject, otherWrittenObject));
 				}
-				
-				for(DataObjectWrapper readObject : readObjects) {
-					if(!writtenObject.equals(readObject) && parent.parent.getDataModel().isAssociated(writtenObject.getNormalizedName(), readObject.getNormalizedName())) {
-						associationsToWrite.add(new Pair<>(writtenObject, readObject));
-					}
+			}
+			
+			for(DataObjectWrapper readObject : dataObjectsThat(ioSet::reads)) {
+				if(!createdObject.equals(readObject) && parent.parent.getDataModel().isAssociated(createdObject.getNormalizedName(), readObject.getNormalizedName())) {
+					associationsToWrite.add(new Pair<>(createdObject, readObject));
 				}
 			}
 		}
@@ -227,8 +213,8 @@ public class IOSetCompiler {
 
     private Set<StateChange> determineStateChanges() {
     	Set<StateChange> stateChangesToPerform = new HashSet<>();
-    	readContext.values().stream().flatMap(List::stream).forEach(input -> {
-        	writeContext.values().stream().flatMap(List::stream).forEach(output -> {
+    	ioSet.first.forEach(input -> {
+        	ioSet.second.forEach(output -> {
         		if(input.equalsDataElementAndCollection(output) && !input.getStateName().equals(output.getStateName())) {
         			stateChangesToPerform.add(new StateChange(input, output));
         		}
@@ -257,8 +243,8 @@ public class IOSetCompiler {
 					//If the second object is just created, then an additional assoc is created, so the checked goal lower bound must be lower
 					int goalLowerBound = assocEnd.getGoalLowerBound();
 					int lowerBound = assocEnd.getLowerBound();
-					if (writtenObjects.stream().anyMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject()))) &&
-							readObjects.stream().noneMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject())))) {
+					if (dataObjectsThat(ioSet::writes).stream().anyMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject()))) &&
+							dataObjectsThat(ioSet::reads).stream().noneMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject())))) {
 						goalLowerBound--;
 					}
 					
@@ -280,8 +266,8 @@ public class IOSetCompiler {
     private Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkAssociationsOfReadDataObjects() {
     	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToCheck = new HashSet<>();
 		
-		for(DataObjectWrapper readObject : readObjects) {
-			for(DataObjectWrapper otherReadObject : readObjects) {
+		for(DataObjectWrapper readObject : dataObjectsThat(ioSet::reads)) {
+			for(DataObjectWrapper otherReadObject : dataObjectsThat(ioSet::reads)) {
 				if(readObject.compareTo(otherReadObject) < 0 && parent.parent.getDataModel().isAssociated(readObject.getNormalizedName(), otherReadObject.getNormalizedName())) {
 					associationsToCheck.add(new Pair<>(readObject, otherReadObject));
 				}
@@ -290,7 +276,7 @@ public class IOSetCompiler {
 		
 		//TODO checking of assocs of collections is done elsewhere (by checking lower bounds), could be brought together
 		Set<Pair<DataObjectWrapper, DataObjectWrapper>> nonCollectionAssocs = associationsToCheck.stream()
-				.filter(assoc -> Stream.of(assoc.first, assoc.second).allMatch(dataObject -> !readContext.get(dataObject).stream().allMatch(StatefulDataAssociation::isCollection)))
+				.filter(assoc -> Stream.of(assoc.first, assoc.second).allMatch(ioSet::readsAsNonCollection))
 				.collect(Collectors.toSet());
 		if(!nonCollectionAssocs.isEmpty()) {
 			String guard = "contains assoc "+ nonCollectionAssocs.stream()
@@ -303,6 +289,10 @@ public class IOSetCompiler {
 		
 		//return nonCollectionAssocs;
 		return associationsToCheck;
+    }
+    
+    private Set<DataObjectWrapper> dataObjectsThat(Predicate<DataObjectWrapper> predicate) {
+    	return parent.parent.getDataObjects().stream().filter(predicate).collect(Collectors.toSet());
     }
 
 	
