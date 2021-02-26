@@ -45,7 +45,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	
 	@TestWithAllModels
 	public void testNetIsSound() throws Exception {
-		//checkNet();
+		checkNet();
 	}
 	
 	@TestWithAllModels

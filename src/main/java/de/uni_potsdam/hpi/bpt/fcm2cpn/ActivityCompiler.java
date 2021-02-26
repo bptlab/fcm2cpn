@@ -52,8 +52,10 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
         		.flatMap(Utils::splitDataAssociationByState)
         		.collect(Collectors.toMap(Function.identity(), x -> new ArrayList<>()));
         // All possible combinations of input and output sets, either defined by io-specification or *all* possible combinations are used
+        int transputSetIndex = 0;
         for (Pair<InputSetWrapper, OutputSetWrapper> transputSet : transputSets()) {
-        	compileTransputsSet(transputSet);
+        	compileTransputsSet(transputSet, transputSetIndex);
+        	transputSetIndex++;
         }
         
         createDataAssociationArcs(outputtingTransitions, inputtingTransitions);
@@ -110,8 +112,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
     }
  
     
-    private void compileTransputsSet(Pair<InputSetWrapper, OutputSetWrapper> transputSet) {
-    	int transputSetIndex = 0;
+    private void compileTransputsSet(Pair<InputSetWrapper, OutputSetWrapper> transputSet, int transputSetIndex) {
         InputSetWrapper inputSet = transputSet.first;
         OutputSetWrapper outputSet = transputSet.second;
 
@@ -120,8 +121,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
         ioSetCompiler.compile();
         
         inputSet.forEach(input -> inputtingTransitions.get(input).add(subpageTransition));
-        outputSet.forEach(output -> outputtingTransitions.get(output).add(subpageTransition));  
-        transputSetIndex++;
+        outputSet.forEach(output -> outputtingTransitions.get(output).add(subpageTransition));
     }
 	
 
