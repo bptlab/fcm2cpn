@@ -25,7 +25,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.AssociationsProvider;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIOSet;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIdIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
 public class ObjectLifeCycleParserTests extends ModelStructureTests {
@@ -48,7 +48,7 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
-	public void testAllTransitionsByActivityArePossible(Activity activity, DataObjectIOSet ioSet) {
+	public void testAllTransitionsByActivityArePossible(Activity activity, DataObjectIdIOSet ioSet) {
 		Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioStateMap = ioAssociationsToStateMaps(ioSet);
 		ioStateMap.first.forEach((object, inputState) -> {
 			String outputState = ioStateMap.second.get(object);// All read objects are written back, so this is never null

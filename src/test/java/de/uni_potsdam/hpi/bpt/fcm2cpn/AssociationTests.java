@@ -16,7 +16,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.AssociationsProvider;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIOSet;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIdIOSet;
 
 public class AssociationTests extends ModelStructureTests {
 	
@@ -32,7 +32,7 @@ public class AssociationTests extends ModelStructureTests {
 	@ArgumentsSource(AssociationsProvider.class)
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
-	public void testDataAssociationsBetweenReadAndWriteAreCreated(String first, String second, Activity activity, DataObjectIOSet ioSet) {
+	public void testDataAssociationsBetweenReadAndWriteAreCreated(String first, String second, Activity activity, DataObjectIdIOSet ioSet) {
 		assumeTrue(ioSet.reads(first) && ioSet.creates(second), "Activity does not read the first and create the second data object.");
 		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
@@ -46,7 +46,7 @@ public class AssociationTests extends ModelStructureTests {
 	@ArgumentsSource(AssociationsProvider.class)
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
-	public void testDataAssociationsBetweenParallelWritesAreCreated(String first, String second, Activity activity, DataObjectIOSet ioSet) {
+	public void testDataAssociationsBetweenParallelWritesAreCreated(String first, String second, Activity activity, DataObjectIdIOSet ioSet) {
 		assumeTrue(ioSet.writes(first) && ioSet.writes(second), "Activity does not write both data objects.");
 		assumeFalse(ioSet.associationShouldAlreadyBeInPlace(first, second), "Activity reads both data objects in the same collection/non-collection way as they are written, so an association is already in place");
 		
@@ -62,7 +62,7 @@ public class AssociationTests extends ModelStructureTests {
 	@ArgumentsSource(AssociationsProvider.class)
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
-	public void testAssociationsAreCheckedWhenReading(String first, String second, Activity activity, DataObjectIOSet ioSet) {
+	public void testAssociationsAreCheckedWhenReading(String first, String second, Activity activity, DataObjectIdIOSet ioSet) {
 		assumeTrue(ioSet.reads(first) && ioSet.reads(second), "Activity does not read both data objects.");
 		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
@@ -76,7 +76,7 @@ public class AssociationTests extends ModelStructureTests {
 	@ArgumentsSource(AssociationsProvider.class)
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
-	public void testCheckedAssociationsAreNotDuplicated(String first, String second, Activity activity, DataObjectIOSet ioSet) {
+	public void testCheckedAssociationsAreNotDuplicated(String first, String second, Activity activity, DataObjectIdIOSet ioSet) {
 		assumeTrue(ioSet.reads(first) && ioSet.reads(second), "Activity does not read both data objects.");
 		assumeTrue(ioSet.associationShouldAlreadyBeInPlace(first, second), "A new association should be created.");
 		
@@ -103,7 +103,7 @@ public class AssociationTests extends ModelStructureTests {
 	@ArgumentsSource(AssociationsProvider.class)
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
-	public void testUpperLimitsAreChecked(String first, String second, Activity activity, DataObjectIOSet ioSet) {
+	public void testUpperLimitsAreChecked(String first, String second, Activity activity, DataObjectIdIOSet ioSet) {
 		Association assoc = dataModel.getAssociation(first, second).get();
 		int upperBound = assoc.getEnd(second).getUpperBound();
 		assumeTrue(upperBound > 1 && upperBound != AssociationEnd.UNLIMITED, "No upper limit that has to be checked");//TODO will 1:1 need to be checked?
@@ -119,7 +119,7 @@ public class AssociationTests extends ModelStructureTests {
 	@ArgumentsSource(AssociationsProvider.class)
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
-	public void testLowerLimitsAreChecked(String first, String second, Activity activity, DataObjectIOSet ioSet) {
+	public void testLowerLimitsAreChecked(String first, String second, Activity activity, DataObjectIdIOSet ioSet) {
 		Association assoc = dataModel.getAssociation(first, second).get();
 		int lowerBound = assoc.getEnd(second).getLowerBound();
 		assumeTrue(lowerBound > 1, "No lower bound that has to be checked");

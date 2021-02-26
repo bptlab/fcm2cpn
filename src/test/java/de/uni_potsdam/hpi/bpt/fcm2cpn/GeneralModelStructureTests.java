@@ -37,7 +37,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIOSet;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIdIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
 
@@ -271,7 +271,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
-	public void testEachIOSetIsMappedToTransition(Activity activity,  DataObjectIOSet ioSet) {
+	public void testEachIOSetIsMappedToTransition(Activity activity,  DataObjectIdIOSet ioSet) {
 		Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> stateMap = ioAssociationsToStateMaps(ioSet);
 		assertTrue(transitionForIoCombination(stateMap, activity).isPresent(), 
 				"No transition for ioSet "+stateMap+" of activity "+elementName(activity));		
@@ -443,7 +443,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
-	public void testGoalCardinalitiesAreCheckedOnStateChange(Activity activity,  DataObjectIOSet ioSet) {
+	public void testGoalCardinalitiesAreCheckedOnStateChange(Activity activity,  DataObjectIdIOSet ioSet) {
 		var stateMap = ioAssociationsToStateMaps(ioSet);
 		Transition transition = transitionForIoCombination(stateMap, activity).get();
 		

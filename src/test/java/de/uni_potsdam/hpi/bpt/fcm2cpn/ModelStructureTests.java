@@ -45,7 +45,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycleParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelConsumerTest;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIOSet;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIdIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
@@ -133,7 +133,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	
 
 	@SuppressWarnings("unchecked")
-	public static Set<DataObjectIOSet> ioAssociationCombinations(Activity activity) {
+	public static Set<DataObjectIdIOSet> ioAssociationCombinations(Activity activity) {
 		return statelessAssociationCombinations(activity).stream().flatMap(ioAssociationCombination -> {
 			Map<Pair<String, Boolean>, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> inputStates = ioAssociationCombination.first.stream()
 					.flatMap(Utils::splitDataAssociationByState)
@@ -148,10 +148,10 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 
 			List<List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> possibleInputForms = Utils.allCombinationsOf(inputStates.values());
 			List<List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> possibleOutputForms = Utils.allCombinationsOf(outputStates.values());
-			List<DataObjectIOSet> ioForms = new ArrayList<>();
+			List<DataObjectIdIOSet> ioForms = new ArrayList<>();
 			for(var inputForm: possibleInputForms) {
 				for(var outputForm: possibleOutputForms) {
-					ioForms.add(new DataObjectIOSet(inputForm, outputForm));
+					ioForms.add(new DataObjectIdIOSet(inputForm, outputForm));
 				}
 			}
 			return ioForms.stream();
@@ -159,7 +159,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		.collect(Collectors.toSet());
 	}
 	
-	public static Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioAssociationsToStateMaps(DataObjectIOSet ioAssociations) {
+	public static Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioAssociationsToStateMaps(DataObjectIdIOSet ioAssociations) {
 		Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioConfiguration = new Pair<>(
 				ioAssociations.first.stream()
 					.collect(Collectors.toMap(StatefulDataAssociation::dataElementNameAndCollection, StatefulDataAssociation::getStateName)),
