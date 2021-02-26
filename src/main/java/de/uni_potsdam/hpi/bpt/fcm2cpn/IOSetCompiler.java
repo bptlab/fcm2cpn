@@ -21,6 +21,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.InputSetWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.OutputSetWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectWrapperIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
@@ -50,13 +51,13 @@ public class IOSetCompiler {
 	
 	public void compile() {
         List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>> readDataObjectReferences = inputSet.stream()
-        	.filter(StatefulDataAssociation::isDataObjectReference)
-        	.map(reference -> (StatefulDataAssociation<DataInputAssociation, DataObjectReference>) reference)
+        	.map(StatefulDataAssociation::asDataObjectReference)
+        	.flatMap(Optional::stream)
         	.collect(Collectors.toList());
         
         List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> writtenDataObjectReferences = outputSet.stream()
-        	.filter(StatefulDataAssociation::isDataObjectReference)
-        	.map(reference -> (StatefulDataAssociation<DataOutputAssociation, DataObjectReference>) reference)
+        	.map(StatefulDataAssociation::asDataObjectReference)
+        	.flatMap(Optional::stream)
         	.collect(Collectors.toList());
         
         ioSet = new DataObjectWrapperIOSet(readDataObjectReferences, writtenDataObjectReferences);
@@ -127,7 +128,7 @@ public class IOSetCompiler {
 				if(!collectionDataObject.isPresent() || listReadSingleObjectCreate) {
 					return "^^["+Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString()+"]";
 				} else {
-					DataObjectWrapper identifier = parent.parent.getDataObjectCollectionIdentifier(element, collectionDataObject.get());
+					DataObjectWrapper identifier = getDataObjectCollectionIdentifier(element, collectionDataObject.get());
 					DataObjectWrapper other = (DataObjectWrapper) assoc.otherElement(collectionDataObject.get());
 					//TODO does not sort alphabetically
 					return "^^(associateWithList "+other.dataElementId()+" "+collectionDataObject.get().getNormalizedName()+" "+identifier.dataElementId()+" assoc)";
@@ -136,9 +137,9 @@ public class IOSetCompiler {
 			.distinct()
 			.collect(Collectors.joining());
     }
-    
-    private void checkUpperBoundsOfCreatedAssoc(Pair<DataObjectWrapper, DataObjectWrapper> createdAssoc) {
-		Association dataModelAssoc = parent.parent.getDataModel().getAssociation(createdAssoc.first.getNormalizedName(), createdAssoc.second.getNormalizedName()).get();
+
+	private void checkUpperBoundsOfCreatedAssoc(Pair<DataObjectWrapper, DataObjectWrapper> createdAssoc) {
+		Association dataModelAssoc = getDataModel().getAssociation(createdAssoc.first.getNormalizedName(), createdAssoc.second.getNormalizedName()).get();
 		//Create guards for: Cannot create data object if this would violate upper bounds
 		Stream.of(createdAssoc.first, createdAssoc.second).forEach(dataObject -> {
 			AssociationEnd end = dataModelAssoc.getEnd(dataObject.getNormalizedName());
@@ -155,20 +156,13 @@ public class IOSetCompiler {
     private void checkLowerBoundForCreatedObject(Pair<DataObjectWrapper, DataObjectWrapper> createdAssoc) {
 		//Create guards for: Cannot create data object if lower bounds of read list data object are not given
 		//When a collection is read, an identifier determines which elements exactly are read, so the check boils down to checking the number of identifier associations
-		Association dataModelAssoc = parent.parent.getDataModel().getAssociation(createdAssoc.first.getNormalizedName(), createdAssoc.second.getNormalizedName()).get();
+		Association dataModelAssoc = getDataModel().getAssociation(createdAssoc.first.getNormalizedName(), createdAssoc.second.getNormalizedName()).get();
 		Stream.of(createdAssoc.first, createdAssoc.second)
 			.filter(dataObject -> ioSet.readsAsCollection(dataObject))
 			.forEach(collectionDataObject -> {
-				DataObjectWrapper singleObject = (DataObjectWrapper) createdAssoc.otherElement(collectionDataObject);
-				/*Try to use the same identifier that is used for the list*/
-				DataObjectWrapper identifier = parent.parent.getDataObjectCollectionIdentifier(element, collectionDataObject);
-//				if(!parent.getDataModel().getAssociation(identifier.getNormalizedName(), singleObject.getNormalizedName())
-//						.map(linkingAssoc -> linkingAssoc.first.getUpperBound() <= 1 && linkingAssoc.second.getUpperBound() <= 1)
-//						.orElse(false)) throw new ModelValidationException("Identifier data object "+identifier.getNormalizedName()+" for list data object "+collectionDataObject.getNormalizedName()+" is not associated 1 to 1 with "+singleObject.getNormalizedName()+" in activity "+elementName(element));
-
+				/*Use the same identifier that is used for the list*/
+				DataObjectWrapper identifier = getDataObjectCollectionIdentifier(element, collectionDataObject);
 				int lowerBound = dataModelAssoc.getEnd(collectionDataObject.getNormalizedName()).getLowerBound();
-				//TODO new guard
-				//String newGuard = "((length " + collectionDataObject.dataElementList() + ") < " + lowerBound + ") (*requirements "+ singleObject.getNormalizedName() + "*)";
 				String newGuard = "(enforceLowerBound "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc "+lowerBound+")";
 				addGuardCondition(transition, newGuard);
 		});
@@ -196,13 +190,13 @@ public class IOSetCompiler {
 		// OR if another object was read as collection
 		for(DataObjectWrapper createdObject : dataObjectsThat(ioSet::creates)) {
 			for(DataObjectWrapper otherWrittenObject : dataObjectsThat(ioSet::writesAsNonCollection)) {
-				if(!createdObject.equals(otherWrittenObject) && parent.parent.getDataModel().isAssociated(createdObject.getNormalizedName(), otherWrittenObject.getNormalizedName())) {
+				if(!createdObject.equals(otherWrittenObject) && getDataModel().isAssociated(createdObject.getNormalizedName(), otherWrittenObject.getNormalizedName())) {
 					associationsToWrite.add(new Pair<>(createdObject, otherWrittenObject));
 				}
 			}
 			
 			for(DataObjectWrapper readObject : dataObjectsThat(ioSet::reads)) {
-				if(!createdObject.equals(readObject) && parent.parent.getDataModel().isAssociated(createdObject.getNormalizedName(), readObject.getNormalizedName())) {
+				if(!createdObject.equals(readObject) && getDataModel().isAssociated(createdObject.getNormalizedName(), readObject.getNormalizedName())) {
 					associationsToWrite.add(new Pair<>(createdObject, readObject));
 				}
 			}
@@ -229,7 +223,7 @@ public class IOSetCompiler {
 			String inputState = stateChange.first.getStateName();
 			String outputState = stateChange.second.getStateName();
 			
-			ObjectLifeCycle olc = parent.parent.olcFor(stateChange.dataObject());
+			ObjectLifeCycle olc = olcFor(stateChange.dataObject());
 			ObjectLifeCycle.State istate = olc.getState(inputState).get();
 			if (istate.getUpdateableAssociations().isEmpty()) continue;
 			ObjectLifeCycle.State ostate = olc.getState(outputState).get();
@@ -262,13 +256,13 @@ public class IOSetCompiler {
 			}
 		}
     }
-    
-    private Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkAssociationsOfReadDataObjects() {
+
+	private Set<Pair<DataObjectWrapper, DataObjectWrapper>> checkAssociationsOfReadDataObjects() {
     	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToCheck = new HashSet<>();
 		
 		for(DataObjectWrapper readObject : dataObjectsThat(ioSet::reads)) {
 			for(DataObjectWrapper otherReadObject : dataObjectsThat(ioSet::reads)) {
-				if(readObject.compareTo(otherReadObject) < 0 && parent.parent.getDataModel().isAssociated(readObject.getNormalizedName(), otherReadObject.getNormalizedName())) {
+				if(readObject.compareTo(otherReadObject) < 0 && getDataModel().isAssociated(readObject.getNormalizedName(), otherReadObject.getNormalizedName())) {
 					associationsToCheck.add(new Pair<>(readObject, otherReadObject));
 				}
 			}
@@ -291,11 +285,23 @@ public class IOSetCompiler {
 		return associationsToCheck;
     }
     
+	
+	//TODO LOD violation
     private Set<DataObjectWrapper> dataObjectsThat(Predicate<DataObjectWrapper> predicate) {
     	return parent.parent.getDataObjects().stream().filter(predicate).collect(Collectors.toSet());
     }
+    
+    private DataModel getDataModel() {
+    	return parent.parent.getDataModel();
+    }
+    
+    private DataObjectWrapper getDataObjectCollectionIdentifier(Activity activity, DataObjectWrapper dataObjectWrapper) {
+		return parent.parent.getDataObjectCollectionIdentifier(activity, dataObjectWrapper);
+	}
 
-	
+    private ObjectLifeCycle olcFor(DataObjectWrapper dataObject) {
+		return parent.parent.olcFor(dataObject);
+	}
 	
 
 }

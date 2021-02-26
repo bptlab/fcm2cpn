@@ -1,6 +1,7 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import org.camunda.bpm.model.bpmn.instance.DataAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
@@ -57,6 +58,13 @@ public class StatefulDataAssociation<AssociationType extends DataAssociation, Da
 	
 	public boolean isDataObjectReference() {
 		return dataElement instanceof DataObjectReference;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Optional<StatefulDataAssociation<AssociationType, DataObjectReference>> asDataObjectReference() {
+		return isDataObjectReference() 
+			? Optional.of((StatefulDataAssociation<AssociationType, DataObjectReference>) this)
+			: Optional.empty();
 	}
 	
 	public boolean isDataStoreReference() {

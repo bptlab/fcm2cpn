@@ -1,21 +1,18 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.addGuardCondition;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.allCombinationsOf;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getSource;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getTarget;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
-import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.IoSpecification;
@@ -25,8 +22,6 @@ import org.cpntools.accesscpn.model.Transition;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.InputSetWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.OutputSetWrapper;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
