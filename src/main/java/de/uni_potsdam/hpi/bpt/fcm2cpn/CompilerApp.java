@@ -502,6 +502,7 @@ public class CompilerApp implements AbstractPageScope {
     			.get();
     }
     
+    //TODO should be dependent on IO set, not on activity
     public DataObjectWrapper getDataObjectCollectionIdentifier(Activity activity, DataObjectWrapper object) {
     	Set<DataObjectWrapper> potentialIdentifiers = activity.getDataInputAssociations().stream()
     		.flatMap(Utils::splitDataAssociationByState)

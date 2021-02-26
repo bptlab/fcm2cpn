@@ -168,16 +168,8 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
     
     private void associateDataObjects(Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
 
-    	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = determineAssociationsToWrite(readDataObjects, writtenDataObjects, readContext, writeContext);
-    	
-    	Set<StateChange> stateChangesToPerform = new HashSet<>();
-    	readContext.values().stream().flatMap(List::stream).forEach(input -> {
-        	writeContext.values().stream().flatMap(List::stream).forEach(output -> {
-        		if(input.equalsDataElementAndCollection(output) && !input.getStateName().equals(output.getStateName())) {
-        			stateChangesToPerform.add(new StateChange(input, output));
-        		}
-        	});
-    	});
+    	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = determineAssociationsToWrite(readDataObjects, writtenDataObjects, readContext, writeContext);    	
+    	Set<StateChange> stateChangesToPerform = determineStateChanges(readContext, writeContext);
 
 		// Add guards for goal cardinalities
 		addGuardsForStateChanges(stateChangesToPerform, transition, readDataObjects, writtenDataObjects, readContext, writeContext);
@@ -195,78 +187,86 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 			}
 			
 			//Create write back arcs; if new assocs are create, write the union back; if assocs are checked, they already exist
-			String writeAnnotation = "assoc";
-			checkedAssociations.stream()
-				.filter(pair -> !(Optional.ofNullable(readContext.get(pair.first)).map(opt -> opt.stream().anyMatch(StatefulDataAssociation::isCollection)).orElse(false) && Optional.ofNullable(writeContext.get(pair.first)).map(opt -> opt.stream().anyMatch(assoc -> !assoc.isCollection())).orElse(false)))
-				.filter(pair -> !(Optional.ofNullable(readContext.get(pair.second)).map(opt -> opt.stream().anyMatch(StatefulDataAssociation::isCollection)).orElse(false) && Optional.ofNullable(writeContext.get(pair.second)).map(opt -> opt.stream().anyMatch(assoc -> !assoc.isCollection())).orElse(false)))
-				.forEach(associationsToWrite::remove);
-			
-			if(!associationsToWrite.isEmpty()) {
-				writeAnnotation += associationsToWrite.stream()
-					.map(pair -> {
-						Optional<DataObjectWrapper> collectionDataObject = Stream.of(pair.first, pair.second)
-								.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
-								.findAny();
-						boolean listReadSingleObjectCreate = false;
-						if (collectionDataObject.isPresent()) {
-							listReadSingleObjectCreate = Stream.of(pair.first, pair.second)
-									.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
-									.allMatch(dataObject -> writtenDataObjects.contains(dataObject) && writeContext.get(dataObject).stream().anyMatch(assoc -> !assoc.isCollection()));
-						}
-						if(!collectionDataObject.isPresent() || listReadSingleObjectCreate) {
-							return "^^["+Stream.of(pair.first, pair.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString()+"]";
-						} else {
-							DataObjectWrapper identifier = parent.getDataObjectCollectionIdentifier(element, collectionDataObject.get());
-							DataObjectWrapper other = (DataObjectWrapper) pair.otherElement(collectionDataObject.get());
-							//TODO does not sort alphabetically
-							return "^^(associateWithList "+other.dataElementId()+" "+collectionDataObject.get().getNormalizedName()+" "+identifier.dataElementId()+" assoc)";
-						}
-					})
-					.distinct()
-					.collect(Collectors.joining());
-
-				checkedAssociations.forEach(associationsToWrite::remove);
-				associationsToWrite.forEach(pair -> {
-					Association assoc = parent.getDataModel().getAssociation(pair.first.getNormalizedName(), pair.second.getNormalizedName()).get();
-					//Create guards for: Cannot create data object if this would violate upper bounds
-					Stream.of(pair.first, pair.second).forEach(dataObject -> {
-						AssociationEnd end = assoc.getEnd(dataObject.getNormalizedName());
-						int limit = end.getUpperBound();
-						DataObjectWrapper otherObject = (DataObjectWrapper) pair.otherElement(dataObject);
-						
-						if(limit > 1 && limit != AssociationEnd.UNLIMITED && readDataObjects.contains(otherObject)) {//If the other object is not read, it is just created - and then no bound that is 1 or higher will be violated
-							String newGuard = "(enforceUpperBound "+otherObject.dataElementId()+" "+dataObject.namePrefix()+" assoc "+limit+")";
-							addGuardCondition(transition, newGuard);
-						}
-					});
-
-					//Create guards for: Cannot create data object if lower bounds of read list data object are not given
-					Stream.of(pair.first, pair.second)
-						.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
-						.forEach(collectionDataObject -> {
-							DataObjectWrapper singleObject = (DataObjectWrapper) pair.otherElement(collectionDataObject);
-							/*Try to use the same identifier that is used for the list*/
-							DataObjectWrapper identifier = parent.getDataObjectCollectionIdentifier(element, collectionDataObject);
-							if(!parent.getDataModel().getAssociation(identifier.getNormalizedName(), singleObject.getNormalizedName())
-									.map(linkingAssoc -> linkingAssoc.first.getUpperBound() <= 1 && linkingAssoc.second.getUpperBound() <= 1)
-									.orElse(false)) throw new ModelValidationException("Identifier data object "+identifier.getNormalizedName()+" for list data object "+collectionDataObject.getNormalizedName()+" is not associated 1 to 1 with "+singleObject.getNormalizedName()+" in activity "+elementName(element));
-
-							int lowerBound = assoc.getEnd(collectionDataObject.getNormalizedName()).getLowerBound();
-							//TODO new guard
-							//String newGuard = "((length " + collectionDataObject.dataElementList() + ") < " + lowerBound + ") (*requirements "+ singleObject.getNormalizedName() + "*)";
-							String newGuard = "(enforceLowerBound "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc "+lowerBound+")";
-							addGuardCondition(transition, newGuard);
-					});
-				});
-				
-				
-			}
+			String writeAnnotation = writeToAssociationArcInscription(associationsToWrite, readDataObjects, writtenDataObjects, readContext, writeContext);
 			elementPage.createArcTo(parent.getAssociationsPlace(), transition, writeAnnotation);
 			if(!hasCreatedArcToAssocPlace) {
 				parent.createArc(node(), parent.getAssociationsPlace());
 				hasCreatedArcToAssocPlace = true;
 			}
+			
+				
+			if(!associationsToWrite.isEmpty()) {
+				//checkedAssociations.forEach(associationsToWrite::remove);
+				associationsToWrite.forEach(createdAssoc -> {
+					checkUpperBoundsOfCreatedAssoc(createdAssoc, readDataObjects, transition);
+					checkLowerBoundForCreatedObject(createdAssoc, readDataObjects, readContext, transition);
+				});
+			}
+			
+
 		}
+    }
+    
+    private String writeToAssociationArcInscription(Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
+    	return "assoc" + associationsToWrite.stream()
+			.map(assoc -> {
+				Optional<DataObjectWrapper> collectionDataObject = Stream.of(assoc.first, assoc.second)
+						.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
+						.findAny();
+				boolean listReadSingleObjectCreate = false;
+				if (collectionDataObject.isPresent()) {
+					listReadSingleObjectCreate = Stream.of(assoc.first, assoc.second)
+							.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
+							.allMatch(dataObject -> writtenDataObjects.contains(dataObject) && !writeContext.get(dataObject).stream().allMatch(StatefulDataAssociation::isCollection));
+				}
+				if(!collectionDataObject.isPresent() || listReadSingleObjectCreate) {
+					return "^^["+Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString()+"]";
+				} else {
+					DataObjectWrapper identifier = parent.getDataObjectCollectionIdentifier(element, collectionDataObject.get());
+					DataObjectWrapper other = (DataObjectWrapper) assoc.otherElement(collectionDataObject.get());
+					//TODO does not sort alphabetically
+					return "^^(associateWithList "+other.dataElementId()+" "+collectionDataObject.get().getNormalizedName()+" "+identifier.dataElementId()+" assoc)";
+				}
+			})
+			.distinct()
+			.collect(Collectors.joining());
+    }
+    
+    private void checkUpperBoundsOfCreatedAssoc(Pair<DataObjectWrapper, DataObjectWrapper> createdAssoc, Set<DataObjectWrapper> readDataObjects, Transition transition) {
+		Association dataModelAssoc = parent.getDataModel().getAssociation(createdAssoc.first.getNormalizedName(), createdAssoc.second.getNormalizedName()).get();
+		//Create guards for: Cannot create data object if this would violate upper bounds
+		Stream.of(createdAssoc.first, createdAssoc.second).forEach(dataObject -> {
+			AssociationEnd end = dataModelAssoc.getEnd(dataObject.getNormalizedName());
+			int limit = end.getUpperBound();
+			DataObjectWrapper otherObject = (DataObjectWrapper) createdAssoc.otherElement(dataObject);
+			
+			if(limit > 1 && limit != AssociationEnd.UNLIMITED && readDataObjects.contains(otherObject)) {//If the other object is not read, it is just created - and then no bound that is 1 or higher will be violated
+				String newGuard = "(enforceUpperBound "+otherObject.dataElementId()+" "+dataObject.namePrefix()+" assoc "+limit+")";
+				addGuardCondition(transition, newGuard);
+			}
+		});
+    }
+    
+    private void checkLowerBoundForCreatedObject(Pair<DataObjectWrapper, DataObjectWrapper> createdAssoc, Set<DataObjectWrapper> readDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Transition transition) {
+		//Create guards for: Cannot create data object if lower bounds of read list data object are not given
+		//When a collection is read, an identifier determines which elements exactly are read, so the check boils down to checking the number of identifier associations
+		Association dataModelAssoc = parent.getDataModel().getAssociation(createdAssoc.first.getNormalizedName(), createdAssoc.second.getNormalizedName()).get();
+		Stream.of(createdAssoc.first, createdAssoc.second)
+			.filter(dataObject -> readDataObjects.contains(dataObject) && readContext.get(dataObject).stream().anyMatch(StatefulDataAssociation::isCollection))
+			.forEach(collectionDataObject -> {
+				DataObjectWrapper singleObject = (DataObjectWrapper) createdAssoc.otherElement(collectionDataObject);
+				/*Try to use the same identifier that is used for the list*/
+				DataObjectWrapper identifier = parent.getDataObjectCollectionIdentifier(element, collectionDataObject);
+//				if(!parent.getDataModel().getAssociation(identifier.getNormalizedName(), singleObject.getNormalizedName())
+//						.map(linkingAssoc -> linkingAssoc.first.getUpperBound() <= 1 && linkingAssoc.second.getUpperBound() <= 1)
+//						.orElse(false)) throw new ModelValidationException("Identifier data object "+identifier.getNormalizedName()+" for list data object "+collectionDataObject.getNormalizedName()+" is not associated 1 to 1 with "+singleObject.getNormalizedName()+" in activity "+elementName(element));
+
+				int lowerBound = dataModelAssoc.getEnd(collectionDataObject.getNormalizedName()).getLowerBound();
+				//TODO new guard
+				//String newGuard = "((length " + collectionDataObject.dataElementList() + ") < " + lowerBound + ") (*requirements "+ singleObject.getNormalizedName() + "*)";
+				String newGuard = "(enforceLowerBound "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc "+lowerBound+")";
+				addGuardCondition(transition, newGuard);
+		});
     }
     
     private Set<Pair<DataObjectWrapper, DataObjectWrapper>> determineAssociationsToWrite(Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
@@ -285,20 +285,42 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 			};
 		};
 		
-		//Associations are created two objects are written together or if one is read and the other one is written
+		//New associations are created when an object is created and ...
+		//    if another object is written as non-collection
+		// OR if another object was read as non-collection
+		// OR if another object was read as collection
 		for(DataObjectWrapper writtenObject : writtenDataObjects) {
-			for(DataObjectWrapper readObject : readDataObjects) {
-				if(!writtenObject.equals(readObject) && parent.getDataModel().isAssociated(writtenObject.getNormalizedName(), readObject.getNormalizedName())) {
-					associationsToWrite.add(new Pair<>(writtenObject, readObject));
+			if(
+					(!readContext.containsKey(writtenObject) || readContext.get(writtenObject).stream().allMatch(StatefulDataAssociation::isCollection))
+					&& !writeContext.get(writtenObject).stream().allMatch(StatefulDataAssociation::isCollection)) {
+				for(DataObjectWrapper otherWrittenObject : writtenDataObjects) {
+					if(!writtenObject.equals(otherWrittenObject) && parent.getDataModel().isAssociated(writtenObject.getNormalizedName(), otherWrittenObject.getNormalizedName())
+							&& !writeContext.get(otherWrittenObject).stream().allMatch(StatefulDataAssociation::isCollection)) {
+						associationsToWrite.add(new Pair<>(writtenObject, otherWrittenObject));
+					}
 				}
-			}
-			for(DataObjectWrapper otherWrittenObject : writtenDataObjects) {
-				if(!writtenObject.equals(otherWrittenObject) && parent.getDataModel().isAssociated(writtenObject.getNormalizedName(), otherWrittenObject.getNormalizedName())) {
-					associationsToWrite.add(new Pair<>(writtenObject, otherWrittenObject));
+				
+				for(DataObjectWrapper readObject : readDataObjects) {
+					if(!writtenObject.equals(readObject) && parent.getDataModel().isAssociated(writtenObject.getNormalizedName(), readObject.getNormalizedName())) {
+						associationsToWrite.add(new Pair<>(writtenObject, readObject));
+					}
 				}
 			}
 		}
 		return associationsToWrite;
+    }
+    
+
+    private Set<StateChange> determineStateChanges(Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
+    	Set<StateChange> stateChangesToPerform = new HashSet<>();
+    	readContext.values().stream().flatMap(List::stream).forEach(input -> {
+        	writeContext.values().stream().flatMap(List::stream).forEach(output -> {
+        		if(input.equalsDataElementAndCollection(output) && !input.getStateName().equals(output.getStateName())) {
+        			stateChangesToPerform.add(new StateChange(input, output));
+        		}
+        	});
+    	});
+    	return stateChangesToPerform;
     }
     
     private void addGuardsForStateChanges(Set<StateChange> stateChangesToPerform, Transition transition, Set<DataObjectWrapper> readDataObjects, Set<DataObjectWrapper> writtenDataObjects, Map<DataObjectWrapper, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> readContext, Map<DataObjectWrapper, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> writeContext) {
@@ -352,7 +374,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 			}
 		}
 		
-		//TODO checking of assocs of collections is done elswhere, could be brought together
+		//TODO checking of assocs of collections is done elsewhere (by checking lower bounds), could be brought together
 		Set<Pair<DataObjectWrapper, DataObjectWrapper>> nonCollectionAssocs = associationsToCheck.stream()
 				.filter(assoc -> Stream.of(assoc.first, assoc.second).allMatch(dataObject -> !readContext.get(dataObject).stream().allMatch(StatefulDataAssociation::isCollection)))
 				.collect(Collectors.toSet());
@@ -365,6 +387,7 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
 			addGuardCondition(transition, guard);
 		}
 		
+		//return nonCollectionAssocs;
 		return associationsToCheck;
     }
 }

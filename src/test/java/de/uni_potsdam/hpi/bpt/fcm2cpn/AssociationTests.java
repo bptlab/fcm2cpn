@@ -33,13 +33,12 @@ public class AssociationTests extends ModelStructureTests {
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
 	public void testDataAssociationsBetweenReadAndWriteAreCreated(String first, String second, Activity activity, DataObjectIOSet ioSet) {
-		assumeTrue(ioSet.reads(first) && ioSet.writes(second), "Activity does not read the first and write the second data object.");
-		assumeFalse(ioSet.associationShouldAlreadyBeInPlace(first, second), "Activity reads both data objects in the same collection/non-collection way as they are written, so an association is already in place");
+		assumeTrue(ioSet.reads(first) && ioSet.creates(second), "Activity does not read the first and create the second data object.");
 		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		if(arcsFromNodeNamed(transition, first).count() != 0 && arcsToNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
 			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
-			"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+elementName(activity)+" transition "+transition.getName().toString());
+			"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+elementName(activity)+" transition "+transition.getName().toString()+" for IO set "+ioSet);
 		}
 	}
 	
@@ -108,12 +107,12 @@ public class AssociationTests extends ModelStructureTests {
 		Association assoc = dataModel.getAssociation(first, second).get();
 		int upperBound = assoc.getEnd(second).getUpperBound();
 		assumeTrue(upperBound > 1 && upperBound != AssociationEnd.UNLIMITED, "No upper limit that has to be checked");//TODO will 1:1 need to be checked?
-		assumeTrue(ioSet.creates(second) && (ioSet.writes(first) || ioSet.reads(first)), "Association is not created in this activity");
+		assumeTrue(ioSet.createsAssociationBetween(first, second), "Association is not created in this activity");
+		assumeTrue(!ioSet.creates(first), "First object is just created, so current cardinality is exactly 1:1 and does not have to be checked.");
+		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
-		if(arcsFromNodeNamed(transition, first).count() != 0) {//If the object is just created, no upper bound checking is needed
-			assertEquals(1, guardsOf(transition).filter(guard -> guard.equals("(enforceUpperBound "+first+"Id "+second+" assoc "+upperBound+")")).count(),
-					"There is not exactly one guard for upper limit of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");
-		}
+		assertEquals(1, guardsOf(transition).filter(guard -> guard.equals("(enforceUpperBound "+first+"Id "+second+" assoc "+upperBound+")")).count(),
+				"There is not exactly one guard for upper limit of assoc "+assoc+" for IOSet "+ioSet+" of activity \""+elementName(activity)+"\"");
 	}
 	
 	@TestWithAllModels
