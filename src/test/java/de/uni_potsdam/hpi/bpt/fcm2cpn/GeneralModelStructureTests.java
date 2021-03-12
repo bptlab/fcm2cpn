@@ -441,38 +441,6 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	}
 	
 	@TestWithAllModels
-	@ForEachBpmn(Activity.class)
-	@ForEachIOSet
-	public void testGoalCardinalitiesAreCheckedOnStateChange(Activity activity,  DataObjectIdIOSet ioSet) {
-		var stateMap = ioAssociationsToStateMaps(ioSet);
-		Transition transition = transitionForIoCombination(stateMap, activity).get();
-		
-		var dataObjectStateChangesWithReducedUpdateability = ioSet.stateChanges().stream().flatMap(stateChange -> {
-			ObjectLifeCycle olc = olcFor(stateChange.first.dataElementName());
-			Set<AssociationEnd> removedUpdateableAssociations = new HashSet<>(olc.getState(stateChange.first.getStateName()).get().getUpdateableAssociations());
-			removedUpdateableAssociations.removeAll(olc.getState(stateChange.second.getStateName()).get().getUpdateableAssociations());
-			return removedUpdateableAssociations.stream().map(removedAssoc -> new Pair<>(stateChange, removedAssoc));
-		});
-		
-		var dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds = dataObjectStateChangesWithReducedUpdateability
-				.filter(x -> x.second.hasTightGoalLowerBound());
-		
-		dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds.forEach(x -> {
-			var stateChange = x.first;
-			var removedAssociation = x.second;
-			String dataObjectName = stateChange.first.dataElementName();
-			assertTrue(transition.getCondition().getText().contains(IOSetCompiler.GOAL_CARDINALITY_COMMENT), 
-					"Activity transition "+transition.getName().asString()+" for io set "+ioSet+" does not check for goal lower bound between "+dataObjectName+" and "+removedAssociation.getDataObject()
-					+" although "+dataObjectName+" changes state from "+stateChange.first.getStateName()+" to "+stateChange.second.getStateName()+" where no new associations can be created");
-			//TODO actually check for correct statement when goal cardinalities are implemented
-		});
-	}
-	
-	public void testCheckedGoalCardinalitiesComeFromStateChange() {
-		//TODO can only be created when goal cardinalities are implemented
-	}
-	
-	@TestWithAllModels
 	public void testAllCpnIdentifiersHaveNoWhitespace() {
 		Stream<HasName> allNodesInNet = Stream.concat(
 			petrinet.getPage().stream(),
