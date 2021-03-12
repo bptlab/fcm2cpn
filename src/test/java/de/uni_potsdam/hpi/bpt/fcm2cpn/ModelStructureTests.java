@@ -207,6 +207,18 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 				&& dataModel.getAssociation(identifier, identified).get().getEnd(identifier).getUpperBound() == 1;
 	}
 	
+	public boolean isDirectLowerBoundGuard(String guard, String first, String second, int lowerBound) {
+		return removeComments(guard).equals("(enforceLowerBound "+first+"Id "+second+" assoc "+lowerBound+")");
+	}
+	
+	public boolean isLowerBoundGuardViaCollectionIdentifier(String guard, String first, String second, int lowerBound, DataObjectIdIOSet ioSet) {
+		guard = removeComments(guard);
+		String beforeIdentifier = "(enforceLowerBound ";
+		String afterIdentifier = "Id "+second+" assoc "+lowerBound+")";
+		String identifier = guard.replace(beforeIdentifier, "").replace(afterIdentifier, "");
+		return guard.startsWith(beforeIdentifier) && guard.endsWith(afterIdentifier) && isValidCollectionIdentifier(identifier, second, ioSet);
+	}
+	
 	public Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioCombinationOfTransition(Transition transition) {
 		Map<Pair<String, Boolean>, String> inputs = new HashMap<>();
 		Map<Pair<String, Boolean>, String> outputs = new HashMap<>();

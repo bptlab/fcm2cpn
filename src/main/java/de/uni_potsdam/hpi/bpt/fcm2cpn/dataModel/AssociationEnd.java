@@ -34,13 +34,22 @@ public class AssociationEnd {
 	}
 
 	public int getGoalLowerBound() {
-		return goalLowerBound;
+		return getGoalLowerBound(false);
+	}
+	
+	/** Goal lower bound is smaller by one, if a new association is created in the context*/
+	public int getGoalLowerBound(boolean isAssociationCreated) {
+		return goalLowerBound + (isAssociationCreated ? -1 : 0);
 	}
 	
 	public boolean hasTightGoalLowerBound() {
-		return goalLowerBound > lowerBound;
+		return hasTightGoalLowerBound(false);
 	}
-
+	
+	public boolean hasTightGoalLowerBound(boolean isAssociationCreated) {
+		return getGoalLowerBound(isAssociationCreated) > lowerBound;
+	}
+	
 	public void setGoalLowerBound(int goalLowerBound) {
 		this.goalLowerBound = goalLowerBound;
 	}

@@ -130,9 +130,9 @@ public class AssociationTests extends ModelStructureTests {
 		int lowerBound = assoc.getEnd(second).getLowerBound();
 		assumeTrue(lowerBound > 1, "No lower bound that has to be checked");
 		assumeTrue(ioSet.reads(first) && ioSet.reads(second), "no "+first+" is read together with "+second);
+		//TODO is there a test case that fulfills the assumptions?
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
-		assertEquals(1, guardsOf(transition).map(AssociationTests::removeComments)
-				.filter(guard -> guard.equals("(enforceLowerBound "+first+"Id "+second+" assoc "+lowerBound+")")).count(),
+		assertEquals(1, guardsOf(transition).filter(guard -> isDirectLowerBoundGuard(guard, first, second, lowerBound)).count(),
 				"There is not exactly one guard for lower limit of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");
 	}
 	
@@ -148,12 +148,7 @@ public class AssociationTests extends ModelStructureTests {
 		assumeTrue(ioSet.creates(first) && ioSet.reads(second), "Association is not created in this activity");
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		if(arcsFromNodeNamed(transition, first).count() != 0 || arcsToNodeNamed(transition, first).count() != 0) {//Object might not be part of transition i/o set
-			assertEquals(1, guardsOf(transition).map(AssociationTests::removeComments).filter(guard -> {
-				String beforeIdentifier = "(enforceLowerBound ";
-				String afterIdentifier = "Id "+second+" assoc "+lowerBound+")";
-				String identifier = guard.replace(beforeIdentifier, "").replace(afterIdentifier, "");
-				return guard.startsWith(beforeIdentifier) && guard.endsWith(afterIdentifier) && isValidCollectionIdentifier(identifier, second, ioSet);
-			}).count(),
+			assertEquals(1, guardsOf(transition).filter(guard -> isLowerBoundGuardViaCollectionIdentifier(guard, first, second, lowerBound, ioSet)).count(),
 					"There is not exactly one guard for lower limit "+lowerBound+" of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");
 		}
 	}
@@ -162,9 +157,9 @@ public class AssociationTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
+	/** Goal lower bounds must be checked when a data object changes to a state where the number of associations cannot change anymore*/
 	public void testGoalCardinalitiesAreCheckedOnStateChange(Activity activity,  DataObjectIdIOSet ioSet) {
-		var stateMap = ioAssociationsToStateMaps(ioSet);
-		Transition transition = transitionForIoCombination(stateMap, activity).get();
+		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		
 		var dataObjectStateChangesWithReducedUpdateability = ioSet.stateChanges().stream().flatMap(stateChange -> {
 			ObjectLifeCycle olc = olcFor(stateChange.first.dataElementName());
@@ -173,17 +168,26 @@ public class AssociationTests extends ModelStructureTests {
 			return removedUpdateableAssociations.stream().map(removedAssoc -> new Pair<>(stateChange, removedAssoc));
 		});
 		
+		/** When one association is created in this activity, the goal bound to check is less tight */
 		var dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds = dataObjectStateChangesWithReducedUpdateability
-				.filter(x -> x.second.hasTightGoalLowerBound());
+				.filter(x -> x.second.hasTightGoalLowerBound(
+						ioSet.creates(x.first.first.dataElementName())
+						|| ioSet.creates(x.second.getDataObject())
+		));
 		
 		dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds.forEach(x -> {
 			var stateChange = x.first;
-			var removedAssociation = x.second;
 			String dataObjectName = stateChange.first.dataElementName();
-			assertTrue(transition.getCondition().getText().contains(IOSetCompiler.GOAL_CARDINALITY_COMMENT), 
-					"Activity transition "+transition.getName().asString()+" for io set "+ioSet+" does not check for goal lower bound between "+dataObjectName+" and "+removedAssociation.getDataObject()
+			
+			var removedAssociationEnd = x.second;
+			String otherDataObject = removedAssociationEnd.getDataObject();
+			int goalLowerBound = removedAssociationEnd.getGoalLowerBound(ioSet.creates(dataObjectName) || ioSet.creates(otherDataObject));
+			
+			assertEquals(1, guardsOf(transition).filter(guard -> 
+				(isDirectLowerBoundGuard(guard, dataObjectName, otherDataObject, goalLowerBound))
+				&& guard.contains(IOSetCompiler.GOAL_CARDINALITY_COMMENT)).count(), 
+					"Activity transition "+transition.getName().asString()+" for io set "+ioSet+" does not check for goal lower bound between "+dataObjectName+" and "+otherDataObject
 					+" although "+dataObjectName+" changes state from "+stateChange.first.getStateName()+" to "+stateChange.second.getStateName()+" where no new associations can be created");
-			//TODO actually check for correct statement when goal cardinalities are implemented
 		});
 	}
 	
