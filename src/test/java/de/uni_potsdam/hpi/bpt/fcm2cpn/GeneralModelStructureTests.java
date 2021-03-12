@@ -447,16 +447,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		var stateMap = ioAssociationsToStateMaps(ioSet);
 		Transition transition = transitionForIoCombination(stateMap, activity).get();
 		
-		var dataObjectStateChanges = ioSet.first.stream().map(input -> 
-			new Pair<>(input, 
-			ioSet.second.stream().filter(output -> 
-				output.dataElementName().equals(input.dataElementName()) && output.isCollection() == input.isCollection()
-				&& !output.getStateName().equals(input.getStateName())).findAny())
-		)
-		.filter(stateChange -> stateChange.second.isPresent())
-		.map(stateChange -> new Pair<>(stateChange.first, stateChange.second.get()));
-		
-		var dataObjectStateChangesWithReducedUpdateability = dataObjectStateChanges.flatMap(stateChange -> {
+		var dataObjectStateChangesWithReducedUpdateability = ioSet.stateChanges().stream().flatMap(stateChange -> {
 			ObjectLifeCycle olc = olcFor(stateChange.first.dataElementName());
 			Set<AssociationEnd> removedUpdateableAssociations = new HashSet<>(olc.getState(stateChange.first.getStateName()).get().getUpdateableAssociations());
 			removedUpdateableAssociations.removeAll(olc.getState(stateChange.second.getStateName()).get().getUpdateableAssociations());
@@ -470,7 +461,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 			var stateChange = x.first;
 			var removedAssociation = x.second;
 			String dataObjectName = stateChange.first.dataElementName();
-			assertTrue(transition.getCondition().getText().contains(IOSetCompiler.GOAL_CARDINALITY), 
+			assertTrue(transition.getCondition().getText().contains(IOSetCompiler.GOAL_CARDINALITY_COMMENT), 
 					"Activity transition "+transition.getName().asString()+" for io set "+ioSet+" does not check for goal lower bound between "+dataObjectName+" and "+removedAssociation.getDataObject()
 					+" although "+dataObjectName+" changes state from "+stateChange.first.getStateName()+" to "+stateChange.second.getStateName()+" where no new associations can be created");
 			//TODO actually check for correct statement when goal cardinalities are implemented

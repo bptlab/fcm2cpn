@@ -23,14 +23,13 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIOSet.StateChange;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectWrapperIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
 public class IOSetCompiler {
 	
 	private final ActivityCompiler parent;
-	private final InputSetWrapper inputSet;
-	private final OutputSetWrapper outputSet;
 	private final Transition transition;
 	
 	private final Activity element;
@@ -38,52 +37,40 @@ public class IOSetCompiler {
 	private DataObjectWrapperIOSet ioSet;
 	
 	/** Comment to show that lower bound check is goal cardinality check.*/
-	public static final String GOAL_CARDINALITY = "(*goal cardinality*)";
+	public static final String GOAL_CARDINALITY_COMMENT = "(*goal cardinality*)";
 	
 	public IOSetCompiler(ActivityCompiler parent, OutputSetWrapper outputSet, InputSetWrapper inputSet, Transition transition) {
 		this.parent = parent;
-		this.inputSet = inputSet;
-		this.outputSet = outputSet;
+		this.ioSet = transputSetWrapperToIOSet(inputSet, outputSet);
 		this.transition = transition;	
 		
 		element = parent.getElement();
 	}
 	
-	public void compile() {
+	private DataObjectWrapperIOSet transputSetWrapperToIOSet(InputSetWrapper inputSet, OutputSetWrapper outputSet) {
         List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>> readDataObjectReferences = inputSet.stream()
-        	.map(StatefulDataAssociation::asDataObjectReference)
-        	.flatMap(Optional::stream)
-        	.collect(Collectors.toList());
-        
-        List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> writtenDataObjectReferences = outputSet.stream()
-        	.map(StatefulDataAssociation::asDataObjectReference)
-        	.flatMap(Optional::stream)
-        	.collect(Collectors.toList());
-        
-        ioSet = new DataObjectWrapperIOSet(readDataObjectReferences, writtenDataObjectReferences);
-        
-        parent.attachObjectCreationCounters(transition, dataObjectsThat(ioSet::creates));
+            	.map(StatefulDataAssociation::asDataObjectReference)
+            	.flatMap(Optional::stream)
+            	.collect(Collectors.toList());
+            
+            List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> writtenDataObjectReferences = outputSet.stream()
+            	.map(StatefulDataAssociation::asDataObjectReference)
+            	.flatMap(Optional::stream)
+            	.collect(Collectors.toList());
+       return new DataObjectWrapperIOSet(readDataObjectReferences, writtenDataObjectReferences);
+	}
+	
+	public void compile() {
+		parent.attachObjectCreationCounters(transition, dataObjectsThat(ioSet::creates));
         parent.createCreationRegistrationArcs(transition, dataObjectsThat(ioSet::creates));
         associateDataObjects();
 	}
-	
-    /**Alias class for better readability*/
-    private class StateChange extends Pair<StatefulDataAssociation<DataInputAssociation, DataObjectReference>, StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> {
-		public StateChange(StatefulDataAssociation<DataInputAssociation, DataObjectReference> first, StatefulDataAssociation<DataOutputAssociation, DataObjectReference> second) {
-			super(first, second);
-			assert first.equalsDataElementAndCollection(second);
-		}
-		
-		public DataObjectWrapper dataObject() {
-			assert parent.wrapperFor(first).equals(parent.wrapperFor(second));
-			return (DataObjectWrapper) parent.wrapperFor(first);
-		}
-	}
+
     
     private void associateDataObjects() {
 
     	Set<Pair<DataObjectWrapper, DataObjectWrapper>> associationsToWrite = determineAssociationsToWrite();    	
-    	Set<StateChange> stateChangesToPerform = determineStateChanges();
+    	Set<StateChange> stateChangesToPerform = ioSet.stateChanges();
 
 		// Add guards for goal cardinalities
 		addGuardsForStateChanges(stateChangesToPerform);
@@ -204,18 +191,6 @@ public class IOSetCompiler {
 		return associationsToWrite;
     }
     
-
-    private Set<StateChange> determineStateChanges() {
-    	Set<StateChange> stateChangesToPerform = new HashSet<>();
-    	ioSet.first.forEach(input -> {
-        	ioSet.second.forEach(output -> {
-        		if(input.equalsDataElementAndCollection(output) && !input.getStateName().equals(output.getStateName())) {
-        			stateChangesToPerform.add(new StateChange(input, output));
-        		}
-        	});
-    	});
-    	return stateChangesToPerform;
-    }
     
     private void addGuardsForStateChanges(Set<StateChange> stateChangesToPerform) {
 		
@@ -223,7 +198,7 @@ public class IOSetCompiler {
 			String inputState = stateChange.first.getStateName();
 			String outputState = stateChange.second.getStateName();
 			
-			ObjectLifeCycle olc = olcFor(stateChange.dataObject());
+			ObjectLifeCycle olc = olcFor(dataObject(stateChange));
 			ObjectLifeCycle.State istate = olc.getState(inputState).get();
 			if (istate.getUpdateableAssociations().isEmpty()) continue;
 			ObjectLifeCycle.State ostate = olc.getState(outputState).get();
@@ -245,9 +220,9 @@ public class IOSetCompiler {
 					if (goalLowerBound > lowerBound) {
 						String newGuard;
 						if (stateChange.first.isCollection()) {
-							newGuard = "(List.all (fn oId => (enforceLowerBound oId " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ")) (List.map (fn obj => #id obj) " + stateChange.dataObject().dataElementList() + ")) "+GOAL_CARDINALITY;
+							newGuard = "(List.all (fn oId => (enforceLowerBound oId " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ")) (List.map (fn obj => #id obj) " + dataObject(stateChange).dataElementList() + ")) "+GOAL_CARDINALITY_COMMENT;
 						} else {
-							newGuard = "(enforceLowerBound " + stateChange.dataObject().dataElementId() + " " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ") "+GOAL_CARDINALITY;
+							newGuard = "(enforceLowerBound " + dataObject(stateChange).dataElementId() + " " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ") "+GOAL_CARDINALITY_COMMENT;
 						}
 						System.out.println(newGuard);
 						addGuardCondition(transition, newGuard);
@@ -285,6 +260,11 @@ public class IOSetCompiler {
 		return associationsToCheck;
     }
     
+	
+	private DataObjectWrapper dataObject(StateChange stateChange) {
+		assert parent.wrapperFor(stateChange.first).equals(parent.wrapperFor(stateChange.second));
+		return (DataObjectWrapper) parent.wrapperFor(stateChange.first);
+	}
 	
 	//TODO LOD violation
     private Set<DataObjectWrapper> dataObjectsThat(Predicate<DataObjectWrapper> predicate) {

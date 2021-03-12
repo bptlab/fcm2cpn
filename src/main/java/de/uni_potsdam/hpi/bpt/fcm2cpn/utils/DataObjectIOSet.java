@@ -1,6 +1,8 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.utils;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
@@ -69,6 +71,20 @@ public abstract class DataObjectIOSet<DataObject> extends Pair<List<StatefulData
 								&& readsAsNonCollection(secondDataObject) == writesAsNonCollection(secondDataObject));
 	}
 	
+	public Set<StateChange> stateChanges() {
+    	Set<StateChange> stateChanges = new HashSet<>();
+    	first.forEach(input -> {
+        	second.forEach(output -> {
+        		if(input.equalsDataElementAndCollection(output) && !input.getStateName().equals(output.getStateName())) {
+        			stateChanges.add(new StateChange(input, output));
+        		}
+        	});
+    	});
+    	return stateChanges;
+	}
+	
+	
+	// Matching associations
 	protected abstract boolean matches(StatefulDataAssociation<?, DataObjectReference> assoc, DataObject dataObject);
 	
 	private Stream<StatefulDataAssociation<DataInputAssociation, DataObjectReference>> inputsForName(DataObject dataObject) {
@@ -78,4 +94,16 @@ public abstract class DataObjectIOSet<DataObject> extends Pair<List<StatefulData
 	private Stream<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> outputsForName(DataObject dataObject) {
 		return second.stream().filter(each -> matches(each, dataObject));
 	}
+	
+	
+	// Helper classes
+    /**Alias class for better readability*/
+    public static class StateChange extends Pair<StatefulDataAssociation<DataInputAssociation, DataObjectReference>, StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> {
+		public StateChange(StatefulDataAssociation<DataInputAssociation, DataObjectReference> first, StatefulDataAssociation<DataOutputAssociation, DataObjectReference> second) {
+			super(first, second);
+			assert first.equalsDataElementAndCollection(second);
+		}
+	}
+	
+	
 }
