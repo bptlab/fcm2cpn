@@ -200,6 +200,13 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 			.findAny();
 	}
 	
+	
+	public boolean isValidCollectionIdentifier(String identifier, String identified, DataObjectIdIOSet ioSet) {
+		return ioSet.reads(identifier) 
+				&& dataModel.isAssociated(identifier, identified) 
+				&& dataModel.getAssociation(identifier, identified).get().getEnd(identifier).getUpperBound() == 1;
+	}
+	
 	public Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioCombinationOfTransition(Transition transition) {
 		Map<Pair<String, Boolean>, String> inputs = new HashMap<>();
 		Map<Pair<String, Boolean>, String> outputs = new HashMap<>();
@@ -284,10 +291,12 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	
 	public static Stream<String> guardsOf(Transition transition) {
 		String guard = transition.getCondition().getText().replaceFirst("^\\[", "").replaceFirst("]$", "");
-		//Remove arc comments:
-		guard = guard.replaceAll("\\(\\*(.|[\\r\\n])*?\\*\\)", "");
 		return Arrays.stream(guard.split(",\n"))
 				.map(String::trim);
+	}
+	
+	public static String removeComments(String guard) {
+		return guard.replaceAll("\\(\\*(.|[\\r\\n])*?\\*\\)", "").trim();
 	}
 	
 	public static boolean hasGuardForAssociation(Transition transition, String first, String second) {

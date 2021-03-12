@@ -124,21 +124,37 @@ public class AssociationTests extends ModelStructureTests {
 	@ArgumentsSource(AssociationsProvider.class)
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
-	public void testLowerLimitsAreChecked(String first, String second, Activity activity, DataObjectIdIOSet ioSet) {
+	/** Lower bounds must be checked if associated objects are read together*/
+	public void testLowerLimitsAreCheckedWhenReadTogetherWithCollection(String first, String second, Activity activity, DataObjectIdIOSet ioSet) {
 		Association assoc = dataModel.getAssociation(first, second).get();
 		int lowerBound = assoc.getEnd(second).getLowerBound();
 		assumeTrue(lowerBound > 1, "No lower bound that has to be checked");
-		assumeTrue(ioSet.reads(second) && (ioSet.writes(first) || ioSet.reads(first)), "Association is not created in this activity");
+		assumeTrue(ioSet.reads(first) && ioSet.reads(second), "no "+first+" is read together with "+second);
+		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
+		assertEquals(1, guardsOf(transition).map(AssociationTests::removeComments)
+				.filter(guard -> guard.equals("(enforceLowerBound "+first+"Id "+second+" assoc "+lowerBound+")")).count(),
+				"There is not exactly one guard for lower limit of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");
+	}
+	
+	@TestWithAllModels
+	@ArgumentsSource(AssociationsProvider.class)
+	@ForEachBpmn(Activity.class)
+	@ForEachIOSet
+	/** Lower bounds must be changed at creation as in "are there enough B to create an A?"; number of B is determined via identifier*/
+	public void testLowerLimitsAreCheckedWhenNewObjectIsCreated(String first, String second, Activity activity, DataObjectIdIOSet ioSet) {
+		Association assoc = dataModel.getAssociation(first, second).get();
+		int lowerBound = assoc.getEnd(second).getLowerBound();
+		assumeTrue(lowerBound > 1, "No lower bound that has to be checked");
+		assumeTrue(ioSet.creates(first) && ioSet.reads(second), "Association is not created in this activity");
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		if(arcsFromNodeNamed(transition, first).count() != 0 || arcsToNodeNamed(transition, first).count() != 0) {//Object might not be part of transition i/o set
-			assertEquals(1, guardsOf(transition).filter(guard -> {
+			assertEquals(1, guardsOf(transition).map(AssociationTests::removeComments).filter(guard -> {
 				String beforeIdentifier = "(enforceLowerBound ";
 				String afterIdentifier = "Id "+second+" assoc "+lowerBound+")";
-				if(!(guard.startsWith(beforeIdentifier) && guard.endsWith(afterIdentifier))) return false;
 				String identifier = guard.replace(beforeIdentifier, "").replace(afterIdentifier, "");
-				return ioSet.reads(identifier) && dataModel.getAssociation(identifier, second).map(idAssoc -> idAssoc.getEnd(identifier).getUpperBound() == 1).orElse(false);
+				return guard.startsWith(beforeIdentifier) && guard.endsWith(afterIdentifier) && isValidCollectionIdentifier(identifier, second, ioSet);
 			}).count(),
-					"There is not exactly one guard for lower limit of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");
+					"There is not exactly one guard for lower limit "+lowerBound+" of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");
 		}
 	}
 	
