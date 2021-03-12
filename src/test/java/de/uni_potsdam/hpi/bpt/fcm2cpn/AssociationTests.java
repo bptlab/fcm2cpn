@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
@@ -20,6 +21,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.AssociationsProvider;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIOSet.StateChange;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIdIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
@@ -160,39 +162,57 @@ public class AssociationTests extends ModelStructureTests {
 	/** Goal lower bounds must be checked when a data object changes to a state where the number of associations cannot change anymore*/
 	public void testGoalCardinalitiesAreCheckedOnStateChange(Activity activity,  DataObjectIdIOSet ioSet) {
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
-		
-		var dataObjectStateChangesWithReducedUpdateability = ioSet.stateChanges().stream().flatMap(stateChange -> {
+
+		dataObjectStateChangesWithRemovedUpdateableAssociations(ioSet).forEach(x -> {
+			StateChange stateChange = x.first;
+			AssociationEnd removedAssociationEnd = x.second;
+			String dataObjectName = stateChange.first.dataElementName();
+			String otherDataObject = removedAssociationEnd.getDataObject();
+			
+			boolean assocIsCreated = ioSet.creates(dataObjectName) || ioSet.creates(otherDataObject);
+			if(removedAssociationEnd.hasTightGoalLowerBound(assocIsCreated)) {
+				int goalLowerBound = removedAssociationEnd.getGoalLowerBound(assocIsCreated);
+				assertEquals(1, guardsOf(transition).filter(guard -> 
+				(isDirectLowerBoundGuard(guard, dataObjectName, otherDataObject, goalLowerBound))
+				&& guard.contains(IOSetCompiler.GOAL_CARDINALITY_COMMENT)).count(), 
+					"Activity transition "+transition.getName().asString()+" for io set "+ioSet+" does not check for goal lower bound between "+dataObjectName+" and "+otherDataObject
+					+" although "+dataObjectName+" changes state from "+stateChange.first.getStateName()+" to "+stateChange.second.getStateName()+" where no new associations can be created");
+			}
+		});
+	}
+	
+	public Stream<Pair<StateChange, AssociationEnd>> dataObjectStateChangesWithRemovedUpdateableAssociations(DataObjectIdIOSet ioSet) {
+		return ioSet.stateChanges().stream().flatMap(stateChange -> {
 			ObjectLifeCycle olc = olcFor(stateChange.first.dataElementName());
 			Set<AssociationEnd> removedUpdateableAssociations = new HashSet<>(olc.getState(stateChange.first.getStateName()).get().getUpdateableAssociations());
 			removedUpdateableAssociations.removeAll(olc.getState(stateChange.second.getStateName()).get().getUpdateableAssociations());
 			return removedUpdateableAssociations.stream().map(removedAssoc -> new Pair<>(stateChange, removedAssoc));
 		});
-		
-		/** When one association is created in this activity, the goal bound to check is less tight */
-		var dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds = dataObjectStateChangesWithReducedUpdateability
-				.filter(x -> x.second.hasTightGoalLowerBound(
-						ioSet.creates(x.first.first.dataElementName())
-						|| ioSet.creates(x.second.getDataObject())
-		));
-		
-		dataObjectStateChangesWithReducedUpdateabilityAndTightGoalLowerBounds.forEach(x -> {
-			var stateChange = x.first;
-			String dataObjectName = stateChange.first.dataElementName();
-			
-			var removedAssociationEnd = x.second;
-			String otherDataObject = removedAssociationEnd.getDataObject();
-			int goalLowerBound = removedAssociationEnd.getGoalLowerBound(ioSet.creates(dataObjectName) || ioSet.creates(otherDataObject));
-			
-			assertEquals(1, guardsOf(transition).filter(guard -> 
-				(isDirectLowerBoundGuard(guard, dataObjectName, otherDataObject, goalLowerBound))
-				&& guard.contains(IOSetCompiler.GOAL_CARDINALITY_COMMENT)).count(), 
-					"Activity transition "+transition.getName().asString()+" for io set "+ioSet+" does not check for goal lower bound between "+dataObjectName+" and "+otherDataObject
-					+" although "+dataObjectName+" changes state from "+stateChange.first.getStateName()+" to "+stateChange.second.getStateName()+" where no new associations can be created");
-		});
 	}
-	
-	public void testCheckedGoalCardinalitiesComeFromStateChange() {
-		//TODO can only be created when goal cardinalities are implemented
+
+	@TestWithAllModels
+	@ForEachBpmn(Activity.class)
+	@ForEachIOSet
+	public void testCheckedGoalCardinalitiesComeFromStateChange(Activity activity,  DataObjectIdIOSet ioSet) {
+		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
+		
+		guardsOf(transition).filter(guard -> guard.contains(IOSetCompiler.GOAL_CARDINALITY_COMMENT)).forEach(guard -> {
+			guard = removeComments(guard);
+			assertTrue(guard.matches("\\(enforceLowerBound .+Id .+ assoc .+\\)"), 
+					"Guard \""+guard+"\" annotated with goal cardinality comment was not a lower bound check");
+			
+			guard = guard.replace("(enforceLowerBound ", "");
+			String first = guard.split("Id ")[0];
+			guard = guard.split("Id ")[1];
+			String second = guard.split(" assoc ")[0];
+
+			assertTrue(dataObjectStateChangesWithRemovedUpdateableAssociations(ioSet).anyMatch(x -> {
+				StateChange stateChange = x.first;
+				AssociationEnd removedAssociationEnd = x.second;
+				return (stateChange.first.dataElementName().equals(first) && removedAssociationEnd.getDataObject().equals(second));
+			}), "No updateable association that is removed on state change matches goal lower bound cardinality guard \""+guard+"\n "
+					+ "of transition "+transition.getName().asString()+" of activity "+elementName(activity));
+		});
 	}
 	
 }
