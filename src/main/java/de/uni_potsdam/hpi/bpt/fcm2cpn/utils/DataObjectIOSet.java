@@ -12,7 +12,10 @@ import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle.State;
 
-/** TODO */
+/** 
+ * Utility class for handling io sets of activities. Allows to check whether and how data objects are read and written etc.
+ * Is abstract, as the identifier used for the data objects can vary, as long as there is a mechanism that matches whether a data object association refers to the given identifier.
+ */
 public abstract class DataObjectIOSet<DataObject> extends Pair<List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> {
 	
 	public DataObjectIOSet(List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>> first,

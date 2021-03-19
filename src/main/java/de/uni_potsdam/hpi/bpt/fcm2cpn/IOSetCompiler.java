@@ -4,7 +4,6 @@ import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.addGuardCondition;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -12,13 +11,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
-import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
-import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
-import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 import org.cpntools.accesscpn.model.Transition;
 
-import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.InputSetWrapper;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.TransputSetWrapper.OutputSetWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
@@ -39,27 +33,15 @@ public class IOSetCompiler {
 	/** Comment to show that lower bound check is goal cardinality check.*/
 	public static final String GOAL_CARDINALITY_COMMENT = "(*goal cardinality*)";
 	
-	public IOSetCompiler(ActivityCompiler parent, OutputSetWrapper outputSet, InputSetWrapper inputSet, Transition transition) {
+	public IOSetCompiler(ActivityCompiler parent, DataObjectWrapperIOSet ioSet, Transition transition) {
 		this.parent = parent;
-		this.ioSet = transputSetWrapperToIOSet(inputSet, outputSet);
+		this.ioSet = ioSet;
 		this.transition = transition;	
 		
 		element = parent.getElement();
 	}
 	
-	private DataObjectWrapperIOSet transputSetWrapperToIOSet(InputSetWrapper inputSet, OutputSetWrapper outputSet) {
-        List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>> readDataObjectReferences = inputSet.stream()
-            	.map(StatefulDataAssociation::asDataObjectReference)
-            	.flatMap(Optional::stream)
-            	.collect(Collectors.toList());
-            
-            List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>> writtenDataObjectReferences = outputSet.stream()
-            	.map(StatefulDataAssociation::asDataObjectReference)
-            	.flatMap(Optional::stream)
-            	.collect(Collectors.toList());
-       return new DataObjectWrapperIOSet(readDataObjectReferences, writtenDataObjectReferences);
-	}
-	
+
 	public void compile() {
 		parent.attachObjectCreationCounters(transition, dataObjectsThat(ioSet::creates));
         parent.createCreationRegistrationArcs(transition, dataObjectsThat(ioSet::creates));
