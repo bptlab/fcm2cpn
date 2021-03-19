@@ -337,7 +337,7 @@ public class CompilerApp implements AbstractPageScope {
 
     	Collection<DataObject> dataObjects = bpmn.getModelElementsByType(DataObject.class);
         dataObjects.forEach(each -> dataObjectsNamesToWrappers
-        		.computeIfAbsent(elementName(each), normalizedName -> new DataObjectWrapper(this, normalizedName, Utils.dataObjectStates(normalizedName, bpmn)))
+        		.computeIfAbsent(elementName(each), normalizedName -> new DataObjectWrapper(this, normalizedName))
         		.addMappedElement(each));
 
         Collection<DataObjectReference> dataObjectRefs = bpmn.getModelElementsByType(DataObjectReference.class);

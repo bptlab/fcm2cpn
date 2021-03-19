@@ -1,10 +1,7 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
@@ -21,9 +18,9 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObjectReference> {
 
 	private final Map<SubpageElement, PlaceNode> creationCounterPlaces = new HashMap<>();
-	
+	private Map<String, Place> statePlaces;
 
-	public DataObjectWrapper(CompilerApp compilerApp, String normalizedName, Set<String> states) {
+	public DataObjectWrapper(CompilerApp compilerApp, String normalizedName) {
 		super(compilerApp, normalizedName);
 		
 		assert compilerApp.getDataModel().hasDataObject(getNormalizedName());
@@ -31,20 +28,21 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
         compilerApp.createVariable(dataElementId(), "ID");
         compilerApp.createVariable(dataElementCount(), "INT");
         compilerApp.createVariable(dataElementList(), "LIST_OF_DATA_OBJECT");
-        
-        List<Place> statePlaces = states.stream().map(this::createPlace).collect(Collectors.toList());
 	}
 
 
 	@Override
-	@Deprecated
-	protected Place createPlace() {
-		return compilerApp.createPlace(normalizedName, "DATA_OBJECT");
+	protected void createPlaces() {
+		statePlaces = new HashMap<String, Place>();
+		for(String state : Utils.dataObjectStates(normalizedName, compilerApp.getBpmn())) {
+			statePlaces.put(state, createPlace(state));
+		}
 	}
 	
 	protected Place createPlace(String state) {
 		return compilerApp.createPlace(Utils.dataPlaceName(normalizedName, state), "DATA_OBJECT");
 	}
+
 
 
 	public PlaceNode creationCounterForPage(SubpageElement page) {
@@ -86,6 +84,12 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 	@Override
 	public boolean isDataStoreWrapper() {
 		return false;
+	}
+
+
+	@Override
+	public Place getPlace(String state) {
+		return statePlaces.get(state);
 	}
 
 }

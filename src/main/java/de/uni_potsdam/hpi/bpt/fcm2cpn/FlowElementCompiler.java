@@ -56,10 +56,10 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
         outputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = parent.wrapperFor(assoc);
         	String annotation = dataElement.annotationForDataFlow(element, assoc);
-        	linkWritingTransitions(dataElement, annotation, transitions);
+        	linkWritingTransitions(dataElement, annotation, transitions, assoc);
         	/*Assert that when writing a data store and not reading, the token is read before*/
         	if(!readElements.contains(dataElement) && dataElement.isDataStoreWrapper()) {
-        		linkReadingTransitions(dataElement, annotation, transitions);
+        		linkReadingTransitions(dataElement, annotation, transitions, assoc);
             	readElements.add(dataElement);
         	}
         });
@@ -72,34 +72,30 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
                 String guard = dataElement.collectionCreationGuard(element, assoc);
                 transitions.stream().forEach(transition -> addGuardCondition(transition, guard));
             }
-    		linkReadingTransitions(dataElement, annotation, transitions);
+    		linkReadingTransitions(dataElement, annotation, transitions, assoc);
 
     		/*Assert that when reading and not writing, the unchanged token is put back*/
     		List<Transition> readOnlyTransitions = transitions.stream()
     				.filter(transition -> outputs.entrySet().stream()
-    						.noneMatch(entry -> 
-		    					parent.wrapperFor(entry.getKey()).equals(dataElement) 
-		    					&& entry.getValue().contains(transition)
-		    					&& entry.getKey().isCollection() == assoc.isCollection()
-	    					)
-					)
+    						.filter(entry -> entry.getKey().equalsDataElementAndCollection(assoc))
+    						.noneMatch(entry -> entry.getValue().contains(transition)))
     				.collect(Collectors.toList());
-    		linkWritingTransitions(dataElement, annotation, readOnlyTransitions);
+    		linkWritingTransitions(dataElement, annotation, readOnlyTransitions, assoc);
         });
     }
     
 
-    protected void linkWritingTransitions(DataElementWrapper<?,?> dataElement, String annotation, List<Transition> transitions) {
-    	dataElement.assertMainPageArcFrom(element);
+    protected void linkWritingTransitions(DataElementWrapper<?,?> dataElement, String annotation, List<Transition> transitions, StatefulDataAssociation<?, ?> assoc) {
+    	if(!transitions.isEmpty()) dataElement.assertMainPageArcFrom(element, assoc.getStateName());
     	transitions.forEach(subPageTransition -> {
-    		elementPage.createArc(subPageTransition, elementPage.refPlaceFor(dataElement.getPlace()), annotation);
+    		elementPage.createArc(subPageTransition, elementPage.refPlaceFor(dataElement.getPlace(assoc.getStateName())), annotation);
     	});
     }    
     
-    protected void linkReadingTransitions(DataElementWrapper<?,?> dataElement, String annotation, List<Transition> transitions) {
-    	dataElement.assertMainPageArcTo(element);
+    protected void linkReadingTransitions(DataElementWrapper<?,?> dataElement, String annotation, List<Transition> transitions, StatefulDataAssociation<?, ?> assoc) {
+    	if(!transitions.isEmpty()) dataElement.assertMainPageArcTo(element, assoc.getStateName());
     	transitions.forEach(subPageTransition -> {
-    		elementPage.createArc(elementPage.refPlaceFor(dataElement.getPlace()), subPageTransition, annotation);
+    		elementPage.createArc(elementPage.refPlaceFor(dataElement.getPlace(assoc.getStateName())), subPageTransition, annotation);
     	});
     }
     

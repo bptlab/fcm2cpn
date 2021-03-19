@@ -10,6 +10,8 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
 
 public class DataStoreWrapper extends DataElementWrapper<DataStore, DataStoreReference> {
+	
+	protected Place place;
 
 	public DataStoreWrapper(CompilerApp compilerApp, String trimmedName) {
 		super(compilerApp, trimmedName);
@@ -19,8 +21,8 @@ public class DataStoreWrapper extends DataElementWrapper<DataStore, DataStoreRef
 	}
 
 	@Override
-	protected Place createPlace() {
-    	return compilerApp.createPlace(normalizedName, "DATA_STORE", "1`\"store_"+namePrefix()+"\"");
+	protected void createPlaces() {
+    	this.place = compilerApp.createPlace(normalizedName, "DATA_STORE", "1`\"store_"+namePrefix()+"\"");
 	}
 
 	@Override
@@ -41,6 +43,11 @@ public class DataStoreWrapper extends DataElementWrapper<DataStore, DataStoreRef
 	@Override
 	public String collectionCreationGuard(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc) {
 		throw new UnsupportedOperationException("Data stores cannot be created as lists");
+	}
+
+	@Override
+	public Place getPlace(String state) {
+		return place;
 	}
 
 }

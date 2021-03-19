@@ -97,6 +97,6 @@ public class StatefulDataAssociation<AssociationType extends DataAssociation, Da
 	
 	@Override
 	public String toString() {
-		return this.getClass().getSimpleName()+"("+dataElement.getAttributeValue("name")+", "+stateName+")";
+		return this.getClass().getSimpleName()+"("+dataElement.getAttributeValue("name")+", "+stateName+", isCollection="+isCollection+")";
 	}
 }
