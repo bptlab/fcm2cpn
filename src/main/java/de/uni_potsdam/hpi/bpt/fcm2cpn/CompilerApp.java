@@ -334,23 +334,13 @@ public class CompilerApp implements AbstractPageScope {
     
     private void translateDataObjects() {
         Map<String, DataObjectWrapper> dataObjectsNamesToWrappers = new HashMap<>();
-        
-        Collection<DataObjectReference> dataObjectRefs = bpmn.getModelElementsByType(DataObjectReference.class);
-        Map<String, Set<String>> states = dataObjectRefs.stream()
-        		.collect(Collectors.groupingBy(ref -> elementName(ref.getDataObject()))).entrySet().stream()
-        		.collect(Collectors.toMap(Map.Entry::getKey, entry -> {
-        			return entry.getValue().stream()
-	            		.map(ItemAwareElement::getDataState)
-	            		.map(DataState::getName)
-	                	.flatMap(Utils::dataObjectStateToNetColors)
-	                	.collect(Collectors.toSet());
-        		}));
 
     	Collection<DataObject> dataObjects = bpmn.getModelElementsByType(DataObject.class);
         dataObjects.forEach(each -> dataObjectsNamesToWrappers
-        		.computeIfAbsent(elementName(each), normalizedName -> new DataObjectWrapper(this, normalizedName, states.get(normalizedName)))
+        		.computeIfAbsent(elementName(each), normalizedName -> new DataObjectWrapper(this, normalizedName, Utils.dataObjectStates(normalizedName, bpmn)))
         		.addMappedElement(each));
 
+        Collection<DataObjectReference> dataObjectRefs = bpmn.getModelElementsByType(DataObjectReference.class);
         dataObjectRefs.forEach(each -> dataObjectsNamesToWrappers
         		.get(elementName(each.getDataObject()))
         		.addMappedReference(each));

@@ -1,6 +1,5 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements;
 
-import java.util.Collections;
 
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
@@ -13,7 +12,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
 public class DataStoreWrapper extends DataElementWrapper<DataStore, DataStoreReference> {
 
 	public DataStoreWrapper(CompilerApp compilerApp, String trimmedName) {
-		super(compilerApp, trimmedName, Collections.emptySet());
+		super(compilerApp, trimmedName);
 
         compilerApp.createVariable(dataElementId(), "STRING");
 		

@@ -1,6 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -191,6 +191,17 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testDataObjectPlacesAreCreated(DataObject dataObject) {
 		assertEquals(1, dataObjectPlacesNamed(elementName(dataObject)).count(), 
 			"There is not exactly one place for data object "+elementName(dataObject));
+	}
+	
+	
+	@TestWithAllModels
+	@ForEachBpmn(DataObject.class)
+	public void testDataObjectStatePlacesAreCreated(DataObject dataObject) {
+		String dataObjectName = elementName(dataObject);
+		for(String state : dataObjectStates(dataObjectName, bpmn)) {
+			assertEquals(1, dataObjectPlacesNamed(dataPlaceName(dataObjectName, state)).count(), 
+					"There is not exactly one place for data object \""+elementName(dataObject)+"\" in state \""+state+"\"");
+		}
 	}
 	
 	@TestWithAllModels

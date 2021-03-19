@@ -5,8 +5,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.impl.instance.SourceRef;
 import org.camunda.bpm.model.bpmn.impl.instance.TargetRef;
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
@@ -51,6 +54,20 @@ public class Utils {
     			.replace('\n', ' ').trim()
     			.replaceAll("\\s","_")
     			.toLowerCase();
+    }
+    
+    public static String dataPlaceName(String dataElementName, String state) {
+    	return dataElementName+"__"+state; //TODO find better separator
+    }
+    
+    public static Set<String> dataObjectStates(String dataObject, BpmnModelInstance bpmn) {
+        Collection<DataObjectReference> dataObjectRefs = bpmn.getModelElementsByType(DataObjectReference.class);
+        return dataObjectRefs.stream()
+        		.filter(ref -> elementName(ref.getDataObject()).equals(dataObject))
+        		.map(ItemAwareElement::getDataState)
+        		.map(DataState::getName)
+            	.flatMap(Utils::dataObjectStateToNetColors)
+            	.collect(Collectors.toSet());
     }
     
     /**

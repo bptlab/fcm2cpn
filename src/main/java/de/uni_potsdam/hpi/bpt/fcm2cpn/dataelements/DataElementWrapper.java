@@ -25,7 +25,7 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 	protected final Map<BaseElement, Arc> outgoingArcs;
 	protected final Map<BaseElement, Arc> incomingArcs;
 
-	public DataElementWrapper(CompilerApp compilerApp, String normalizedName, Set<String> states) {
+	public DataElementWrapper(CompilerApp compilerApp, String normalizedName) {
 		this.compilerApp = compilerApp;
 		this.normalizedName = normalizedName;
 		this.place = createPlace();

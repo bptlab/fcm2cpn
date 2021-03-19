@@ -1,8 +1,10 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
@@ -14,6 +16,7 @@ import org.cpntools.accesscpn.model.PlaceNode;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.SubpageElement;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObjectReference> {
 
@@ -21,19 +24,26 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 	
 
 	public DataObjectWrapper(CompilerApp compilerApp, String normalizedName, Set<String> states) {
-		super(compilerApp, normalizedName, states);
+		super(compilerApp, normalizedName);
 		
 		assert compilerApp.getDataModel().hasDataObject(getNormalizedName());
 		
         compilerApp.createVariable(dataElementId(), "ID");
         compilerApp.createVariable(dataElementCount(), "INT");
         compilerApp.createVariable(dataElementList(), "LIST_OF_DATA_OBJECT");
+        
+        List<Place> statePlaces = states.stream().map(this::createPlace).collect(Collectors.toList());
 	}
 
 
 	@Override
+	@Deprecated
 	protected Place createPlace() {
 		return compilerApp.createPlace(normalizedName, "DATA_OBJECT");
+	}
+	
+	protected Place createPlace(String state) {
+		return compilerApp.createPlace(Utils.dataPlaceName(normalizedName, state), "DATA_OBJECT");
 	}
 
 
