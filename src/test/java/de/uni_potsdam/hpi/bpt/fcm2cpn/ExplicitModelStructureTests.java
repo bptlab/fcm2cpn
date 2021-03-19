@@ -13,6 +13,7 @@ import org.cpntools.accesscpn.model.Place;
 import org.junit.jupiter.api.Test;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 public class ExplicitModelStructureTests extends ModelStructureTests {
 
@@ -78,7 +79,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@ModelsToTest("Simple")
 	public void testDataObjectPlacesAreCreated() {
 		Arrays.asList(FIRSTDATAOBJECTNAME, SECONDDATAOBJECTNAME).forEach(dataObjectReference -> {
-			assertEquals(1, dataObjectPlacesNamed(normalizeElementName(dataObjectReference)).count(), 
+			assertEquals(1, dataObjectPlacesNamed(Utils.dataPlaceName(normalizeElementName(dataObjectReference), BpmnPreprocessor.BLANK_STATE)).count(), 
 				"There is not exactly one place for data object reference "+dataObjectReference);
 		});
 	}
@@ -86,7 +87,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@Test
 	@ModelsToTest("Simple")
 	public void testReadDataObjectsAreConsumed() {
-		Place dataObjectPlace = dataObjectPlacesNamed(normalizeElementName(FIRSTDATAOBJECTNAME)).findAny().get();
+		Place dataObjectPlace = dataObjectPlacesNamed(Utils.dataPlaceName(normalizeElementName(FIRSTDATAOBJECTNAME), BpmnPreprocessor.BLANK_STATE)).findAny().get();
 		assertEquals(1, arcsToNodeNamed(dataObjectPlace, ACTIVITYNAME).count(),
 				"There is not exactly one read arc from data object to activity");
 	}
@@ -94,7 +95,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@Test
 	@ModelsToTest("Simple")
 	public void testWrittenDataObjectsAreProduced() {
-		Place dataObjectPlace = dataObjectPlacesNamed(normalizeElementName(SECONDDATAOBJECTNAME)).findAny().get();
+		Place dataObjectPlace = dataObjectPlacesNamed(Utils.dataPlaceName(normalizeElementName(SECONDDATAOBJECTNAME), BpmnPreprocessor.BLANK_STATE)).findAny().get();
 		assertEquals(1, arcsFromNodeNamed(dataObjectPlace, ACTIVITYNAME).count(),
 				"There is not exactly one write arc from activity to data object");
 	}
@@ -103,7 +104,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@ModelsToTest("Simple")
 	public void testStartEventsProduceDataObjects() {
 		Page mainPage = petrinet.getPage().get(0);
-		Place dataObjectPlace = StreamSupport.stream(mainPage.place().spliterator(), true).filter(place -> {return place.getSort().getText().equals("DATA_OBJECT") && place.getName().asString().equals(normalizeElementName(FIRSTDATAOBJECTNAME));}).findAny().get();
+		Place dataObjectPlace = StreamSupport.stream(mainPage.place().spliterator(), true).filter(place -> {return place.getSort().getText().equals("DATA_OBJECT") && place.getName().asString().equals(Utils.dataPlaceName(normalizeElementName(FIRSTDATAOBJECTNAME), BpmnPreprocessor.BLANK_STATE));}).findAny().get();
 		assertEquals(1, arcsFromNodeNamed(dataObjectPlace, STARTEVENTNAME).count(),
 				"There is not exactly one write arc from start event to data object");
 	}
@@ -112,7 +113,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@ModelsToTest("Simple")
 	public void testUnmodifiedDataObjectsArePutBack() {
 		Page mainPage = petrinet.getPage().get(0);
-		Place dataObjectPlace = StreamSupport.stream(mainPage.place().spliterator(), true).filter(place -> {return place.getSort().getText().equals("DATA_OBJECT") && place.getName().asString().equals(normalizeElementName(FIRSTDATAOBJECTNAME));}).findAny().get();
+		Place dataObjectPlace = StreamSupport.stream(mainPage.place().spliterator(), true).filter(place -> {return place.getSort().getText().equals("DATA_OBJECT") && place.getName().asString().equals(Utils.dataPlaceName(normalizeElementName(FIRSTDATAOBJECTNAME), BpmnPreprocessor.BLANK_STATE));}).findAny().get();
 		assertEquals(1, arcsFromNodeNamed(dataObjectPlace, ACTIVITYNAME).count(),
 				"There is not exactly one write back arc from activity to data object");
 	}
