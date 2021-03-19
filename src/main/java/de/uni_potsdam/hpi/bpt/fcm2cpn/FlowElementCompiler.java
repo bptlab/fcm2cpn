@@ -14,6 +14,9 @@ import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.PlaceNode;
 import org.cpntools.accesscpn.model.Transition;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataElementWrapper;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataObjectWrapper;
+
 public abstract class FlowElementCompiler<T extends FlowElement> {
 	
 	/**The bpmn element that is compiled with this object*/
@@ -89,14 +92,14 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
     protected void linkWritingTransitions(DataElementWrapper<?,?> dataElement, String annotation, List<Transition> transitions) {
     	dataElement.assertMainPageArcFrom(element);
     	transitions.forEach(subPageTransition -> {
-    		elementPage.createArc(subPageTransition, elementPage.refPlaceFor(dataElement.place), annotation);
+    		elementPage.createArc(subPageTransition, elementPage.refPlaceFor(dataElement.getPlace()), annotation);
     	});
     }    
     
     protected void linkReadingTransitions(DataElementWrapper<?,?> dataElement, String annotation, List<Transition> transitions) {
     	dataElement.assertMainPageArcTo(element);
     	transitions.forEach(subPageTransition -> {
-    		elementPage.createArc(elementPage.refPlaceFor(dataElement.place), subPageTransition, annotation);
+    		elementPage.createArc(elementPage.refPlaceFor(dataElement.getPlace()), subPageTransition, annotation);
     	});
     }
     

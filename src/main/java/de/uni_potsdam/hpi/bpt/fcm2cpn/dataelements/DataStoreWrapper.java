@@ -1,4 +1,4 @@
-package de.uni_potsdam.hpi.bpt.fcm2cpn;
+package de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements;
 
 import java.util.Collections;
 
@@ -6,6 +6,9 @@ import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.cpntools.accesscpn.model.Place;
+
+import de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
 
 public class DataStoreWrapper extends DataElementWrapper<DataStore, DataStoreReference> {
 

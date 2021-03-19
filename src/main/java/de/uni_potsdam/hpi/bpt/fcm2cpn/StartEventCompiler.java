@@ -15,6 +15,8 @@ import org.camunda.bpm.model.bpmn.instance.StartEvent;
 import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.Transition;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataElementWrapper;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataObjectWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 public class StartEventCompiler extends FlowElementCompiler<StartEvent> {

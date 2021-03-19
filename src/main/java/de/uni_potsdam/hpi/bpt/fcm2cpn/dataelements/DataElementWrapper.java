@@ -1,4 +1,4 @@
-package de.uni_potsdam.hpi.bpt.fcm2cpn;
+package de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,6 +10,9 @@ import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Place;
+
+import de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
 
 public abstract class DataElementWrapper<Element extends ItemAwareElement, Reference> implements Comparable<DataElementWrapper<?,?>> {
 
@@ -51,6 +54,10 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 
 	public String dataElementCount() {
 		return namePrefix() + "Count";
+	}
+	
+	public Place getPlace() {
+		return place;
 	}
 	
     public abstract String annotationForDataFlow(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc);

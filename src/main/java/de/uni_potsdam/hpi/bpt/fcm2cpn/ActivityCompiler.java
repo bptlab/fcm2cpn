@@ -22,6 +22,7 @@ import org.camunda.bpm.model.bpmn.instance.OutputSet;
 import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Transition;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataElementWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectWrapperIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;

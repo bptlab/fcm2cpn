@@ -1,4 +1,4 @@
-package de.uni_potsdam.hpi.bpt.fcm2cpn;
+package de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +10,10 @@ import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.PlaceNode;
+
+import de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.SubpageElement;
 
 public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObjectReference> {
 

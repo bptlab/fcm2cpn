@@ -38,6 +38,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycleParser;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataElementWrapper;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataObjectWrapper;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataStoreWrapper;
 
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
@@ -521,7 +524,7 @@ public class CompilerApp implements AbstractPageScope {
     		.filter(DataElementWrapper::isDataObjectWrapper)
     		.map(DataObjectWrapper.class::cast)
 			.filter(potentialIdentifier -> dataModel.getAssociation(potentialIdentifier.getNormalizedName(), object.getNormalizedName())
-                .filter(identifyingAssoc -> identifyingAssoc.getEnd(potentialIdentifier.normalizedName).getUpperBound() <= 1)
+                .filter(identifyingAssoc -> identifyingAssoc.getEnd(potentialIdentifier.getNormalizedName()).getUpperBound() <= 1)
                 .isPresent()).collect(Collectors.toSet());
 		assert potentialIdentifiers.size() == 1;
 		return potentialIdentifiers.stream().findAny().get();
