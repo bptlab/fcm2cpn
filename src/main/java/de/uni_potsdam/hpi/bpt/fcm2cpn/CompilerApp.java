@@ -53,6 +53,7 @@ import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
 import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.FlowNode;
+import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
@@ -330,13 +331,23 @@ public class CompilerApp implements AbstractPageScope {
     
     private void translateDataObjects() {
         Map<String, DataObjectWrapper> dataObjectsNamesToWrappers = new HashMap<>();
+        
+        Collection<DataObjectReference> dataObjectRefs = bpmn.getModelElementsByType(DataObjectReference.class);
+        Map<String, Set<String>> states = dataObjectRefs.stream()
+        		.collect(Collectors.groupingBy(ref -> elementName(ref.getDataObject()))).entrySet().stream()
+        		.collect(Collectors.toMap(Map.Entry::getKey, entry -> {
+        			return entry.getValue().stream()
+	            		.map(ItemAwareElement::getDataState)
+	            		.map(DataState::getName)
+	                	.flatMap(Utils::dataObjectStateToNetColors)
+	                	.collect(Collectors.toSet());
+        		}));
 
     	Collection<DataObject> dataObjects = bpmn.getModelElementsByType(DataObject.class);
         dataObjects.forEach(each -> dataObjectsNamesToWrappers
-        		.computeIfAbsent(elementName(each), normalizedName -> new DataObjectWrapper(this, normalizedName))
+        		.computeIfAbsent(elementName(each), normalizedName -> new DataObjectWrapper(this, normalizedName, states.get(normalizedName)))
         		.addMappedElement(each));
-        
-        Collection<DataObjectReference> dataObjectRefs = bpmn.getModelElementsByType(DataObjectReference.class);
+
         dataObjectRefs.forEach(each -> dataObjectsNamesToWrappers
         		.get(elementName(each.getDataObject()))
         		.addMappedReference(each));

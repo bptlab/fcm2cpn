@@ -1,5 +1,7 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
+import java.util.Collections;
+
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
@@ -8,7 +10,7 @@ import org.cpntools.accesscpn.model.Place;
 public class DataStoreWrapper extends DataElementWrapper<DataStore, DataStoreReference> {
 
 	public DataStoreWrapper(CompilerApp compilerApp, String trimmedName) {
-		super(compilerApp, trimmedName);
+		super(compilerApp, trimmedName, Collections.emptySet());
 
         compilerApp.createVariable(dataElementId(), "STRING");
 		

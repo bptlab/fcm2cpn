@@ -2,6 +2,7 @@ package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
@@ -15,8 +16,8 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 	private final Map<SubpageElement, PlaceNode> creationCounterPlaces = new HashMap<>();
 	
 
-	public DataObjectWrapper(CompilerApp compilerApp, String normalizedName) {
-		super(compilerApp, normalizedName);
+	public DataObjectWrapper(CompilerApp compilerApp, String normalizedName, Set<String> states) {
+		super(compilerApp, normalizedName, states);
 		
 		assert compilerApp.getDataModel().hasDataObject(getNormalizedName());
 		
