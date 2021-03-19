@@ -79,7 +79,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@ModelsToTest("Simple")
 	public void testDataObjectPlacesAreCreated() {
 		Arrays.asList(FIRSTDATAOBJECTNAME, SECONDDATAOBJECTNAME).forEach(dataObjectReference -> {
-			assertEquals(1, dataObjectPlacesNamed(Utils.dataPlaceName(normalizeElementName(dataObjectReference), BpmnPreprocessor.BLANK_STATE)).count(), 
+			assertEquals(1, dataObjectPlaces(normalizeElementName(dataObjectReference), BpmnPreprocessor.BLANK_STATE).count(), 
 				"There is not exactly one place for data object reference "+dataObjectReference);
 		});
 	}
@@ -87,7 +87,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@Test
 	@ModelsToTest("Simple")
 	public void testReadDataObjectsAreConsumed() {
-		Place dataObjectPlace = dataObjectPlacesNamed(Utils.dataPlaceName(normalizeElementName(FIRSTDATAOBJECTNAME), BpmnPreprocessor.BLANK_STATE)).findAny().get();
+		Place dataObjectPlace = dataObjectPlaces(normalizeElementName(FIRSTDATAOBJECTNAME), BpmnPreprocessor.BLANK_STATE).findAny().get();
 		assertEquals(1, arcsToNodeNamed(dataObjectPlace, ACTIVITYNAME).count(),
 				"There is not exactly one read arc from data object to activity");
 	}
@@ -95,7 +95,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@Test
 	@ModelsToTest("Simple")
 	public void testWrittenDataObjectsAreProduced() {
-		Place dataObjectPlace = dataObjectPlacesNamed(Utils.dataPlaceName(normalizeElementName(SECONDDATAOBJECTNAME), BpmnPreprocessor.BLANK_STATE)).findAny().get();
+		Place dataObjectPlace = dataObjectPlaces(normalizeElementName(SECONDDATAOBJECTNAME), BpmnPreprocessor.BLANK_STATE).findAny().get();
 		assertEquals(1, arcsFromNodeNamed(dataObjectPlace, ACTIVITYNAME).count(),
 				"There is not exactly one write arc from activity to data object");
 	}

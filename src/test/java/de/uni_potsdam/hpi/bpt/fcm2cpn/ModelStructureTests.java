@@ -383,9 +383,13 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 				.filter(place -> Objects.toString(place.getName().asString()).equals(name));
 	}
 
-	public Stream<Place> dataObjectPlacesNamed(String name) {
-		return placesNamed(name)
+	public Stream<Place> dataObjectPlaces(String dataObjectName, String state) {
+		return placesNamed(Utils.dataPlaceName(dataObjectName, state))
 				.filter(place -> place.getSort().getText().equals("DATA_OBJECT") );
+	}
+	
+	public Stream<Place> dataObjectPlacesForAllStates(String dataObjectName) {
+		return Utils.dataObjectStates(dataObjectName, bpmn).stream().flatMap(state -> dataObjectPlaces(dataObjectName, state));
 	}
 	
 	public Stream<Place> dataStorePlacesNamed(String name) {
