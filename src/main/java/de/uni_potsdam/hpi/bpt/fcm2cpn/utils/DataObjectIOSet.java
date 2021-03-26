@@ -3,6 +3,7 @@ package de.uni_potsdam.hpi.bpt.fcm2cpn.utils;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
@@ -10,6 +11,7 @@ import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataOutputAssociation;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle.State;
 
 /** 
@@ -34,9 +36,13 @@ public abstract class DataObjectIOSet<DataObject> extends Pair<List<StatefulData
 	public boolean readsAsNonCollection(DataObject dataObject) {
 		return inputsForName(dataObject).anyMatch(each -> !each.isCollection());
 	}
+	
+	public Set<State> readStates(DataObject dataObject, ObjectLifeCycle olc) {
+		return inputsForName(dataObject).map(each -> olc.getState(each.getStateName()).get()).collect(Collectors.toSet());
+	}
 
 	public boolean readsInState(DataObject dataObject, State state) {
-		return inputsForName(dataObject).anyMatch(each -> state.getOLC().getState(each.getStateName()).get().equals(state));
+		return readStates(dataObject, state.getOLC()).contains(state);
 	}
 
 	public boolean writes(DataObject dataObject) {
@@ -50,9 +56,14 @@ public abstract class DataObjectIOSet<DataObject> extends Pair<List<StatefulData
 	public boolean writesAsNonCollection(DataObject dataObject) {
 		return outputsForName(dataObject).anyMatch(each -> !each.isCollection());
 	}
+	
+	
+	public Set<State> writtenStates(DataObject dataObject, ObjectLifeCycle olc) {
+		return outputsForName(dataObject).map(each -> olc.getState(each.getStateName()).get()).collect(Collectors.toSet());
+	}
 
 	public boolean writesInState(DataObject dataObject, State state) {
-		return outputsForName(dataObject).anyMatch(each -> state.getOLC().getState(each.getStateName()).get().equals(state));
+		return writtenStates(dataObject, state.getOLC()).contains(state);
 	}
 
 	public boolean creates(DataObject dataObject) {

@@ -6,7 +6,6 @@ import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getAssociation;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.getReferencedElement;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.splitDataAssociationByState;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +28,7 @@ import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.OutputSet;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIdIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 public class ObjectLifeCycleParser {
@@ -122,6 +121,7 @@ public class ObjectLifeCycleParser {
 
     private void determineUpdateableAssociationsForStates() {
         for (String object : olcForClass.keySet()) {
+            ObjectLifeCycle olc = olcForClass.get(object);
         	// All associated data objects 
             List<AssociationEnd> associatedObjectsWithGoalLowerBound = domainModel.getAssociationsForDataObject(object)
                     .map(assoc -> assoc.getOtherEnd(object))
@@ -130,18 +130,11 @@ public class ObjectLifeCycleParser {
             for (Activity activity : bpmn.getModelElementsByType(Activity.class)) {
                 for (AssociationEnd assocEnd : associatedObjectsWithGoalLowerBound) {
                 	//Whenever the associated object is created ...
-                	for(Pair<InputSet, OutputSet> ioSetsThatCreateObject : ioSetsThatCreateObject(activity, assocEnd.getDataObject())) {
-                        InputSet inputSet = ioSetsThatCreateObject.first;
-                        
+                	for(DataObjectIdIOSet ioSetThatCreatesObject : ioSetsThatCreateObject(activity, assocEnd.getDataObject())) {
                         // ... and the base object is read, which means that a new association is created ...
-                        Set<String> readStates = inputSet.getDataInputs().stream()
-                                .filter(input -> getDataObjectName(input).equals(object))
-                                .flatMap(input -> getDataObjectStates(input).stream())
-                                .collect(Collectors.toSet());
-
+                        ioSetThatCreatesObject.readStates(object, olc)
                         // ... the state in which the base object is read can update the association cardinality
-                        ObjectLifeCycle olc = olcForClass.get(object);
-                        readStates.forEach(readState -> olc.getState(readState).get().addUpdateableAssociation(assocEnd));
+                        	.forEach(readState -> readState.addUpdateableAssociation(assocEnd));
                 	}
                 }
             }
@@ -149,22 +142,9 @@ public class ObjectLifeCycleParser {
     }
 
 
-    private static List<Pair<InputSet, OutputSet>> ioSetsThatCreateObject(Activity activity, String object) {
-    	//TODO consider collection / non-collection read/write
-        IoSpecification io = activity.getIoSpecification();
-        List<Pair<InputSet, OutputSet>> ioSetsThatCreateObject = new ArrayList<>();
-        for (OutputSet outputSet : io.getOutputSets()) {
-            for (InputSet inputSet : outputSet.getInputSetRefs()) {
-	            boolean writesObject = outputSet.getDataOutputRefs().stream()
-	            		.map(ObjectLifeCycleParser::getDataObjectName)
-	            		.anyMatch(object::equals);
-            	boolean readsObject = inputSet.getDataInputs().stream()
-            			.map(ObjectLifeCycleParser::getDataObjectName)
-	            		.anyMatch(object::equals);
-            	if(writesObject && !readsObject) ioSetsThatCreateObject.add(new Pair<>(inputSet, outputSet));
-            }
-        }
-        return ioSetsThatCreateObject;
+    private static List<DataObjectIdIOSet> ioSetsThatCreateObject(Activity activity, String object) {
+        return DataObjectIdIOSet.parseIOSpecification(activity.getIoSpecification()).stream()
+        		.filter(ioSet -> ioSet.creates(object)).collect(Collectors.toList());
     }
 
     private static String getDataObjectName(DataInput iRef) {
