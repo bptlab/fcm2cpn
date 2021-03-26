@@ -43,7 +43,8 @@ public abstract class ModelConsumerTest {
 			"TwoEventsInSuccessionRegression",
 			"NoIOSpecification",
 			"ReadAndWriteButAsCollectionReadOnlyRegression",
-			"MakeGoalLowerBoundImpossibleInDifferentTaskRegression"
+			"MakeGoalLowerBoundImpossibleInDifferentTaskRegression",
+			"LowerBoundsCheckAtReading"
 		);
 	}
 	
