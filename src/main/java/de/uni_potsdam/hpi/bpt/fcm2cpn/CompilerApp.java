@@ -18,7 +18,6 @@
 
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.dataObjectStateToNetColors;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
 
 import java.io.File;
@@ -36,12 +35,6 @@ import java.util.stream.Stream;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycleParser;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataElementWrapper;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataObjectWrapper;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataStoreWrapper;
-
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.Activity;
@@ -49,14 +42,12 @@ import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.BoundaryEvent;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
-import org.camunda.bpm.model.bpmn.instance.DataState;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
 import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.FlowNode;
-import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
@@ -78,6 +69,11 @@ import org.cpntools.accesscpn.model.util.BuildCPNUtil;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycleParser;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataElementWrapper;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataObjectWrapper;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataStoreWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.AbstractPageScope;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
@@ -245,24 +241,11 @@ public class CompilerApp implements AbstractPageScope {
         id.addSort("INT");
         builder.declareColorSet(petriNet, "ID", id);
         
-        // State
-        CPNEnum stateEnum = CpntypesFactory.INSTANCE.createCPNEnum();
-        Collection<DataState> dataStates = bpmn.getModelElementsByType(DataState.class);
-        dataStates.stream()
-        	.flatMap(state -> dataObjectStateToNetColors(state.getName()))
-            .forEach(stateEnum::addValue);
-        if(!dataStates.isEmpty()) builder.declareColorSet(petriNet, "STATE", stateEnum);
-        
         // DataObject & ListOfDataObjects
         CPNRecord dataObject = CpntypesFactory.INSTANCE.createCPNRecord();
         dataObject.addValue("id", "ID");
         dataObject.addValue(caseId(), "STRING");
-        if(!dataStates.isEmpty()) dataObject.addValue("state", "STATE");
         builder.declareColorSet(petriNet, "DATA_OBJECT", dataObject);
-        
-        if(!dataStates.isEmpty()) builder.declareMLFunction(petriNet, 
-        		"fun mapState collection state =\n" + 
-        		"(map (fn(el) => DATA_OBJECT.set_state el state) collection);");
 
         CPNList listOfDataObject = CpntypesFactory.INSTANCE.createCPNList();
         listOfDataObject.setSort("DATA_OBJECT");

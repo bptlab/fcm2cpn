@@ -52,27 +52,21 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 
 	@Override
 	public String annotationForDataFlow(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc) {
-        String stateString = ", state = "+assoc.getStateName();
         String caseId = compilerApp.caseId();
         if(!assoc.isCollection()) {
-            return "{id = "+dataElementId()+" , "+caseId+" = "+caseId+stateString+"}";
+            return "{id = "+dataElementId()+" , "+caseId+" = "+caseId+"}";
         } else {
-        	if(assoc.isInput() || assoc.getStateName().isEmpty()) {
-        		return dataElementList();
-        	} else {
-        		return "mapState "+dataElementList()+" "+assoc.getStateName();
-        	}
+    		return dataElementList();
         }
         
 	}
 
 	@Override
 	public String collectionCreationGuard(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc) {
-        String stateString = ", state = "+assoc.getStateName();
 		String caseId = compilerApp.caseId();
 		String className = normalizedName;
 		String identifyingObjectId = compilerApp.getDataObjectCollectionIdentifier((Activity) otherEnd, this).dataElementId();
-		return dataElementList() + " = (map (fn(el) => {id = unpack el "+className+" , "+caseId+" = "+caseId+stateString+"}) (listAssocs "+identifyingObjectId+" "+className+" assoc))";
+		return dataElementList() + " = (map (fn(el) => {id = unpack el "+className+" , "+caseId+" = "+caseId+"}) (listAssocs "+identifyingObjectId+" "+className+" assoc))";
 	}
 
 	@Override
