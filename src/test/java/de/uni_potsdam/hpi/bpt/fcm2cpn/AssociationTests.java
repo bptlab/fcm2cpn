@@ -43,10 +43,8 @@ public class AssociationTests extends ModelStructureTests {
 		assumeTrue(ioSet.reads(first) && ioSet.creates(second), "Activity does not read the first and create the second data object.");
 		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
-		if(arcsFromNodeNamed(transition, first).count() != 0 && arcsToNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
-			assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
-			"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+elementName(activity)+" transition "+transition.getName().toString()+" for IO set "+ioSet);
-		}
+		assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
+				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+elementName(activity)+" transition "+transition.getName().toString()+" for IO set "+ioSet);	
 	}
 	
 	@TestWithAllModels
@@ -57,12 +55,9 @@ public class AssociationTests extends ModelStructureTests {
 		assumeTrue(ioSet.writes(first) && ioSet.writes(second), "Activity does not write both data objects.");
 		assumeFalse(ioSet.associationShouldAlreadyBeInPlace(first, second), "Activity reads both data objects in the same collection/non-collection way as they are written, so an association is already in place");
 		
-		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
-		if(arcsToNodeNamed(transition, first).count() != 0 && arcsToNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
-				assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
-			"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+elementName(activity)+" transition "+transition.getName().toString());
-		}
+		assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
+				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+elementName(activity)+" transition "+transition.getName().toString());
 	}
 	
 	@TestWithAllModels
@@ -73,10 +68,9 @@ public class AssociationTests extends ModelStructureTests {
 		assumeTrue(ioSet.reads(first) && ioSet.reads(second), "Activity does not read both data objects.");
 		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
-		if(arcsFromNodeNamed(transition, first).count() != 0 && arcsFromNodeNamed(transition, second).count() != 0) {//Objects might not be part of transition i/o set			
-			assertTrue(hasGuardForAssociation(transition, first, second),
-					"There is no guard for association when reading objects "+first+" and "+second+" at activity "+elementName(activity)+" transition "+transition.getName().toString());
-		}	
+		assertTrue(hasGuardForAssociation(transition, first, second),
+				"There is no guard for association when reading objects "+first+" and "+second+" at activity "+elementName(activity)+" transition "+transition.getName().toString());
+
 	}
 	
 	@TestWithAllModels
@@ -126,15 +120,15 @@ public class AssociationTests extends ModelStructureTests {
 	@ArgumentsSource(AssociationsProvider.class)
 	@ForEachBpmn(Activity.class)
 	@ForEachIOSet
-	/** Lower bounds must be checked if associated objects are read together*/
-	public void testLowerLimitsAreCheckedWhenReadTogetherWithCollection(String first, String second, Activity activity, DataObjectIdIOSet ioSet) {
+	/** Lower bounds must not be checked if associated objects are read together, as they should already have been checked when the single object was created*/
+	public void testLowerLimitsAreNotCheckedWhenReadTogetherWithCollection(String first, String second, Activity activity, DataObjectIdIOSet ioSet) {
 		Association assoc = dataModel.getAssociation(first, second).get();
 		int lowerBound = assoc.getEnd(second).getLowerBound();
 		assumeTrue(lowerBound > 1, "No lower bound that has to be checked");
 		assumeTrue(ioSet.reads(first) && ioSet.reads(second), "no "+first+" is read together with "+second);
 		//TODO is there a test case that fulfills the assumptions?
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
-		assertEquals(1, guardsOf(transition).filter(guard -> isDirectLowerBoundGuard(guard, first, second, lowerBound)).count(),
+		assertEquals(0, guardsOf(transition).filter(guard -> isDirectLowerBoundGuard(guard, first, second, lowerBound)).count(),
 				"There is not exactly one guard for lower limit of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");
 	}
 	
@@ -149,10 +143,8 @@ public class AssociationTests extends ModelStructureTests {
 		assumeTrue(lowerBound > 1, "No lower bound that has to be checked");
 		assumeTrue(ioSet.creates(first) && ioSet.reads(second), "Association is not created in this activity");
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
-		if(arcsFromNodeNamed(transition, first).count() != 0 || arcsToNodeNamed(transition, first).count() != 0) {//Object might not be part of transition i/o set
-			assertEquals(1, guardsOf(transition).filter(guard -> isLowerBoundGuardViaCollectionIdentifier(guard, first, second, lowerBound, ioSet)).count(),
-					"There is not exactly one guard for lower limit "+lowerBound+" of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");
-		}
+		assertEquals(1, guardsOf(transition).filter(guard -> isLowerBoundGuardViaCollectionIdentifier(guard, first, second, lowerBound, ioSet)).count(),
+				"There is not exactly one guard for lower limit "+lowerBound+" of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");
 	}
 	
 	
