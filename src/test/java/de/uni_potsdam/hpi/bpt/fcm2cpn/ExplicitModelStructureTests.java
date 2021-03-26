@@ -2,6 +2,7 @@ package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -121,12 +122,11 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@Test
 	@ModelsToTest("SimpleWithStates")
 	public void testInputAndOutputCombinations() {
-		Page activityPage = petrinet.getPage().stream().filter(page -> page.getName().asString().equals(normalizeElementName(ACTIVITYNAME))).findAny().get();
 		List<String> possibleInputStates = Arrays.asList("X", "Y");
 		List<String> possibleOutputStates = Arrays.asList("Z1", "Z2", "Z3");
 		for(String inputState : possibleInputStates) {
 			for(String outputState : possibleOutputStates) {
-				assertEquals(1, activityTransitionsForTransput(activityPage, ACTIVITYNAME, FIRSTDATAOBJECTNAME, inputState, SECONDDATAOBJECTNAME, outputState).count(), 
+				assertTrue(transitionForIoCombination(ACTIVITYNAME, FIRSTDATAOBJECTNAME, inputState, SECONDDATAOBJECTNAME, outputState).isPresent(), 
 						"There was not exactly one transition for activity "+ACTIVITYNAME+" with input "+inputState+" and output "+outputState);
 			}
 		}

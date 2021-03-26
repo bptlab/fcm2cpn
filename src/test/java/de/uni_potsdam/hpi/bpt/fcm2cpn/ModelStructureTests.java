@@ -38,6 +38,7 @@ import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Place;
+import org.cpntools.accesscpn.model.PlaceNode;
 import org.cpntools.accesscpn.model.Transition;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
@@ -193,22 +194,20 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		return ioCombinations;
 	}
 	
-	//TODO duplicate to activityTransitionsForTransput ?
 	public Optional<Transition> transitionForIoCombination(Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioCombination, Activity activity) {
-		return transitionsFor(activity)
+		List<Transition> candidates = transitionsFor(activity)
 			.filter(transition -> ioCombinationOfTransition(transition).equals(ioCombination))
-			.findAny();
+			.collect(Collectors.toList());
+		assert candidates.size() <= 1;
+		return candidates.stream().findAny();
 	}
 	
-	
-	public boolean isValidCollectionIdentifier(String identifier, String identified, DataObjectIdIOSet ioSet) {
-		return ioSet.reads(identifier) 
-				&& dataModel.isAssociated(identifier, identified) 
-				&& dataModel.getAssociation(identifier, identified).get().getEnd(identifier).getUpperBound() == 1;
-	}
-	
-	public boolean isDirectLowerBoundGuard(String guard, String first, String second, int lowerBound) {
-		return removeComments(guard).equals("(enforceLowerBound "+first+"Id "+second+" assoc "+lowerBound+")");
+	public Optional<Transition> transitionForIoCombination(String activityName, String inputId, String inputState, String outputId, String outputState) {
+		Activity activity = bpmn.getModelElementsByType(Activity.class).stream().filter(act -> elementName(act).equals(activityName)).findAny().get();
+		return transitionForIoCombination(new Pair<>(
+				Map.of(new Pair<>(inputId, false), inputState), 
+				Map.of(new Pair<>(outputId, false), outputState, new Pair<>(inputId, false), inputState) // Input object is written back
+			), activity);
 	}
 	
 	public boolean isLowerBoundGuardViaCollectionIdentifier(String guard, String first, String second, int lowerBound, DataObjectIdIOSet ioSet) {
@@ -218,56 +217,40 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		String identifier = guard.replace(beforeIdentifier, "").replace(afterIdentifier, "");
 		return guard.startsWith(beforeIdentifier) && guard.endsWith(afterIdentifier) && isValidCollectionIdentifier(identifier, second, ioSet);
 	}
+	
+	public boolean isValidCollectionIdentifier(String identifier, String identified, DataObjectIdIOSet ioSet) {
+		return ioSet.reads(identifier) 
+				&& dataModel.isAssociated(identifier, identified) 
+				&& dataModel.getAssociation(identifier, identified).get().getEnd(identifier).getUpperBound() == 1;
+	}
 
-	//TODO
 	public Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioCombinationOfTransition(Transition transition) {
 		Map<Pair<String, Boolean>, String> inputs = new HashMap<>();
 		Map<Pair<String, Boolean>, String> outputs = new HashMap<>();
 		transition.getTargetArc().stream()
-			.map(inputArc -> inputArc.getHlinscription().asString())
-			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> inputs.put(idAndState.first, idAndState.second)));
+			.map(ModelStructureTests::parseCreatedTokenIdAndState)
+			.flatMap(Optional::stream)
+			.forEach(idAndState -> inputs.put(idAndState.first, idAndState.second));
 
 		transition.getSourceArc().stream()
-			.map(outputArc -> outputArc.getHlinscription().asString())
-			.forEach(inscription -> parseCreatedTokenIdAndState(inscription, transition).ifPresent(idAndState -> outputs.put(idAndState.first, idAndState.second)));
+			.map(ModelStructureTests::parseCreatedTokenIdAndState)
+			.flatMap(Optional::stream)
+			.forEach(idAndState -> outputs.put(idAndState.first, idAndState.second));
 		return new Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>>(inputs, outputs);
 	}
-	
-	//TODO
-	public static Optional<Pair<Pair<String, Boolean>, String>> parseCreatedTokenIdAndState(String inscription, Transition transition) {
-		String dataId = null;
-		String state = null;
-		boolean isCollection = false;
 
-		int startIndex = inscription.indexOf("{");
-		int endIndex = inscription.indexOf("}");
-		if(startIndex != -1 && endIndex != -1) {
-			String potentialCreation = inscription.substring(startIndex+1, endIndex);
-			List<String[]> statements = Arrays.stream(potentialCreation.split(","))
-					.map(String::trim)
-					.map(statement -> statement.split("="))
-					.filter(statement -> statement.length == 2)
-					.collect(Collectors.toList());
-				for(String[] statement : statements) {
-					if(statement[0].trim().equals("id")) dataId = statement[1].trim().replaceAll("Id$", "");
-					if(statement[0].trim().equals("state")) state = statement[1].trim();
-				}
-		} else if(inscription.contains("_list")) {
-			isCollection = true;
-			String[] tokens = inscription.split(" ");
-			if(tokens.length == 3 && tokens[0].equals("mapState") && tokens[1].endsWith("_list")) {
-				dataId = tokens[1].replaceAll("_list$", "");
-				state = tokens[2];
-			} else if(tokens.length == 1 && tokens[0].endsWith("_list")) {
-				dataId = tokens[0].replaceAll("_list$", "");
-				state = guardsOf(transition)
-					.filter(guard -> guard.startsWith(tokens[0]+" = "))
-					.map(guard -> guard.split("state = ")[1].split("}")[0])
-					.findAny().orElse(null);
-			}
-		}
-		if(dataId != null) return Optional.of(new Pair<>(new Pair<>(dataId, isCollection), state));
-		else return Optional.empty();
+	public static Optional<Pair<Pair<String, Boolean>, String>> parseCreatedTokenIdAndState(Arc arc) {
+		PlaceNode dataElementPlace = arc.getPlaceNode();
+		if(!dataElementPlace.getSort().getText().equals("DATA_OBJECT")) return Optional.empty();
+		String dataPlaceName = dataElementPlace.getName().asString();
+		String dataPlaceElement = Utils.dataPlaceElement(dataPlaceName);
+		String dataPlaceState = Utils.dataPlaceState(dataPlaceName);
+		boolean isCollection = arc.getHlinscription().asString().contains("_list");
+		return Optional.of(new Pair<>(new Pair<>(dataPlaceElement, isCollection) , dataPlaceState));
+	}
+
+	public boolean isDirectLowerBoundGuard(String guard, String first, String second, int lowerBound) {
+		return removeComments(guard).equals("(enforceLowerBound "+first+"Id "+second+" assoc "+lowerBound+")");
 	}
 	
 	public static <Key, T> List<Map<Key, T>> indexedCombinationsOf(Map<Key, List<T>> groups) {
@@ -468,29 +451,6 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	public Stream<Transition> activityTransitionsNamed(Page page, String activityName) {
 		return StreamSupport.stream(page.transition().spliterator(), false).filter(transition -> transition.getName().asString().startsWith(activityName));  
 	}
-	
-	//TODO
-	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, String inputId, String inputState, String outputId, String outputState) {
-		return activityTransitionsForTransput(page, activityName, Map.of(inputId, inputState), Map.of(outputId, outputState));
-	}
-	
-	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, Map<String, String> inputStates, Map<String, String> outputStates) {
-		return activityTransitionsNamed(page, activityName).filter(transition -> {
-			return inputStates.entrySet().stream().allMatch(inputObject -> 
-					transition.getTargetArc().stream()
-						.map(arc -> arc.getPlaceNode().getName().asString())
-						.anyMatch(dataPlaceName -> 
-							inputObject.getKey().equals(Utils.dataPlaceElement(dataPlaceName)) 
-							&& inputObject.getValue().equals(Utils.dataPlaceState(dataPlaceName))))
-				&& outputStates.entrySet().stream().allMatch(outputObject -> 
-					transition.getSourceArc().stream()
-						.map(arc -> arc.getPlaceNode().getName().asString())
-						.anyMatch(dataPlaceName -> 
-							outputObject.getKey().equals(Utils.dataPlaceElement(dataPlaceName)) 
-							&& outputObject.getValue().equals(Utils.dataPlaceState(dataPlaceName))));
-		});
-	}
-
 	
 	public Stream<Transition> transitionsFor(FlowElement activityOrStartEvent) {
 		Page activityPage = pagesNamed(elementName(activityOrStartEvent)).findAny().get();
