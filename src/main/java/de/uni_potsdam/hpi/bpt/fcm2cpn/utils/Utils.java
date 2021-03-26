@@ -56,9 +56,19 @@ public class Utils {
     			.toLowerCase();
     }
     
+    public static final String DATA_PLACE_NAME_SEPARATOR = "__";
     public static String dataPlaceName(String dataElementName, String state) {
-    	return dataElementName+"__"+state; //TODO find better separator
+    	return dataElementName + DATA_PLACE_NAME_SEPARATOR + state; //TODO find better separator
     }
+    
+    public static String dataPlaceElement(String dataPlaceName) {
+    	return dataPlaceName.split(DATA_PLACE_NAME_SEPARATOR)[0];
+    }    
+    
+    public static String dataPlaceState(String dataPlaceName) {
+    	return dataPlaceName.split(DATA_PLACE_NAME_SEPARATOR)[1];
+    }
+    
     
     public static Set<String> dataObjectStates(String dataObject, BpmnModelInstance bpmn) {
         Collection<DataObjectReference> dataObjectRefs = bpmn.getModelElementsByType(DataObjectReference.class);

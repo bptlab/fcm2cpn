@@ -218,7 +218,8 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		String identifier = guard.replace(beforeIdentifier, "").replace(afterIdentifier, "");
 		return guard.startsWith(beforeIdentifier) && guard.endsWith(afterIdentifier) && isValidCollectionIdentifier(identifier, second, ioSet);
 	}
-	
+
+	//TODO
 	public Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioCombinationOfTransition(Transition transition) {
 		Map<Pair<String, Boolean>, String> inputs = new HashMap<>();
 		Map<Pair<String, Boolean>, String> outputs = new HashMap<>();
@@ -232,6 +233,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		return new Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>>(inputs, outputs);
 	}
 	
+	//TODO
 	public static Optional<Pair<Pair<String, Boolean>, String>> parseCreatedTokenIdAndState(String inscription, Transition transition) {
 		String dataId = null;
 		String state = null;
@@ -467,25 +469,28 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 		return StreamSupport.stream(page.transition().spliterator(), false).filter(transition -> transition.getName().asString().startsWith(activityName));  
 	}
 	
-	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, String inputState, String outputState) {
-		return activityTransitionsNamed(page, activityName).filter(transition -> {
-			return transition.getTargetArc().stream().filter(arc -> arc.getHlinscription().asString().contains("state = "+inputState)).count() == 1
-					&& transition.getSourceArc().stream().filter(arc -> arc.getHlinscription().asString().contains("state = "+outputState)).count() == 1;
-		});
+	//TODO
+	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, String inputId, String inputState, String outputId, String outputState) {
+		return activityTransitionsForTransput(page, activityName, Map.of(inputId, inputState), Map.of(outputId, outputState));
 	}
 	
 	public Stream<Transition> activityTransitionsForTransput(Page page, String activityName, Map<String, String> inputStates, Map<String, String> outputStates) {
 		return activityTransitionsNamed(page, activityName).filter(transition -> {
 			return inputStates.entrySet().stream().allMatch(inputObject -> 
 					transition.getTargetArc().stream()
-						.map(arc -> arc.getHlinscription().asString())
-						.anyMatch(inscription -> inscription.contains(inputObject.getKey()+"Id") && inscription.contains("state = "+inputObject.getValue())))
+						.map(arc -> arc.getPlaceNode().getName().asString())
+						.anyMatch(dataPlaceName -> 
+							inputObject.getKey().equals(Utils.dataPlaceElement(dataPlaceName)) 
+							&& inputObject.getValue().equals(Utils.dataPlaceState(dataPlaceName))))
 				&& outputStates.entrySet().stream().allMatch(outputObject -> 
 					transition.getSourceArc().stream()
-						.map(arc -> arc.getHlinscription().asString())
-						.anyMatch(inscription -> inscription.contains(outputObject.getKey()+"Id") && inscription.contains("state = "+outputObject.getValue())));
+						.map(arc -> arc.getPlaceNode().getName().asString())
+						.anyMatch(dataPlaceName -> 
+							outputObject.getKey().equals(Utils.dataPlaceElement(dataPlaceName)) 
+							&& outputObject.getValue().equals(Utils.dataPlaceState(dataPlaceName))));
 		});
 	}
+
 	
 	public Stream<Transition> transitionsFor(FlowElement activityOrStartEvent) {
 		Page activityPage = pagesNamed(elementName(activityOrStartEvent)).findAny().get();

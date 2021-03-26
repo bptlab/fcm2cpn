@@ -126,7 +126,8 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 		List<String> possibleOutputStates = Arrays.asList("Z1", "Z2", "Z3");
 		for(String inputState : possibleInputStates) {
 			for(String outputState : possibleOutputStates) {
-				assertEquals(1, activityTransitionsForTransput(activityPage, ACTIVITYNAME, inputState, outputState).count(), "There was no arc for activity "+ACTIVITYNAME+" with input "+inputState+" and output "+outputState);
+				assertEquals(1, activityTransitionsForTransput(activityPage, ACTIVITYNAME, FIRSTDATAOBJECTNAME, inputState, SECONDDATAOBJECTNAME, outputState).count(), 
+						"There was not exactly one transition for activity "+ACTIVITYNAME+" with input "+inputState+" and output "+outputState);
 			}
 		}
 	}
