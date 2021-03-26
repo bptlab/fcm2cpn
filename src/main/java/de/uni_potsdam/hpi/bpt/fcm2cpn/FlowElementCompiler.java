@@ -69,7 +69,7 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
             String annotation = dataElement.annotationForDataFlow(element, assoc);
             /*Collections are initialized in guard to make arcs more tidy*/
             if(assoc.isCollection()) {
-                String guard = dataElement.collectionCreationGuard(element, assoc);
+                String guard = dataElement.collectionCreationGuard(element, assoc, inputs.keySet());
                 transitions.stream().forEach(transition -> addGuardCondition(transition, guard));
             }
     		linkReadingTransitions(dataElement, annotation, transitions, assoc);

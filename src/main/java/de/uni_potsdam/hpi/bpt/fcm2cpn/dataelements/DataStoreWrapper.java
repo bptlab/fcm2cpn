@@ -1,7 +1,10 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements;
 
 
+import java.util.Set;
+
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
+import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
 import org.camunda.bpm.model.bpmn.instance.DataStoreReference;
 import org.cpntools.accesscpn.model.Place;
@@ -41,7 +44,7 @@ public class DataStoreWrapper extends DataElementWrapper<DataStore, DataStoreRef
 	}
 
 	@Override
-	public String collectionCreationGuard(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc) {
+	public String collectionCreationGuard(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc, Set<StatefulDataAssociation<DataInputAssociation, ?>> availableInputs) {
 		throw new UnsupportedOperationException("Data stores cannot be created as lists");
 	}
 

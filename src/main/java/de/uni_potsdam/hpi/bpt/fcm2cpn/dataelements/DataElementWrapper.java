@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
+import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.ItemAwareElement;
 import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.Place;
@@ -77,7 +79,7 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 	public abstract boolean isDataStoreWrapper();
 
 
-	public abstract String collectionCreationGuard(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc);
+	public abstract String collectionCreationGuard(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc, Set<StatefulDataAssociation<DataInputAssociation, ?>> availableInputs);
 
 	public Arc assertMainPageArcTo(BaseElement element, String state) {
 		Place place = getPlace(state);

@@ -10,7 +10,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.cpntools.accesscpn.model.Transition;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
@@ -27,8 +26,6 @@ public class IOSetCompiler {
 	private final ActivityCompiler parent;
 	private final Transition transition;
 	
-	private final Activity element;
-	
 	private DataObjectWrapperIOSet ioSet;
 	
 	/** Comment to show that lower bound check is goal cardinality check.*/
@@ -37,9 +34,7 @@ public class IOSetCompiler {
 	public IOSetCompiler(ActivityCompiler parent, DataObjectWrapperIOSet ioSet, Transition transition) {
 		this.parent = parent;
 		this.ioSet = ioSet;
-		this.transition = transition;	
-		
-		element = parent.getElement();
+		this.transition = transition;
 	}
 	
 
@@ -98,7 +93,7 @@ public class IOSetCompiler {
 				if(!collectionDataObject.isPresent() || listReadSingleObjectCreate) {
 					return "^^["+Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString()+"]";
 				} else {
-					DataObjectWrapper identifier = getDataObjectCollectionIdentifier(element, collectionDataObject.get());
+					DataObjectWrapper identifier = getDataObjectCollectionIdentifier(collectionDataObject.get());
 					DataObjectWrapper other = (DataObjectWrapper) assoc.otherElement(collectionDataObject.get());
 					//TODO does not sort alphabetically
 					return "^^(associateWithList "+other.dataElementId()+" "+collectionDataObject.get().getNormalizedName()+" "+identifier.dataElementId()+" assoc)";
@@ -131,7 +126,7 @@ public class IOSetCompiler {
 			.filter(dataObject -> ioSet.readsAsCollection(dataObject))
 			.forEach(collectionDataObject -> {
 				/*Use the same identifier that is used for the list*/
-				DataObjectWrapper identifier = getDataObjectCollectionIdentifier(element, collectionDataObject);
+				DataObjectWrapper identifier = getDataObjectCollectionIdentifier(collectionDataObject);
 				int lowerBound = dataModelAssoc.getEnd(collectionDataObject.getNormalizedName()).getLowerBound();
 				String newGuard = "(enforceLowerBound "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc "+lowerBound+")";
 				addGuardCondition(transition, newGuard);
@@ -258,8 +253,8 @@ public class IOSetCompiler {
     	return parent.parent.getDataModel();
     }
     
-    private DataObjectWrapper getDataObjectCollectionIdentifier(Activity activity, DataObjectWrapper dataObjectWrapper) {
-		return parent.parent.getDataObjectCollectionIdentifier(activity, dataObjectWrapper);
+    private DataObjectWrapper getDataObjectCollectionIdentifier(DataObjectWrapper dataObjectWrapper) {
+		return parent.parent.getDataObjectCollectionIdentifier(dataObjectWrapper, new HashSet<>(ioSet.first));
 	}
 
     private ObjectLifeCycle olcFor(DataObjectWrapper dataObject) {

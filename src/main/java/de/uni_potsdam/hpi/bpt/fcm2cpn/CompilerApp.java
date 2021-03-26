@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,6 +41,7 @@ import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.BoundaryEvent;
+import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
 import org.camunda.bpm.model.bpmn.instance.DataStore;
@@ -489,19 +491,22 @@ public class CompilerApp implements AbstractPageScope {
     			.get();
     }
     
-    //TODO should be dependent on IO set, not on activity
-    public DataObjectWrapper getDataObjectCollectionIdentifier(Activity activity, DataObjectWrapper object) {
-    	Set<DataObjectWrapper> potentialIdentifiers = activity.getDataInputAssociations().stream()
-    		.flatMap(Utils::splitDataAssociationByState)
+    public DataObjectWrapper getDataObjectCollectionIdentifier(DataObjectWrapper object, Set<StatefulDataAssociation<DataInputAssociation, ?>> availableInputs) {
+    	Set<DataObjectWrapper> potentialIdentifiers = availableInputs.stream()
     		.map(this::wrapperFor)
     		.filter(DataElementWrapper::isDataObjectWrapper)
     		.map(DataObjectWrapper.class::cast)
-			.filter(potentialIdentifier -> dataModel.getAssociation(potentialIdentifier.getNormalizedName(), object.getNormalizedName())
-                .filter(identifyingAssoc -> identifyingAssoc.getEnd(potentialIdentifier.getNormalizedName()).getUpperBound() <= 1)
-                .isPresent()).collect(Collectors.toSet());
+			.filter(isValidCollectionIdentifierFor(object))
+			.collect(Collectors.toSet());
 		assert potentialIdentifiers.size() == 1;
 		return potentialIdentifiers.stream().findAny().get();
     } 
+    
+    private Predicate<DataObjectWrapper> isValidCollectionIdentifierFor(DataObjectWrapper objectToIdentify) {
+		return potentialIdentifier -> dataModel.getAssociation(potentialIdentifier.getNormalizedName(), objectToIdentify.getNormalizedName())
+            .filter(identifyingAssoc -> identifyingAssoc.getEnd(potentialIdentifier.getNormalizedName()).getUpperBound() <= 1)
+            .isPresent();    
+    }
     
     
     public SubpageElement createSubpage(FlowElement element) {
