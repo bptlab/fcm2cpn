@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ArgumentContextNameResolver;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ArgumentTreeTests.ArgumentTreeExtensionContext;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIdIOSet;
 
 /**
  * Experimental class to add IO Sets as test parameter
@@ -25,7 +26,7 @@ public class IOContextProvider implements ArgumentsProvider, ArgumentContextName
 				.map(Activity.class::cast)
 				.findAny().get();
 		
-		return GeneralModelStructureTests.ioAssociationCombinations(activity).stream().map(io -> Arguments.of(io));
+		return DataObjectIdIOSet.parseIOSpecification(activity.getIoSpecification()).stream().map(io -> Arguments.of(io));
 //		return ((ModelStructureTests)context.getTestInstance().get()).bpmn.getModelElementsByType(Activity.class).stream().flatMap(activity -> {
 //			return GeneralModelStructureTests.ioAssociationCombinations(activity).stream()
 //					.map(ioSet -> );

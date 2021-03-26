@@ -5,6 +5,7 @@ import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIdIOSet.parseIOSpecification;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -65,7 +66,7 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 		forEachOLCTransition((olc, states) -> {
 			String dataObject = olc.getClassName();
 			boolean anyActivityCanTakeThisTransition = bpmn.getModelElementsByType(Activity.class).stream().anyMatch(activity -> {
-				return ioAssociationCombinations(activity).stream().anyMatch(ioSet -> 
+				return parseIOSpecification(activity.getIoSpecification()).stream().anyMatch(ioSet -> 
 				ioSet.first.stream().anyMatch(inputAssoc -> inputAssoc.dataElementName().equals(dataObject) && states.first.getStateName().equals(inputAssoc.getStateName()))
 				&& ioSet.second.stream().anyMatch(outputAssoc -> outputAssoc.dataElementName().equals(dataObject) && states.second.getStateName().equals(outputAssoc.getStateName()))
 				);
@@ -90,7 +91,7 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 		Association assoc = dataModel.getAssociation(first, second).get();
 		AssociationEnd relevantEnd = assoc.getEnd(second);
 		
-		ioAssociationCombinations(activity).stream()
+		parseIOSpecification(activity.getIoSpecification()).stream()
 			.filter(ioSet -> ioSet.createsAssociationBetween(first, second) && ioSet.creates(second))
 			.forEach(ioSet -> {
 				var stateMap = ioAssociationsToStateMaps(ioSet);
@@ -113,7 +114,7 @@ public class ObjectLifeCycleParserTests extends ModelStructureTests {
 			state.getUpdateableAssociations().forEach(relevantEnd -> {
 				String otherDataObject = relevantEnd.getDataObject();
 				assertTrue(activities.stream()
-					.flatMap(activity -> ioAssociationCombinations(activity).stream())
+					.flatMap(activity -> parseIOSpecification(activity.getIoSpecification()).stream())
 					.filter(ioSet -> ioSet.createsAssociationBetween( dataObjectName, otherDataObject))
 					
 					.anyMatch(ioSet -> ioSet.readsInState( dataObjectName, state)),

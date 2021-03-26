@@ -119,47 +119,6 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 					Collectors.flatMapping(each -> Utils.dataObjectStateToNetColors(each.getDataState().getName()), Collectors.toList())));
 	}
 	
-	public static Set<Pair<List<DataInputAssociation>, List<DataOutputAssociation>>> statelessAssociationCombinations(Activity activity) {
-		Set<Pair<List<DataInputAssociation>, List<DataOutputAssociation>>> combinations = new HashSet<>();
-		activity.getIoSpecification().getInputSets().forEach(inputSet -> {
-			inputSet.getOutputSets().forEach(outputSet -> {
-				combinations.add(new Pair<>(
-						inputSet.getDataInputs().stream().map(Utils::getAssociation).collect(Collectors.toList()), 
-						outputSet.getDataOutputRefs().stream().map(Utils::getAssociation).collect(Collectors.toList()))
-				);
-			});	
-		});
-		return combinations;		
-	}
-	
-
-	@SuppressWarnings("unchecked")
-	public static Set<DataObjectIdIOSet> ioAssociationCombinations(Activity activity) {
-		return statelessAssociationCombinations(activity).stream().flatMap(ioAssociationCombination -> {
-			Map<Pair<String, Boolean>, List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> inputStates = ioAssociationCombination.first.stream()
-					.flatMap(Utils::splitDataAssociationByState)
-					.filter(StatefulDataAssociation::isDataObjectReference)
-					.map(assoc -> (StatefulDataAssociation<DataInputAssociation, DataObjectReference>) assoc)
-					.collect(Collectors.groupingBy(StatefulDataAssociation::dataElementNameAndCollection));
-			Map<Pair<String, Boolean>, List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> outputStates = ioAssociationCombination.second.stream()
-					.flatMap(Utils::splitDataAssociationByState)
-					.filter(StatefulDataAssociation::isDataObjectReference)
-					.map(assoc -> (StatefulDataAssociation<DataOutputAssociation, DataObjectReference>) assoc)
-					.collect(Collectors.groupingBy(StatefulDataAssociation::dataElementNameAndCollection));
-
-			List<List<StatefulDataAssociation<DataInputAssociation, DataObjectReference>>> possibleInputForms = Utils.allCombinationsOf(inputStates.values());
-			List<List<StatefulDataAssociation<DataOutputAssociation, DataObjectReference>>> possibleOutputForms = Utils.allCombinationsOf(outputStates.values());
-			List<DataObjectIdIOSet> ioForms = new ArrayList<>();
-			for(var inputForm: possibleInputForms) {
-				for(var outputForm: possibleOutputForms) {
-					ioForms.add(new DataObjectIdIOSet(inputForm, outputForm));
-				}
-			}
-			return ioForms.stream();
-		})
-		.collect(Collectors.toSet());
-	}
-	
 	public static Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioAssociationsToStateMaps(DataObjectIdIOSet ioAssociations) {
 		Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>> ioConfiguration = new Pair<>(
 				ioAssociations.first.stream()
@@ -177,7 +136,7 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	}
 	
 	public static Set<Pair<Map<Pair<String, Boolean>, String>, Map<Pair<String, Boolean>, String>>> expectedIOCombinations(Activity activity) {
-		return ioAssociationCombinations(activity).stream()
+		return DataObjectIdIOSet.parseIOSpecification(activity.getIoSpecification()).stream()
 				.map(ModelStructureTests::ioAssociationsToStateMaps).collect(Collectors.toSet());
 	}
 	
