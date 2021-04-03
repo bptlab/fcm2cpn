@@ -1,9 +1,7 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.terminationconditions;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.Transition;
@@ -33,25 +31,27 @@ public class TerminationConditionCompiler {
 	public void compile() {
 		for(int clauseIndex = 0; clauseIndex < terminationCondition.getClauses().size(); clauseIndex++) {
 			List<TerminationLiteral> clause = terminationCondition.getClauses().get(clauseIndex);
-			Map<String, List<String>> stateMap = clause.stream().collect(Collectors.toMap(TerminationLiteral::getDataObject, literal -> new ArrayList<>(literal.getStates())));
+			Map<String, List<String>> stateMap = clause.stream().collect(TerminationLiteral.stateMapCollector());
 			
 			/** All possible state combinations that fulfill this clause*/
-			List<Map<String, String>> resolvedLiterals = Utils.indexedCombinationsOf(stateMap);
+			List<Map<String, String>> possibleStateCombinationsForClause = Utils.indexedCombinationsOf(stateMap);
 			int transitionIndex = 0;
-			for(Map<String, String> resolvedLiteral : resolvedLiterals) {
-				createTransition(resolvedLiteral, clauseIndex, transitionIndex);
+			for(Map<String, String> stateCombination : possibleStateCombinationsForClause) {
+				createTransition(stateCombination, clauseIndex, transitionIndex);
 				transitionIndex++;
 			}
 		}
+		// TODO also ensure goal cardinalities
+		// TODO also ensure non-goal lower bounds >= 1 ?
 	}
 
-	private void createTransition(Map<String, String> resolvedLiteral, int clauseIndex, int transitionIndex) {
+	private void createTransition(Map<String, String> stateCombination, int clauseIndex, int transitionIndex) {
 		Transition transition = subPageElement.createTransition("clause_"+clauseIndex+"_t_"+transitionIndex);
-		resolvedLiteral.forEach((dataObjectName, state) -> {
+		stateCombination.forEach((dataObjectName, state) -> {
 			DataObjectWrapper dataObject = parent.getDataObjects().stream().filter(x -> x.getNormalizedName().equals(dataObjectName)).findAny().get();
             Place dataObjectStatePlace = dataObject.getPlace(state);
-            parent.createArc(subPageElement.getMainPageTransition(), dataObjectStatePlace);
-	    	subPageElement.createArc(transition, subPageElement.refPlaceFor(dataObjectStatePlace), dataObject.dataObjectToken());
+            parent.createArc(dataObjectStatePlace, subPageElement.getMainPageTransition());
+	    	subPageElement.createArc(subPageElement.refPlaceFor(dataObjectStatePlace), transition, dataObject.dataObjectToken());
 		});
 		subPageElement.createArc(transition, subPageElement.refPlaceFor(terminationPlace), parent.caseId());
 	}
