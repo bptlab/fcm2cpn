@@ -67,7 +67,7 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 		String caseId = compilerApp.caseId();
 		String className = normalizedName;
 		String identifyingObjectId = compilerApp.getDataObjectCollectionIdentifier(this, availableInputs).dataElementId();
-		return dataElementList() + " = (map (fn(el) => {id = unpack el "+className+" , "+caseId+" = "+caseId+"}) (listAssocs "+identifyingObjectId+" "+className+" assoc))";
+		return dataElementList() + " = allAssociated "+identifyingObjectId+" "+className+" "+caseId+" assoc";
 	}
 
 	@Override

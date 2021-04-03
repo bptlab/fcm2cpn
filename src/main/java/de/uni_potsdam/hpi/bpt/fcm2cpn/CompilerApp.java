@@ -305,6 +305,10 @@ public class CompilerApp implements AbstractPageScope {
         		"fun associateWithList singleObject listObject identifier assoc =\n" + 
         		"(map (fn(el) => [singleObject, unpack el listObject]) (listAssocs identifier listObject assoc));");
         //TODO rename to associateWithCollection?
+        
+        builder.declareMLFunction(petriNet,
+        		"fun allAssociated sourceId collectionClass caseId assoc =\n" + 
+        		"map (fn(el) => {id = unpack el collectionClass , caseId = caseId}) (listAssocs sourceId collectionClass assoc);");
 	}
 
 
@@ -493,8 +497,8 @@ public class CompilerApp implements AbstractPageScope {
     
     public DataObjectWrapper getDataObjectCollectionIdentifier(DataObjectWrapper object, Set<StatefulDataAssociation<DataInputAssociation, ?>> availableInputs) {
     	Set<DataObjectWrapper> potentialIdentifiers = availableInputs.stream()
+			.filter(StatefulDataAssociation::isDataObjectReference)
     		.map(this::wrapperFor)
-    		.filter(DataElementWrapper::isDataObjectWrapper)
     		.map(DataObjectWrapper.class::cast)
 			.filter(isValidCollectionIdentifierFor(object))
 			.collect(Collectors.toSet());
