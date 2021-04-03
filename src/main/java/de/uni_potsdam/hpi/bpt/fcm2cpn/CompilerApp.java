@@ -25,11 +25,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -78,6 +80,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataObjectWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataStoreWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.terminationconditions.TerminationCondition;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.terminationconditions.TerminationConditionCompiler;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.terminationconditions.TerminationConditionParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.AbstractPageScope;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
@@ -90,6 +93,7 @@ public class CompilerApp implements AbstractPageScope {
 
     private static final FileNameExtensionFilter bpmnFileFilter = new FileNameExtensionFilter("BPMN Process Model", "bpmn");
     private static final FileNameExtensionFilter umlFileFilter = new FileNameExtensionFilter("UML Data Model Class Diagram", "uml");
+    private static final FileNameExtensionFilter jsonFileFilter = new FileNameExtensionFilter("JSON Termination Condition", "json");
     private ObjectLifeCycle[] olcs;
 
     /** The bpmn model to be parsed*/
@@ -129,11 +133,14 @@ public class CompilerApp implements AbstractPageScope {
 
     public static void main(final String[] _args) throws Exception {
         System.out.println(licenseInfo);
-        List<String> args = new ArrayList<>(Arrays.asList(_args));
-        boolean useDataModel = args.remove("-d");
+        final LinkedList<String> args = new LinkedList<>(Arrays.asList(_args));
+        Supplier<Boolean> nextArgIsFile = () -> !args.isEmpty() && !args.get(0).startsWith("-");
         
         File bpmnFile;
-        if(!args.isEmpty()) {
+        Optional<File> dataModelFile = Optional.empty();
+        Optional<File> terminationConditionFile = Optional.empty();
+        
+        if(nextArgIsFile.get()) {
         	bpmnFile = new File(args.get(0));
         	args.remove(0);
         } else {
@@ -143,19 +150,28 @@ public class CompilerApp implements AbstractPageScope {
             System.exit(0);
         }
         
-        Optional<File> dataModelFile = Optional.empty();
-        if(useDataModel) {
-            if(!args.isEmpty()) {
-            	dataModelFile = Optional.of(new File(args.get(0)));
-            	args.remove(0);
-            } else {
-            	dataModelFile = Optional.ofNullable(getFile(umlFileFilter));
-            }       
-        } 
-        
-        Optional<DataModel> dataModel = dataModelFile.map(DataModelParser::parse);
+        while(!args.isEmpty()) {
+        	String nextArg = args.removeFirst();
+        	assert nextArg.startsWith("-");
+        	if(nextArg.equals("-d")) {
+                if(nextArgIsFile.get()) {
+                	dataModelFile = Optional.of(new File(args.removeFirst()));
+                } else {
+                	dataModelFile = Optional.ofNullable(getFile(umlFileFilter));
+                }  
+        	} else if(nextArg.equals("-t")) {
+                if(nextArgIsFile.get()) {
+                	terminationConditionFile = Optional.of(new File(args.removeFirst()));
+                } else {
+                	dataModelFile = Optional.ofNullable(getFile(jsonFileFilter));
+                }  
+        	}
+        }
+
         BpmnModelInstance bpmn = loadBPMNFile(bpmnFile);
-        PetriNet petriNet = translateBPMN2CPN(bpmn, dataModel, Optional.empty());
+        Optional<DataModel> dataModel = dataModelFile.map(DataModelParser::parse);
+        Optional<TerminationCondition> terminationCondition = terminationConditionFile.map(TerminationConditionParser::parse);
+        PetriNet petriNet = translateBPMN2CPN(bpmn, dataModel, terminationCondition);
 		ModelPrinter.printModel(petriNet);
         System.out.print("Writing CPN file... ");
         DOMGenerator.export(petriNet, "./"+bpmnFile.getName().replaceAll("\\.bpmn", "")+".cpn");
