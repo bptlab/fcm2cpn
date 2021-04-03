@@ -53,13 +53,16 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 
 	@Override
 	public String annotationForDataFlow(StatefulDataAssociation<?, ?> assoc) {
-        String caseId = compilerApp.caseId();
         if(!assoc.isCollection()) {
-            return "{id = "+dataElementId()+" , "+caseId+" = "+caseId+"}";
+            return dataObjectToken();
         } else {
     		return dataElementList();
         }
-        
+	}
+	
+	public String dataObjectToken() {
+        String caseId = compilerApp.caseId();
+		return "{id = "+dataElementId()+" , "+caseId+" = "+caseId+"}";
 	}
 
 	@Override

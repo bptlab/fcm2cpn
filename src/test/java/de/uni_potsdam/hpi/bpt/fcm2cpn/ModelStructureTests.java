@@ -45,6 +45,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycleParser;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.terminationconditions.TerminationCondition;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelConsumerTest;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIdIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
@@ -56,6 +57,8 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	public PetriNet petrinet;
 	
 	public DataModel dataModel;
+	
+	public Optional<TerminationCondition> terminationCondition;
 	
 	public ObjectLifeCycle[] olcs;
 	
@@ -210,21 +213,6 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 
 	public boolean isDirectLowerBoundGuard(String guard, String first, String second, int lowerBound) {
 		return removeComments(guard).equals("(enforceLowerBound "+first+"Id "+second+" assoc "+lowerBound+")");
-	}
-	
-	public static <Key, T> List<Map<Key, T>> indexedCombinationsOf(Map<Key, List<T>> groups) {
-		//Get defined order into collection
-		List<Key> keys = new ArrayList<>(groups.keySet());
-		List<List<T>> combinations = Utils.allCombinationsOf(keys.stream().map(groups::get).collect(Collectors.toList()));
-		
-		//Zip keys with each combination
-		return combinations.stream().map(combination -> {
-			HashMap<Key, T> map = new HashMap<>();
-			for(int i = 0; i < keys.size(); i++) {
-				map.put(keys.get(i), combination.get(i));
-			}
-			return map;
-		}).collect(Collectors.toList());
 	}
 	
 	public static Predicate<Arc> writesAssociation(String first, String second) {
@@ -422,8 +410,9 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	
 	@Override
 	public void compileModel() {
-		parseDataModel();        
-        petrinet = CompilerApp.translateBPMN2CPN(bpmn, Optional.of(dataModel)); 
+		parseDataModel();       
+		terminationCondition = parseTerminationCondition();
+        petrinet = CompilerApp.translateBPMN2CPN(bpmn, Optional.of(dataModel), terminationCondition); 
         parseOLCs();
 	}
 	
@@ -434,6 +423,10 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
         } else {
             dataModel = DataModel.none();
         }
+	}
+	
+	protected Optional<TerminationCondition> parseTerminationCondition() {
+		return Optional.empty();
 	}
 	
 	protected void parseOLCs() {

@@ -3,7 +3,9 @@ package de.uni_potsdam.hpi.bpt.fcm2cpn.utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -173,6 +175,24 @@ public class Utils {
             combinations.add(combination);
         }
         return combinations;
+	}
+	
+	/**
+	 * Creates the n-fold cartesian product of a map of lists, retaining the map keys in the result tuples
+	 */
+	public static <Key, T> List<Map<Key, T>> indexedCombinationsOf(Map<Key, List<T>> groups) {
+		//Get defined order into collection
+		List<Key> keys = new ArrayList<>(groups.keySet());
+		List<List<T>> combinations = Utils.allCombinationsOf(keys.stream().map(groups::get).collect(Collectors.toList()));
+		
+		//Zip keys with each combination
+		return combinations.stream().map(combination -> {
+			HashMap<Key, T> map = new HashMap<>();
+			for(int i = 0; i < keys.size(); i++) {
+				map.put(keys.get(i), combination.get(i));
+			}
+			return map;
+		}).collect(Collectors.toList());
 	}
 	
 	public static ItemAwareElement dataElementReferenceOf(DataAssociation assoc) {

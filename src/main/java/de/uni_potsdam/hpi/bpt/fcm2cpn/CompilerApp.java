@@ -76,6 +76,8 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycleParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataElementWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataObjectWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataStoreWrapper;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.terminationconditions.TerminationCondition;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.terminationconditions.TerminationConditionCompiler;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.AbstractPageScope;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
@@ -94,6 +96,8 @@ public class CompilerApp implements AbstractPageScope {
 	private BpmnModelInstance bpmn;
     /** Parsed data model of the bpmn model*/
 	private DataModel dataModel;
+	/** Termination condition */
+	private Optional<TerminationCondition> terminationCondition;
 	
 	/** Helper for constructing the resulting net*/
 	private final BuildCPNUtil builder;
@@ -151,15 +155,15 @@ public class CompilerApp implements AbstractPageScope {
         
         Optional<DataModel> dataModel = dataModelFile.map(DataModelParser::parse);
         BpmnModelInstance bpmn = loadBPMNFile(bpmnFile);
-        PetriNet petriNet = translateBPMN2CPN(bpmn, dataModel);
+        PetriNet petriNet = translateBPMN2CPN(bpmn, dataModel, Optional.empty());
 		ModelPrinter.printModel(petriNet);
         System.out.print("Writing CPN file... ");
         DOMGenerator.export(petriNet, "./"+bpmnFile.getName().replaceAll("\\.bpmn", "")+".cpn");
         System.out.println("DONE");
     }
     
-    public static PetriNet translateBPMN2CPN(BpmnModelInstance bpmn, Optional<DataModel> dataModel) {
-    	return new CompilerApp(bpmn, dataModel).translateBPMN2CPN();
+    public static PetriNet translateBPMN2CPN(BpmnModelInstance bpmn, Optional<DataModel> dataModel, Optional<TerminationCondition> terminationCondition) {
+    	return new CompilerApp(bpmn, dataModel, terminationCondition).translateBPMN2CPN();
     }
 
     private static File getFile(FileNameExtensionFilter filter) {
@@ -172,10 +176,11 @@ public class CompilerApp implements AbstractPageScope {
         return  null;
     }
 
-    private CompilerApp(BpmnModelInstance bpmn, Optional<DataModel> dataModel) {
+    private CompilerApp(BpmnModelInstance bpmn, Optional<DataModel> dataModel, Optional<TerminationCondition> terminationCondition) {
     	this.bpmn = bpmn;
         this.builder = new BuildCPNUtil();
         this.dataModel = dataModel.orElse(DataModel.none());
+        this.terminationCondition = terminationCondition;
         this.subpages = new HashMap<>();
         this.nodeMap = new HashMap<>();
         this.deferred = new ArrayList<>();
@@ -197,6 +202,7 @@ public class CompilerApp implements AbstractPageScope {
         translateEvents();
         translateGateways();
         translateControlFlow();
+        translateTerminationCondition();
         runDeferredCalls();
         layout();
         System.out.println("DONE");
@@ -471,6 +477,10 @@ public class CompilerApp implements AbstractPageScope {
     	return node instanceof Place;
     }
     
+    private void translateTerminationCondition() {
+    	terminationCondition.ifPresent(tc -> new TerminationConditionCompiler(this, tc).compile());
+    }
+    
     private void defer(Runnable r) {
     	deferred.add(r);
     }
@@ -515,12 +525,16 @@ public class CompilerApp implements AbstractPageScope {
     
     public SubpageElement createSubpage(FlowElement element) {
     	String name = elementName(element);
+        SubpageElement subpage = createSubpage(name);
+        subpages.put(element, subpage);
+        nodeMap.put(element, subpage.getMainPageTransition());
+        return subpage;
+    }
+    
+    public SubpageElement createSubpage(String name) {
     	Page activityPage = createPage(name);
         Instance mainPageTransition = createSubpageTransition(name, activityPage);
-        SubpageElement subpage = new SubpageElement(this, activityPage, mainPageTransition);
-        subpages.put(element, subpage);
-        nodeMap.put(element, mainPageTransition);
-        return subpage;
+        return new SubpageElement(this, activityPage, mainPageTransition);
     }
     
     //========Accessors======
