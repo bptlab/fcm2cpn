@@ -55,7 +55,7 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
     	
         outputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = parent.wrapperFor(assoc);
-        	String annotation = dataElement.annotationForDataFlow(element, assoc);
+        	String annotation = dataElement.annotationForDataFlow(assoc);
         	linkWritingTransitions(dataElement, annotation, transitions, assoc);
         	/*Assert that when writing a data store and not reading, the token is read before*/
         	if(!readElements.contains(dataElement) && dataElement.isDataStoreWrapper()) {
@@ -66,7 +66,7 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
         
         inputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = parent.wrapperFor(assoc);
-            String annotation = dataElement.annotationForDataFlow(element, assoc);
+            String annotation = dataElement.annotationForDataFlow(assoc);
             /*Collections are initialized in guard to make arcs more tidy*/
             if(assoc.isCollection()) {
                 String guard = dataElement.collectionCreationGuard(element, assoc, inputs.keySet());
