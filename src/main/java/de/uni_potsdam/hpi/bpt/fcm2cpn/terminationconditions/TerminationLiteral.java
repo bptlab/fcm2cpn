@@ -11,5 +11,18 @@ public class TerminationLiteral {
 		this.dataObject = dataObject;
 		this.states = states;
 	}
+	
+	@Override
+	public String toString() {
+		return dataObject+" ["+String.join(" ", states)+"]";
+	}
+
+	public String getDataObject() {
+		return dataObject;
+	}
+
+	public Set<String> getStates() {
+		return states;
+	}
 
 }
