@@ -1,0 +1,10 @@
+[
+    {
+        "conference" : "reviewing_closed",
+        "paper" : "notification_sent",
+        "decision" : "accepted rejected"
+    },
+    {
+        "conference" : "scheduled"
+    }
+]
