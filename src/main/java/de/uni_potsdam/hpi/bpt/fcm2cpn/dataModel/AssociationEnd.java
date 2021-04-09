@@ -1,5 +1,7 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel;
 
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.assumeNameIsNormalized;
+
 public class AssociationEnd {
 	
 	public static int UNLIMITED = Integer.MAX_VALUE;
@@ -10,6 +12,7 @@ public class AssociationEnd {
 	private int upperBound = 1;
 	
 	public AssociationEnd(String dataObject) {
+		assumeNameIsNormalized(dataObject);
 		this.dataObject = dataObject;
 	}
 

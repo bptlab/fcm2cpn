@@ -1,5 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements;
 
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.assumeNameIsNormalized;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +28,7 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 
 	public DataElementWrapper(CompilerApp compilerApp, String normalizedName) {
 		this.compilerApp = compilerApp;
+		assumeNameIsNormalized(normalizedName);
 		this.normalizedName = normalizedName;
 		
 		createPlaces();

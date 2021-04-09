@@ -1,7 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.addGuardCondition;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -186,17 +185,17 @@ public class IOSetCompiler {
 					// TODO: generalize: look at all possible successor states
 					
 					//If the second object is just created, then an additional assoc is created, so the checked goal lower bound must be lower
-					boolean associationIsCreated = dataObjectsThat(ioSet::writes).stream().anyMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject()))) &&
-							dataObjectsThat(ioSet::reads).stream().noneMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject())));
+					boolean associationIsCreated = dataObjectsThat(ioSet::writes).stream().anyMatch(o -> o.getNormalizedName().equals(assocEnd.getDataObject())) &&
+							dataObjectsThat(ioSet::reads).stream().noneMatch(o -> o.getNormalizedName().equals(assocEnd.getDataObject()));
 					
 					if (assocEnd.hasTightGoalLowerBound(associationIsCreated)) {
 						int goalLowerBound = assocEnd.getGoalLowerBound(associationIsCreated);
 						String newGuard;
 						if (stateChange.first.isCollection()) {
 							//TODO untested, case: a list of data objects switch to a state where the goal cardinality is required
-							newGuard = CustomCPNFunctions.enforceGoalLowerBoundForAll(dataObject(stateChange).dataElementList(), normalizeElementName(assocEnd.getDataObject()), goalLowerBound);
+							newGuard = CustomCPNFunctions.enforceGoalLowerBoundForAll(dataObject(stateChange).dataElementList(), assocEnd.getDataObject(), goalLowerBound);
 						} else {
-							newGuard = CustomCPNFunctions.enforceGoalLowerBound(dataObject(stateChange).dataElementId(), normalizeElementName(assocEnd.getDataObject()), goalLowerBound);
+							newGuard = CustomCPNFunctions.enforceGoalLowerBound(dataObject(stateChange).dataElementId(), assocEnd.getDataObject(), goalLowerBound);
 						}
 						addGuardCondition(transition, newGuard);
 					}

@@ -1,5 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel;
 
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.assumeNameIsNormalized;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -11,6 +12,7 @@ public class ObjectLifeCycle {
 
     public ObjectLifeCycle(String className) {
         this.states = new HashSet<>();
+        assumeNameIsNormalized(className);
         this.className = className;
     }
 

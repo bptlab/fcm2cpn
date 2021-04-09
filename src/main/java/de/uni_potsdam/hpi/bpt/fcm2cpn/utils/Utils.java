@@ -58,6 +58,10 @@ public class Utils {
     			.toLowerCase();
     }
     
+    public static void assumeNameIsNormalized(String name) {
+    	assert normalizeElementName(name).equals(name);
+    }
+    
     public static final String DATA_PLACE_NAME_SEPARATOR = "__";
     public static String dataPlaceName(String dataElementName, String state) {
     	return dataElementName + DATA_PLACE_NAME_SEPARATOR + state; //TODO find better separator

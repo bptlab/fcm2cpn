@@ -7,12 +7,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
+
 public class DataModel {
 	
 	private final Set<String> dataObjects;
 	private final Set<Association> associations;
 	
 	public DataModel(Collection<String> dataObjects, Collection<Association> associations) {
+		dataObjects.forEach(Utils::assumeNameIsNormalized);
 		this.dataObjects = new HashSet<>(dataObjects);
 		this.associations = new HashSet<>(associations);
 	}

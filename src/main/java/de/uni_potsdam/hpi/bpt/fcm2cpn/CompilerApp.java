@@ -19,6 +19,7 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.assumeNameIsNormalized;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -548,6 +550,7 @@ public class CompilerApp implements AbstractPageScope {
     }
     
     public SubpageElement createSubpage(String name) {
+    	assumeNameIsNormalized(name);
     	Page activityPage = createPage(name);
         Instance mainPageTransition = createSubpageTransition(name, activityPage);
         return new SubpageElement(this, activityPage, mainPageTransition);
@@ -581,6 +584,11 @@ public class CompilerApp implements AbstractPageScope {
 
 	public Collection<DataObjectWrapper> getDataObjects() {
 		return dataObjectWrappers;
+	}
+	
+	public DataObjectWrapper dataObjectByName(String dataObjectName) throws NoSuchElementException {
+		assumeNameIsNormalized(dataObjectName);
+		return getDataObjects().stream().filter(dataObject -> dataObject.getNormalizedName().equals(dataObjectName)).findAny().get();
 	}
 	
 	public Collection<DataStoreWrapper> getDataStores() {
