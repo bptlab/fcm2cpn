@@ -18,6 +18,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.ObjectLifeCycle;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.dataelements.DataObjectWrapper;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIOSet.StateChange;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.CustomCPNFunctions;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectWrapperIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
@@ -27,9 +28,6 @@ public class IOSetCompiler {
 	private final Transition transition;
 	
 	private DataObjectWrapperIOSet ioSet;
-	
-	/** Comment to show that lower bound check is goal cardinality check.*/
-	public static final String GOAL_CARDINALITY_COMMENT = "(*goal cardinality*)";
 	
 	public IOSetCompiler(ActivityCompiler parent, DataObjectWrapperIOSet ioSet, Transition transition) {
 		this.parent = parent;
@@ -108,11 +106,11 @@ public class IOSetCompiler {
 		//Create guards for: Cannot create data object if this would violate upper bounds
 		Stream.of(createdAssoc.first, createdAssoc.second).forEach(dataObject -> {
 			AssociationEnd end = dataModelAssoc.getEnd(dataObject.getNormalizedName());
-			int limit = end.getUpperBound();
+			int upperBound = end.getUpperBound();
 			DataObjectWrapper otherObject = createdAssoc.otherElement(dataObject);
 			
-			if(limit > 1 && limit != AssociationEnd.UNLIMITED && ioSet.reads(otherObject)) {//If the other object is not read, it is just created - and then no bound that is 1 or higher will be violated
-				String newGuard = "(enforceUpperBound "+otherObject.dataElementId()+" "+dataObject.namePrefix()+" assoc "+limit+")";
+			if(upperBound > 1 && upperBound != AssociationEnd.UNLIMITED && ioSet.reads(otherObject)) {//If the other object is not read, it is just created - and then no bound that is 1 or higher will be violated
+				String newGuard = CustomCPNFunctions.enforceUpperBound(otherObject.dataElementId(), dataObject.namePrefix(), upperBound);
 				addGuardCondition(transition, newGuard);
 			}
 		});
@@ -128,7 +126,7 @@ public class IOSetCompiler {
 				/*Use the same identifier that is used for the list*/
 				DataObjectWrapper identifier = getDataObjectCollectionIdentifier(collectionDataObject);
 				int lowerBound = dataModelAssoc.getEnd(collectionDataObject.getNormalizedName()).getLowerBound();
-				String newGuard = "(enforceLowerBound "+identifier.dataElementId()+" "+collectionDataObject.namePrefix()+" assoc "+lowerBound+")";
+				String newGuard = CustomCPNFunctions.enforceLowerBound(identifier.dataElementId(), collectionDataObject.namePrefix(), lowerBound);
 				addGuardCondition(transition, newGuard);
 		});
     }
@@ -195,9 +193,10 @@ public class IOSetCompiler {
 						int goalLowerBound = assocEnd.getGoalLowerBound(associationIsCreated);
 						String newGuard;
 						if (stateChange.first.isCollection()) {
-							newGuard = "(List.all (fn oId => (enforceLowerBound oId " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ")) (List.map (fn obj => #id obj) " + dataObject(stateChange).dataElementList() + ")) "+GOAL_CARDINALITY_COMMENT;
+							//TODO untested, case: a list of data objects switch to a state where the goal cardinality is required
+							newGuard = CustomCPNFunctions.enforceGoalLowerBoundForAll(dataObject(stateChange).dataElementList(), normalizeElementName(assocEnd.getDataObject()), goalLowerBound);
 						} else {
-							newGuard = "(enforceLowerBound " + dataObject(stateChange).dataElementId() + " " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ") "+GOAL_CARDINALITY_COMMENT;
+							newGuard = CustomCPNFunctions.enforceGoalLowerBound(dataObject(stateChange).dataElementId(), normalizeElementName(assocEnd.getDataObject()), goalLowerBound);
 						}
 						addGuardCondition(transition, newGuard);
 					}

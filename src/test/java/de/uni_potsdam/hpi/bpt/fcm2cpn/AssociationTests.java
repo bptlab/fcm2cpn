@@ -22,6 +22,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.AssociationsProvider;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIOSet.StateChange;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.CustomCPNFunctions;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIdIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
@@ -166,7 +167,7 @@ public class AssociationTests extends ModelStructureTests {
 				int goalLowerBound = removedAssociationEnd.getGoalLowerBound(assocIsCreated);
 				assertEquals(1, guardsOf(transition).filter(guard -> 
 				(isDirectLowerBoundGuard(guard, dataObjectName, otherDataObject, goalLowerBound))
-				&& guard.contains(IOSetCompiler.GOAL_CARDINALITY_COMMENT)).count(), 
+				&& guard.contains(CustomCPNFunctions.GOAL_CARDINALITY_COMMENT)).count(), 
 					"Activity transition "+transition.getName().asString()+" for io set "+ioSet+" does not check for goal lower bound between "+dataObjectName+" and "+otherDataObject
 					+" although "+dataObjectName+" changes state from "+stateChange.first.getStateName()+" to "+stateChange.second.getStateName()+" where no new associations can be created");
 			}
@@ -188,7 +189,7 @@ public class AssociationTests extends ModelStructureTests {
 	public void testCheckedGoalCardinalitiesComeFromStateChange(Activity activity,  DataObjectIdIOSet ioSet) {
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
 		
-		guardsOf(transition).filter(guard -> guard.contains(IOSetCompiler.GOAL_CARDINALITY_COMMENT)).forEach(guard -> {
+		guardsOf(transition).filter(guard -> guard.contains(CustomCPNFunctions.GOAL_CARDINALITY_COMMENT)).forEach(guard -> {
 			guard = removeComments(guard);
 			assertTrue(guard.matches("\\(enforceLowerBound .+Id .+ assoc .+\\)"), 
 					"Guard \""+guard+"\" annotated with goal cardinality comment was not a lower bound check");
