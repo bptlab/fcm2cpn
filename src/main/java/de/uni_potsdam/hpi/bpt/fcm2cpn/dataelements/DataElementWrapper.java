@@ -81,7 +81,7 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 	public abstract boolean isDataStoreWrapper();
 
 
-	public abstract String collectionCreationGuard(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc, Set<StatefulDataAssociation<DataInputAssociation, ?>> availableInputs);
+	public abstract String collectionCreationGuard(StatefulDataAssociation<?, ?> assoc, Set<StatefulDataAssociation<DataInputAssociation, ?>> availableInputs);
 
 	public Arc assertMainPageArcTo(BaseElement element, String state) {
 		Place place = getPlace(state);

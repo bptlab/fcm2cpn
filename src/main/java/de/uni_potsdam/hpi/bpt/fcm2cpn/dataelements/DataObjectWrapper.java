@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.DataInputAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataObject;
 import org.camunda.bpm.model.bpmn.instance.DataObjectReference;
@@ -66,7 +65,7 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 	}
 
 	@Override
-	public String collectionCreationGuard(BaseElement otherEnd, StatefulDataAssociation<?, ?> assoc, Set<StatefulDataAssociation<DataInputAssociation, ?>> availableInputs) {
+	public String collectionCreationGuard(StatefulDataAssociation<?, ?> assoc, Set<StatefulDataAssociation<DataInputAssociation, ?>> availableInputs) {
 		String caseId = compilerApp.caseId();
 		String className = normalizedName;
 		String identifyingObjectId = compilerApp.getDataObjectCollectionIdentifier(this, availableInputs).dataElementId();
