@@ -38,17 +38,9 @@ public class TerminationConditionCompilerTests extends ModelStructureTests {
 	public void testOneTransitionForEachPossibleStateCombination() {
 		assumeTrue(terminationCondition.isPresent(), "Model does not have a termination condition");
 		for(List<TerminationLiteral> clause : terminationCondition.get().getClauses()) {
-			Map<String, List<String>> stateMap = clause.stream().collect(TerminationLiteral.stateMapCollector());
-			List<Map<String, String>> possibleStateCombinationsForClause = Utils.indexedCombinationsOf(stateMap);
-			for(Map<String, String> stateCombination : possibleStateCombinationsForClause) {
-				List<Transition> transitionsThatMatchStateCombination = StreamSupport.stream(getTerminationPage().transition().spliterator(), false).filter(transition -> {
-					return stateCombination.entrySet().stream().allMatch(dataObjectAndState -> {
-						return transition.getTargetArc().stream().filter(arc -> arc.getSource().getName().asString().equals(Utils.dataPlaceName(dataObjectAndState.getKey(), dataObjectAndState.getValue()))).count() == 1;
-					});
-				}).collect(Collectors.toList());
-				assertEquals(1, transitionsThatMatchStateCombination.size(),
-						"There is not exactly one transition for state combination "+stateCombination+" of clause "+clause);
-			}
+			Map<String, String> stateMap = clause.stream().collect(TerminationLiteral.stateMapCollector());
+			assertEquals(1, transitionsThatMatchStateCombination(stateMap).size(),
+					"There is not exactly one transition for state combination "+stateMap+" of clause "+clause);
 		}
 	}
 	
@@ -65,6 +57,14 @@ public class TerminationConditionCompilerTests extends ModelStructureTests {
 	
 	private Page getTerminationPage() {
 		return pagesNamed(TerminationConditionCompiler.TERMINATION_TRANSITION_NAME).findAny().orElse(null);
+	}
+	
+	private List<Transition> transitionsThatMatchStateCombination(Map<String, String> stateMap) {
+		return StreamSupport.stream(getTerminationPage().transition().spliterator(), false).filter(transition -> {
+			return stateMap.entrySet().stream().allMatch(dataObjectAndState -> {
+				return transition.getTargetArc().stream().filter(arc -> arc.getSource().getName().asString().equals(Utils.dataPlaceName(dataObjectAndState.getKey(), dataObjectAndState.getValue()))).count() == 1;
+			});
+		}).collect(Collectors.toList());
 	}
 	
 	@Override

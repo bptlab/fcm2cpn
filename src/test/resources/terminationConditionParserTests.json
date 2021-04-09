@@ -1,12 +1,12 @@
 [
     {
-        "a" : "state_X state_Y",
-        "b" : "state_U state_V"
+        "a" : "state X Y Z",
+        "b" : "state U"
     },
     
     {
-        "a" : "state_Z",
-        "b" : "state_U state_K",
+        "a" : "state Z H F",
+        "b" : "state K",
         "c" : "x\ny"
     }
 ]

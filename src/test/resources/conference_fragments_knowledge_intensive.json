@@ -2,7 +2,7 @@
     {
         "conference" : "reviewing_closed",
         "paper" : "notification_sent",
-        "decision" : "accepted rejected"
+        "decision" : "accepted"
     },
     {
         "conference" : "scheduled"

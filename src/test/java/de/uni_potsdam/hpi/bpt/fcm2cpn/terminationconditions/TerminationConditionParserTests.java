@@ -1,11 +1,12 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.terminationconditions;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.singleDataObjectStateToNetColor;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.*;
+import java.io.File;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -37,13 +38,13 @@ public class TerminationConditionParserTests {
 	
 	@Test
 	public void testStatesAreParsed() {
-		assertIterableEquals(Arrays.asList(singleDataObjectStateToNetColor("state_Z")), getClause(1).get(0).getStates(),
+		assertEquals(singleDataObjectStateToNetColor("state Z H F"), getClause(1).get(0).getState(),
 				"The parser did not parse the expected states");
 		
-		assertIterableEquals(Arrays.asList(singleDataObjectStateToNetColor("state_U"), singleDataObjectStateToNetColor("state_K")), getClause(1).get(1).getStates(),
+		assertEquals(singleDataObjectStateToNetColor("state K"), getClause(1).get(1).getState(),
 				"The parser did not parse the expected states");
 		
-		assertIterableEquals(Arrays.asList(singleDataObjectStateToNetColor("x\ny")), getClause(1).get(2).getStates(),
+		assertEquals(singleDataObjectStateToNetColor("x\ny"),    getClause(1).get(2).getState(),
 				"The parser did not parse the expected states");
 	}
 	
