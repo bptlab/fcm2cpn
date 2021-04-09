@@ -77,7 +77,7 @@ public class DataModelParser {
 				.filter(element -> element.getAttributeValue("annotatedElement").equals(id))
 				.findFirst()
 				.map(this::parseGoalLowerBound)
-				.ifPresentOrElse(endpoint::setGoalLowerBound, () -> endpoint.setGoalLowerBound(endpoint.getLowerBound()));
+				.ifPresent(endpoint::setGoalLowerBound);
 		return endpoint;
 	}
 

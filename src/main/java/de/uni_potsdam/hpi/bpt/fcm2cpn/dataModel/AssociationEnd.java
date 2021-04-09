@@ -42,7 +42,7 @@ public class AssociationEnd {
 	
 	/** Goal lower bound is smaller by one, if a new association is created in the context*/
 	public int getGoalLowerBound(boolean isAssociationCreated) {
-		return goalLowerBound + (isAssociationCreated ? -1 : 0);
+		return Math.max(lowerBound, goalLowerBound) + (isAssociationCreated ? -1 : 0);
 	}
 	
 	public boolean hasTightGoalLowerBound() {

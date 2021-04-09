@@ -316,6 +316,11 @@ public class CompilerApp implements AbstractPageScope {
         builder.declareMLFunction(petriNet, 
         		"fun enforceLowerBound id class assoc bound =\n" + 
         		"(length (listAssocs id class assoc) >= bound);");
+
+        //TODO cannot use #id in function declarations, find alternative
+//        builder.declareMLFunction(petriNet, 
+//        		"fun enforceLowerBoundForEach list class assoc bound =\n" +
+//				"(List.all (fn(oId) => enforceLowerBound oId class assoc bound) (List.map (fn(obj) => #id obj) list));");
         
         builder.declareMLFunction(petriNet, 
         		"fun enforceUpperBound id class assoc bound =\n" + 
@@ -566,7 +571,7 @@ public class CompilerApp implements AbstractPageScope {
 		return registryPlace;
 	}
 
-	Place getAssociationsPlace() {
+	public Place getAssociationsPlace() {
 		return associationsPlace;
 	}
 
