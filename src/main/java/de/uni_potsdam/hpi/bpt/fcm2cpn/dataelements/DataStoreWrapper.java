@@ -28,7 +28,7 @@ public class DataStoreWrapper extends DataElementWrapper<DataStore, DataStoreRef
 	}
 
 	@Override
-	public String annotationForDataFlow(StatefulDataAssociation<?, ?> assoc) {
+	public String annotationForDataFlow(boolean isCollection) {
         return dataElementId();
 	}
 

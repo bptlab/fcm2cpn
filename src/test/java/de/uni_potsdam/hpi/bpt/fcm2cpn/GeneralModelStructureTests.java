@@ -301,13 +301,14 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	
 	@TestWithAllModels
 	public void testRegistryIsCreated() {
-		assertEquals(1, placesNamed("objects").filter(place -> place.getSort().getText().equals("LIST_OF_ID")).count(),
+		assertEquals(1, placesNamed("objects").filter(place -> place.getSort().getText().equals("LIST_OF_DATA_OBJECT")).count(),
 				"There is not exactly one place for object registry");
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testEachCreateIsRegistered(Activity activity) {
+		//TODO refactor with foreachioset annotation
 		expectedIOCombinations(activity).forEach(ioCombination -> {
 			Transition transition = transitionForIoCombination(ioCombination, activity).get();
 			expectedCreatedObjects(ioCombination).forEach(createdObject -> {
@@ -315,7 +316,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 						.map(arc -> arc.getHlinscription().getText())
 						.filter(inscription -> {
 							String[] split = inscription.split("\\^\\^");
-							return split.length == 2 && split[0].equals("registry") && toSet(split[1]).contains(createdObject.first.first+"Id");
+							return split.length == 2 && split[0].equals("registry") && split[1].contains("{id = "+createdObject.first.first+"Id , caseId = caseId}");
 						})
 						.count(),
 					"There is not exactly one arc that registers creation "+createdObject+" in transition "+transition.getName().getText());
@@ -332,7 +333,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 					.map(arc -> arc.getHlinscription().getText())
 					.filter(inscription -> {
 						String[] split = inscription.split("\\^\\^");
-						return split.length == 2 && split[0].equals("registry") && toSet(split[1]).contains(createdObject.getKey()+"Id");
+						return split.length == 2 && split[0].equals("registry") && split[1].contains("{id = "+createdObject.getKey()+"Id , caseId = caseId}");
 					})
 					.count(),
 				"There is not exactly one arc that registers creation "+createdObject+" in transition "+transition.getName().getText());

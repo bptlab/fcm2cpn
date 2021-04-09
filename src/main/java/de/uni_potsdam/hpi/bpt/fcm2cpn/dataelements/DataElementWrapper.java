@@ -58,7 +58,7 @@ public abstract class DataElementWrapper<Element extends ItemAwareElement, Refer
 	
 	public abstract Place getPlace(String state);
 	
-    public abstract String annotationForDataFlow(StatefulDataAssociation<?, ?> assoc);
+    public abstract String annotationForDataFlow(boolean isCollection);
 
 
 	public void addMappedElement(Element dataElement) {

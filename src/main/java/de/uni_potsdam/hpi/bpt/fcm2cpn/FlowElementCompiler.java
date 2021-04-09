@@ -36,7 +36,7 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
 		if(!createdObjects.isEmpty()) {
 			elementPage.createArcFrom(parent.getRegistryPlace(), transition, "registry");
 			elementPage.createArcTo(parent.getRegistryPlace(), transition, 
-					"registry^^"+createdObjects.stream().map(DataObjectWrapper::dataElementId).collect(Collectors.toList()).toString()
+					"registry^^"+createdObjects.stream().map(DataObjectWrapper::dataObjectToken).collect(Collectors.toList()).toString()
 			);
 		}
 	}
@@ -55,7 +55,7 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
     	
         outputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = parent.wrapperFor(assoc);
-        	String annotation = dataElement.annotationForDataFlow(assoc);
+        	String annotation = dataElement.annotationForDataFlow(assoc.isCollection());
         	linkWritingTransitions(dataElement, annotation, transitions, assoc);
         	/*Assert that when writing a data store and not reading, the token is read before*/
         	if(!readElements.contains(dataElement) && dataElement.isDataStoreWrapper()) {
@@ -66,7 +66,7 @@ public abstract class FlowElementCompiler<T extends FlowElement> {
         
         inputs.forEach((assoc, transitions) -> {
         	DataElementWrapper<?,?> dataElement = parent.wrapperFor(assoc);
-            String annotation = dataElement.annotationForDataFlow(assoc);
+            String annotation = dataElement.annotationForDataFlow(assoc.isCollection());
             /*Collections are initialized in guard to make arcs more tidy*/
             if(assoc.isCollection()) {
                 String guard = dataElement.collectionCreationGuard(assoc, inputs.keySet());

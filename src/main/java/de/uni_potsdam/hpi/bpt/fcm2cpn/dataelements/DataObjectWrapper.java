@@ -51,8 +51,8 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 
 
 	@Override
-	public String annotationForDataFlow(StatefulDataAssociation<?, ?> assoc) {
-        if(!assoc.isCollection()) {
+	public String annotationForDataFlow(boolean isCollection) {
+        if(!isCollection) {
             return dataObjectToken();
         } else {
     		return dataElementList();

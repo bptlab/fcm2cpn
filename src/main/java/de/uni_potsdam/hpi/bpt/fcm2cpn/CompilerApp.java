@@ -285,17 +285,13 @@ public class CompilerApp implements AbstractPageScope {
         CPNList listOfAssociation = CpntypesFactory.INSTANCE.createCPNList();
         listOfAssociation.setSort("ASSOCIATION");
         builder.declareColorSet(petriNet, "LIST_OF_ASSOCIATION", listOfAssociation);
-        
-        CPNList listOfId = CpntypesFactory.INSTANCE.createCPNList();
-        listOfId.setSort("ID");
-        builder.declareColorSet(petriNet, "LIST_OF_ID", listOfId);
     }
     
     private void initializeDefaultVariables() {
     	createVariable("count", "INT");
     	createVariable(caseId(), "CaseID");
     	createVariable("assoc", "LIST_OF_ASSOCIATION");
-    	createVariable("registry", "LIST_OF_ID");
+    	createVariable("registry", "LIST_OF_DATA_OBJECT");
     }
     
     private void initializeUtilityFunctions() {
@@ -381,7 +377,7 @@ public class CompilerApp implements AbstractPageScope {
     }
     
     private void createRegistryPlace() {
-    	registryPlace = createPlace("objects", "LIST_OF_ID", "[]");
+    	registryPlace = createPlace("objects", "LIST_OF_DATA_OBJECT", "[]");
     }
     
     private void translateActivities() {
