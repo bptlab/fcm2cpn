@@ -38,10 +38,11 @@ public class Pair<S,T> {
 		return Objects.equals(first, other.first) && Objects.equals(second, other.second);
 	}
 	
-	public Object otherElement(Object o) {
+	@SuppressWarnings("unchecked")
+	public <U> U otherElement(Object o) {
 		assert contains(o);
-		if(o.equals(first)) return second;
-		else return first;
+		if(o.equals(first)) return (U) second;
+		else return (U) first;
 	}
 	
 	public Pair<T,S> reversed() {

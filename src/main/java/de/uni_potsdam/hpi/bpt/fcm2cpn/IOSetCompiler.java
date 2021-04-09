@@ -94,7 +94,7 @@ public class IOSetCompiler {
 					return "^^["+Stream.of(assoc.first, assoc.second).map(DataObjectWrapper::dataElementId).sorted().collect(Collectors.toList()).toString()+"]";
 				} else {
 					DataObjectWrapper identifier = getDataObjectCollectionIdentifier(collectionDataObject.get());
-					DataObjectWrapper other = (DataObjectWrapper) assoc.otherElement(collectionDataObject.get());
+					DataObjectWrapper other = assoc.otherElement(collectionDataObject.get());
 					//TODO does not sort alphabetically
 					return "^^(associateWithList "+other.dataElementId()+" "+collectionDataObject.get().getNormalizedName()+" "+identifier.dataElementId()+" assoc)";
 				}
@@ -109,7 +109,7 @@ public class IOSetCompiler {
 		Stream.of(createdAssoc.first, createdAssoc.second).forEach(dataObject -> {
 			AssociationEnd end = dataModelAssoc.getEnd(dataObject.getNormalizedName());
 			int limit = end.getUpperBound();
-			DataObjectWrapper otherObject = (DataObjectWrapper) createdAssoc.otherElement(dataObject);
+			DataObjectWrapper otherObject = createdAssoc.otherElement(dataObject);
 			
 			if(limit > 1 && limit != AssociationEnd.UNLIMITED && ioSet.reads(otherObject)) {//If the other object is not read, it is just created - and then no bound that is 1 or higher will be violated
 				String newGuard = "(enforceUpperBound "+otherObject.dataElementId()+" "+dataObject.namePrefix()+" assoc "+limit+")";
