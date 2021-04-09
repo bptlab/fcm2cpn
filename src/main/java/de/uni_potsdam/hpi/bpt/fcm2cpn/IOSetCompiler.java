@@ -188,21 +188,17 @@ public class IOSetCompiler {
 					// TODO: generalize: look at all possible successor states
 					
 					//If the second object is just created, then an additional assoc is created, so the checked goal lower bound must be lower
-					int goalLowerBound = assocEnd.getGoalLowerBound();
-					int lowerBound = assocEnd.getLowerBound();
-					if (dataObjectsThat(ioSet::writes).stream().anyMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject()))) &&
-							dataObjectsThat(ioSet::reads).stream().noneMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject())))) {
-						goalLowerBound--;
-					}
+					boolean associationIsCreated = dataObjectsThat(ioSet::writes).stream().anyMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject()))) &&
+							dataObjectsThat(ioSet::reads).stream().noneMatch(o -> o.getNormalizedName().equals(normalizeElementName(assocEnd.getDataObject())));
 					
-					if (goalLowerBound > lowerBound) {
+					if (assocEnd.hasTightGoalLowerBound(associationIsCreated)) {
+						int goalLowerBound = assocEnd.getGoalLowerBound(associationIsCreated);
 						String newGuard;
 						if (stateChange.first.isCollection()) {
 							newGuard = "(List.all (fn oId => (enforceLowerBound oId " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ")) (List.map (fn obj => #id obj) " + dataObject(stateChange).dataElementList() + ")) "+GOAL_CARDINALITY_COMMENT;
 						} else {
 							newGuard = "(enforceLowerBound " + dataObject(stateChange).dataElementId() + " " + normalizeElementName(assocEnd.getDataObject()) + " assoc " + goalLowerBound + ") "+GOAL_CARDINALITY_COMMENT;
 						}
-						System.out.println(newGuard);
 						addGuardCondition(transition, newGuard);
 					}
 				}

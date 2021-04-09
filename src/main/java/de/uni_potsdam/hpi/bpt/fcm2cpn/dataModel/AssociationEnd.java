@@ -6,7 +6,7 @@ public class AssociationEnd {
 	
 	private String dataObject;
 	private int lowerBound = 1;
-	private int goalLowerBound = 1;
+	private int goalLowerBound = 0;
 	private int upperBound = 1;
 	
 	public AssociationEnd(String dataObject) {
