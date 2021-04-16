@@ -34,7 +34,7 @@ public class StartEventCompiler extends FlowElementCompiler<StartEvent> {
         elementPage.createArc(caseTokenPlace, subpageTransition, "count");
         elementPage.createArc(subpageTransition, caseTokenPlace, "count + 1");
         
-        parent.createArc(elementPage.getMainPageTransition(), parent.getActiveCasesPlace());
+        parent.createArc(node(), parent.getActiveCasesPlace());
         elementPage.createArc(subpageTransition, elementPage.refPlaceFor(parent.getActiveCasesPlace()), parent.caseId());
         
         List<StatefulDataAssociation<DataOutputAssociation, ?>> outputs = element.getDataOutputAssociations().stream()

@@ -75,6 +75,13 @@ public class ActivityCompiler extends FlowElementCompiler<Activity> {
         }
         
         createDataAssociationArcs(outputtingTransitions, inputtingTransitions);
+        
+        if(Utils.isFragmentStart(element)) {
+        	parent.createArc(parent.getActiveCasesPlace(), node());
+        	elementPage.createArcsFrom(parent.getActiveCasesPlace(), parent.caseId());
+        	parent.createArc(node(), parent.getActiveCasesPlace());
+        	elementPage.createArcsTo(parent.getActiveCasesPlace(), parent.caseId());
+        }
 	}
 	
 	private List<DataObjectWrapperIOSet> ioSets() {

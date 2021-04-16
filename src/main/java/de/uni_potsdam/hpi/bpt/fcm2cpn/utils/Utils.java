@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.impl.instance.SourceRef;
 import org.camunda.bpm.model.bpmn.impl.instance.TargetRef;
+import org.camunda.bpm.model.bpmn.instance.Activity;
 import org.camunda.bpm.model.bpmn.instance.BaseElement;
 import org.camunda.bpm.model.bpmn.instance.DataAssociation;
 import org.camunda.bpm.model.bpmn.instance.DataInput;
@@ -103,6 +104,10 @@ public class Utils {
      */
     public static String singleDataObjectStateToNetColor(String state) {
     	return removeSpecialCharacters(state).toUpperCase();
+    }
+    
+    public static boolean isFragmentStart(Activity activity) {
+    	return activity.getIncoming().isEmpty();
     }
     
     
