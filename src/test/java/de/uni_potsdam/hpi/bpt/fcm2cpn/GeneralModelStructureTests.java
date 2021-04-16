@@ -90,6 +90,16 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	}
 	
 	@TestWithAllModels
+	@ForEachBpmn(StartEvent.class)
+	public void testStartEventWritesActiveCaseToken(StartEvent startEvent) {
+		transitionsFor(startEvent).forEach(transition -> {
+			assertExactlyOne(arcsToNodeNamed(transition, CompilerApp.ACTIVE_CASES_PLACE_NAME), 
+					"There is not exactly one arc from start event "+elementName(startEvent)+" to the active cases place");
+			
+		});
+	}
+	
+	@TestWithAllModels
 	@ForEachBpmn(BoundaryEvent.class)
 	public void testBoundaryEventSubPageIsCreated(BoundaryEvent boundaryEvent) {
 		assertExactlyOne(pagesNamed(elementName(boundaryEvent)), 

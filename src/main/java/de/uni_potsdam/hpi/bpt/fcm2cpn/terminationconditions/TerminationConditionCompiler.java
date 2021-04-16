@@ -79,6 +79,7 @@ public class TerminationConditionCompiler {
             parent.createArc(dataObjectStatePlace, subPageElement.getMainPageTransition());
 	    	subPageElement.createArc(subPageElement.refPlaceFor(dataObjectStatePlace), transition, dataObject.dataObjectToken());
 		});
+		subPageElement.createArc(subPageElement.refPlaceFor(parent.getActiveCasesPlace()), transition, parent.caseId());
 		subPageElement.createArc(transition, subPageElement.refPlaceFor(parent.getTerminatedCasesPlace()), parent.caseId());
 		return transition;
 	}

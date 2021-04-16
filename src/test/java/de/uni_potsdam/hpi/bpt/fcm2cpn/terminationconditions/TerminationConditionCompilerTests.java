@@ -19,6 +19,7 @@ import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.Transition;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.ModelStructureTests;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
@@ -63,6 +64,19 @@ public class TerminationConditionCompilerTests extends ModelStructureTests {
 							+assoc.getEnd(dataObjectName).getGoalLowerBound()+" "+dataObjectName+"(s) are associated with each "+otherDataObjectName);
 				});
 			}
+		});
+	}
+	
+	@TestWithAllModels
+	@ForEachBpmn(DataObject.class)
+	public void testCaseTokenIsMovedFromActiveToTerminated(DataObject dataObject) {
+		assumeTrue(terminationCondition.isPresent(), "Model does not have a termination condition");
+		
+		getClauseTransitions().forEach(transition -> {
+			assertExactlyOne(arcsFromNodeNamed(transition, CompilerApp.ACTIVE_CASES_PLACE_NAME), 
+					"There is not exactly one arc to termination transition "+transition+" to read active cases");
+			assertExactlyOne(arcsToNodeNamed(transition, CompilerApp.TERMINATED_CASES_PLACE_NAME), 
+					"There is not exactly one arc from termination transition "+transition+" to write terminated cases");
 		});
 	}
 	
