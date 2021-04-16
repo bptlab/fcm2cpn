@@ -19,19 +19,4 @@
     <ownedEnd xmi:type="uml:Property" xmi:id="_c3R24FyfEeulpbAc0yFNRg" name="a" type="_HuAXEFyfEeulpbAc0yFNRg" association="_c3LJMFyfEeulpbAc0yFNRg">
     </ownedEnd>
   </packagedElement>
-  <packagedElement xmi:type="uml:Class" xmi:id="_wqreAFyhEeulpbAc0yFNRg" name="C"/>
-  <packagedElement xmi:type="uml:Association" xmi:id="_y2DJYFyhEeulpbAc0yFNRg" memberEnd="_y2EXgFyhEeulpbAc0yFNRg _y2EXgVyhEeulpbAc0yFNRg">
-    <eAnnotations xmi:type="ecore:EAnnotation" xmi:id="_y2DwcFyhEeulpbAc0yFNRg" source="org.eclipse.papyrus">
-      <details xmi:type="ecore:EStringToStringMapEntry" xmi:id="_y2DwcVyhEeulpbAc0yFNRg" key="nature" value="UML_Nature"/>
-    </eAnnotations>
-    <ownedEnd xmi:type="uml:Property" xmi:id="_y2EXgFyhEeulpbAc0yFNRg" name="b" type="_IY6VQFyfEeulpbAc0yFNRg" association="_y2DJYFyhEeulpbAc0yFNRg"/>
-    <ownedEnd xmi:type="uml:Property" xmi:id="_y2EXgVyhEeulpbAc0yFNRg" name="c" type="_wqreAFyhEeulpbAc0yFNRg" association="_y2DJYFyhEeulpbAc0yFNRg"/>
-  </packagedElement>
-  <packagedElement xmi:type="uml:Association" xmi:id="_02QtoFyhEeulpbAc0yFNRg" memberEnd="_02RUsVyhEeulpbAc0yFNRg _02R7wFyhEeulpbAc0yFNRg">
-    <eAnnotations xmi:type="ecore:EAnnotation" xmi:id="_02QtoVyhEeulpbAc0yFNRg" source="org.eclipse.papyrus">
-      <details xmi:type="ecore:EStringToStringMapEntry" xmi:id="_02RUsFyhEeulpbAc0yFNRg" key="nature" value="UML_Nature"/>
-    </eAnnotations>
-    <ownedEnd xmi:type="uml:Property" xmi:id="_02RUsVyhEeulpbAc0yFNRg" name="a" type="_HuAXEFyfEeulpbAc0yFNRg" association="_02QtoFyhEeulpbAc0yFNRg"/>
-    <ownedEnd xmi:type="uml:Property" xmi:id="_02R7wFyhEeulpbAc0yFNRg" name="c" type="_wqreAFyhEeulpbAc0yFNRg" association="_02QtoFyhEeulpbAc0yFNRg"/>
-  </packagedElement>
 </uml:Model>
