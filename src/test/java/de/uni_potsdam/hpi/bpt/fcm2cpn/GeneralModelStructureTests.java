@@ -25,7 +25,6 @@ import org.camunda.bpm.model.bpmn.instance.FlowElement;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.StartEvent;
-import org.cpntools.accesscpn.model.HasName;
 import org.cpntools.accesscpn.model.Instance;
 import org.cpntools.accesscpn.model.Node;
 import org.cpntools.accesscpn.model.Page;
@@ -310,10 +309,26 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 					"There is not exactly one read arc from data store reference "+elementName(dataStoreReference)+" to writing node "+elementName);
 		});
 	}
+
+	
+	
+	@TestWithAllModels
+	public void testActiveCasesPlaceIsCreated() {
+		assertExactlyOne(placesNamed("objects").filter(place -> place.getSort().getText().equals("LIST_OF_DATA_OBJECT")),
+				"There is not exactly one place for object registry");
+	}
+	
+	
+	@TestWithAllModels
+	public void testTerminatedCasesPlaceIsCreated() {
+		assertExactlyOne(placesNamed(CompilerApp.ACTIVE_CASES_PLACE_NAME).filter(place -> place.getSort().getText().equals("CaseID")),
+				"There is not exactly one place for object registry");
+	}
+	
 	
 	@TestWithAllModels
 	public void testRegistryIsCreated() {
-		assertExactlyOne(placesNamed("objects").filter(place -> place.getSort().getText().equals("LIST_OF_DATA_OBJECT")),
+		assertExactlyOne(placesNamed(CompilerApp.TERMINATED_CASES_PLACE_NAME).filter(place -> place.getSort().getText().equals("CaseID")),
 				"There is not exactly one place for object registry");
 	}
 	
@@ -392,20 +407,6 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testModelsArePreprocessed() {
 		assertEquals("true", bpmn.getDocumentElement().getAttributeValue("de.uni_potsdam.hpi.bpt.fcm2cpn.preprocessed"),
 				"Model "+modelName+" was not marked as preprocessed");
-	}
-	
-	@TestWithAllModels
-	public void testAllCpnIdentifiersHaveNoWhitespace() {
-		Stream<HasName> allNodesInNet = Stream.concat(
-			petrinet.getPage().stream(),
-			petrinet.getPage().stream().flatMap(this::allNodes)
-		);
-		
-		allNodesInNet.forEach(node -> {
-			String name = node.getName().asString();
-			assertEquals(name.replaceAll("\\s",""), name, 
-					"Name \""+name+"\" of node "+node+" contains whitespaces.");
-		});
 	}
 
 }

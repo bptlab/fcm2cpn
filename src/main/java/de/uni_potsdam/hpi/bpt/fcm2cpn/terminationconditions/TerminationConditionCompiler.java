@@ -21,19 +21,16 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
 public class TerminationConditionCompiler {
 	
-	public static final String TERMINATION_PLACE_NAME = "terminated";
 	public static final String TERMINATION_TRANSITION_NAME = "termination";
 	
 	private final TerminationCondition terminationCondition;
 	private final CompilerApp parent;
 	private final SubpageElement subPageElement;
-	private final Place terminationPlace;
 	
 	public TerminationConditionCompiler(CompilerApp parent, TerminationCondition terminationCondition) {
 		this.parent = parent;
 		this.terminationCondition = terminationCondition;
 		this.subPageElement = parent.createSubpage(TERMINATION_TRANSITION_NAME);
-		this.terminationPlace = parent.createPlace(TERMINATION_PLACE_NAME, "CaseID");
 	}
 	
 	public void compile() {
@@ -82,7 +79,7 @@ public class TerminationConditionCompiler {
             parent.createArc(dataObjectStatePlace, subPageElement.getMainPageTransition());
 	    	subPageElement.createArc(subPageElement.refPlaceFor(dataObjectStatePlace), transition, dataObject.dataObjectToken());
 		});
-		subPageElement.createArc(transition, subPageElement.refPlaceFor(terminationPlace), parent.caseId());
+		subPageElement.createArc(transition, subPageElement.refPlaceFor(parent.getTerminatedCasesPlace()), parent.caseId());
 		return transition;
 	}
 	

@@ -122,6 +122,14 @@ public class CompilerApp implements AbstractPageScope {
 	/** Global place that registers all tokens*/
 	private Place registryPlace;
 	
+	/** Global place active cases*/
+	public static final String ACTIVE_CASES_PLACE_NAME = "active_cases";
+	private Place activeCasesPlace;
+	
+	/** Global place for terminated cases*/
+	public static final String TERMINATED_CASES_PLACE_NAME = "terminated_cases";
+	private Place terminatedCasesPlace;
+	
 	/** Steps that run after (most of) the net is created; used e.g. in {@link #translateBoundaryEvents()} to access all control flow places of an interrupted activity*/
 	private List<Runnable> deferred;
 	
@@ -241,6 +249,9 @@ public class CompilerApp implements AbstractPageScope {
         initializeDefaultColorSets();
         initializeDefaultVariables();
         initializeUtilityFunctions();
+        
+        createActiveCasesPlace();
+        createTerminatedCasesPlace();
         
         System.out.println("DONE");
     }
@@ -382,6 +393,15 @@ public class CompilerApp implements AbstractPageScope {
     
     private void createRegistryPlace() {
     	registryPlace = createPlace("objects", "LIST_OF_DATA_OBJECT", "[]");
+    }
+    
+    
+    private void createActiveCasesPlace() {
+    	activeCasesPlace = createPlace(ACTIVE_CASES_PLACE_NAME, "CaseID");
+    }
+    
+    private void createTerminatedCasesPlace() {
+    	terminatedCasesPlace = createPlace(TERMINATED_CASES_PLACE_NAME, "CaseID");
     }
     
     private void translateActivities() {
@@ -572,6 +592,14 @@ public class CompilerApp implements AbstractPageScope {
 
 	public Place getAssociationsPlace() {
 		return associationsPlace;
+	}
+	
+	public Place getActiveCasesPlace() {
+		return activeCasesPlace;
+	}
+
+	public Place getTerminatedCasesPlace() {
+		return terminatedCasesPlace;
 	}
 
 	public Node nodeFor(BaseElement element) {
