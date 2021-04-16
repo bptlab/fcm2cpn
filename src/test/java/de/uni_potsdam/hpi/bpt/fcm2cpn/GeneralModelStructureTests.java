@@ -35,6 +35,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIdIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
 
 
 public class GeneralModelStructureTests extends ModelStructureTests {
@@ -47,7 +48,17 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	public void testFirstPageIsMainPage() {
 		Page mainPage = petrinet.getPage().get(0);
-		assertEquals("Main_Page", mainPage.getName().asString());
+		assertEquals("main_page", mainPage.getName().asString());
+	}
+	
+	@TestWithAllModels
+	public void testNoNameContainsIllegalCharacters() {
+		Stream.concat(petrinet.getPage().stream(), petrinet.getPage().stream().flatMap(this::allNodes)).forEach(nodeOrPage -> {
+			String actualName = nodeOrPage.getName().asString();
+			String nameWithoutIllegalChars = Utils.removeSpecialCharacters(actualName);
+			assertEquals(nameWithoutIllegalChars, actualName, 
+					"Name \""+actualName+"\" of node or page "+nodeOrPage+" is not normalized, expecting \""+nameWithoutIllegalChars+"\"");
+		});
 	}
 	
 	@TestWithAllModels

@@ -52,14 +52,18 @@ public class Utils {
 	 * Removes all whitespaces to simplify further processing of the resulting net
 	 */
     public static String normalizeElementName(String name) {
-    	return name
-    			.replace('\n', ' ').trim()
-    			.replaceAll("\\s","_")
-    			.toLowerCase();
+    	return removeSpecialCharacters(name).toLowerCase();
     }
     
     public static void assumeNameIsNormalized(String name) {
     	assert normalizeElementName(name).equals(name);
+    }
+    
+    public static String removeSpecialCharacters(String string) {
+    	return string
+    			.replace('\n', ' ').trim()
+    			.replaceAll("\\s","_")
+        		.replaceAll("-","_");
     }
     
     public static final String DATA_PLACE_NAME_SEPARATOR = "__";
@@ -98,11 +102,7 @@ public class Utils {
      * Normalizes a single state name, can then be used as value for the STATE color set
      */
     public static String singleDataObjectStateToNetColor(String state) {
-    	return state
-			.trim()
-    		.replaceAll("\\s","_")
-    		.replaceAll("-","_")
-    		.toUpperCase();
+    	return removeSpecialCharacters(state).toUpperCase();
     }
     
     
