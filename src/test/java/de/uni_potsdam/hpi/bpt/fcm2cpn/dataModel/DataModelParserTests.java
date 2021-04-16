@@ -1,6 +1,6 @@
-package de.uni_potsdam.hpi.bpt.fcm2cpn;
+package de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.util.Set;
@@ -9,10 +9,6 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.Association;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.AssociationEnd;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModel;
-import de.uni_potsdam.hpi.bpt.fcm2cpn.dataModel.DataModelParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
 
 public class DataModelParserTests {
