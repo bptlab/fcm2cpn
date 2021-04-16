@@ -17,8 +17,7 @@ public class CustomCPNFunctions {
 	}
 	
 	public static String enforceGoalLowerBoundForAll(String singleObjectList, String collectionClass, int bound) {
-		// return "(enforceLowerBoundForEach "+singleObjectList+" "+collectionClass+" assoc "+bound+")";
-		return "(List.all (fn oId => "+enforceLowerBound("oId", collectionClass, bound)+") (List.map (fn obj => #id obj) " + singleObjectList + ")) "+CustomCPNFunctions.GOAL_CARDINALITY_COMMENT;
+		return "(enforceLowerBoundForEach "+singleObjectList+" "+collectionClass+" assoc "+bound+")";
 	}
 	
 	public static String enforceUpperBound(String singleObjectId, String collectionClass, int bound) {
