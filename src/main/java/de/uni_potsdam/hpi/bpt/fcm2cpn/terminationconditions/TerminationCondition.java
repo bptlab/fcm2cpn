@@ -1,5 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.terminationconditions;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -10,6 +11,11 @@ public class TerminationCondition {
 
 	public TerminationCondition(List<List<TerminationLiteral>> disjunctiveNormalForm) {
 		this.disjunctiveNormalForm = disjunctiveNormalForm;
+	}
+	
+
+	public static TerminationCondition stateIndependent() {
+		return new TerminationCondition(List.of(Collections.emptyList()));
 	}
 	
 	@Override

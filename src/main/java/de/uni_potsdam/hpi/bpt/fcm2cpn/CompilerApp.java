@@ -30,6 +30,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -103,7 +104,7 @@ public class CompilerApp implements AbstractPageScope {
     /** Parsed data model of the bpmn model*/
 	private DataModel dataModel;
 	/** Termination condition */
-	private Optional<TerminationCondition> terminationCondition;
+	private TerminationCondition terminationCondition;
 	
 	/** Helper for constructing the resulting net*/
 	private final BuildCPNUtil builder;
@@ -206,7 +207,7 @@ public class CompilerApp implements AbstractPageScope {
     	this.bpmn = bpmn;
         this.builder = new BuildCPNUtil();
         this.dataModel = dataModel.orElse(DataModel.none());
-        this.terminationCondition = terminationCondition;
+        this.terminationCondition = terminationCondition.orElse(TerminationCondition.stateIndependent());
         this.subpages = new HashMap<>();
         this.nodeMap = new HashMap<>();
         this.deferred = new ArrayList<>();
@@ -516,7 +517,8 @@ public class CompilerApp implements AbstractPageScope {
     }
     
     private void translateTerminationCondition() {
-    	terminationCondition.ifPresent(tc -> new TerminationConditionCompiler(this, tc).compile());
+    	assert Objects.nonNull(terminationCondition);
+    	new TerminationConditionCompiler(this, terminationCondition).compile();
     }
     
     private void defer(Runnable r) {

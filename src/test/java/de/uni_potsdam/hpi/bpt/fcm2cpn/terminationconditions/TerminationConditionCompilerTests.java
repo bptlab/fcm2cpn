@@ -1,14 +1,12 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn.terminationconditions;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
-import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.*;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestUtils.assertExactlyOne;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -30,16 +28,15 @@ public class TerminationConditionCompilerTests extends ModelStructureTests {
 	
 	@TestWithAllModels
 	public void testInfrastructureIsCreatedAsNeeded() {
-		assertEquals(terminationCondition.isPresent(), Objects.nonNull(getTerminationTransition()),
+		assertNotNull(getTerminationTransition(),
 				"Termination condition transition was not created as needed.");
 
-		assertEquals(terminationCondition.isPresent(), Objects.nonNull(getTerminationPage()),
+		assertNotNull(getTerminationPage(),
 				"Terminated condition page was not created as needed.");
 	}
 	
 	@TestWithAllModels
 	public void testOneTransitionForEachPossibleStateCombination() {
-		assumeTrue(terminationCondition.isPresent(), "Model does not have a termination condition");
 		
 		for(List<TerminationLiteral> clause : terminationCondition.get().getClauses()) {
 			Map<String, String> stateMap = clause.stream().collect(TerminationLiteral.stateMapCollector());
@@ -50,9 +47,7 @@ public class TerminationConditionCompilerTests extends ModelStructureTests {
 	
 	@TestWithAllModels
 	@ForEachBpmn(DataObject.class)
-	public void testGoalCardinalitiesAreChecked(DataObject dataObject) {
-		assumeTrue(terminationCondition.isPresent(), "Model does not have a termination condition");
-		
+	public void testGoalCardinalitiesAreChecked(DataObject dataObject) {		
 		String dataObjectName = elementName(dataObject);
 		dataModel.getAssociationsForDataObject(dataObjectName).forEach(assoc -> {
 			String otherDataObjectName = assoc.getOtherEnd(dataObjectName).getDataObject();
@@ -70,7 +65,6 @@ public class TerminationConditionCompilerTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(DataObject.class)
 	public void testCaseTokenIsMovedFromActiveToTerminated(DataObject dataObject) {
-		assumeTrue(terminationCondition.isPresent(), "Model does not have a termination condition");
 		
 		getClauseTransitions().forEach(transition -> {
 			assertExactlyOne(arcsFromNodeNamed(transition, CompilerApp.ACTIVE_CASES_PLACE_NAME), 
@@ -113,5 +107,12 @@ public class TerminationConditionCompilerTests extends ModelStructureTests {
         } else {
             return super.parseTerminationCondition();
         }
+	}
+	
+	@Override
+	public void compileModel() {
+		super.compileModel();
+		// Assume that default value is used if no file was provided
+		if(terminationCondition.isEmpty()) terminationCondition = Optional.of(TerminationCondition.stateIndependent());
 	}
 }
