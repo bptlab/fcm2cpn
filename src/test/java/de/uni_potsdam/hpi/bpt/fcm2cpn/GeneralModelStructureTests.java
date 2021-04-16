@@ -1,5 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestUtils.*;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,7 +49,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	public void testFirstPageIsMainPage() {
 		Page mainPage = petrinet.getPage().get(0);
-		assertEquals("main_page", mainPage.getName().asString());
+		assertEquals("Main_Page", mainPage.getName().asString());
 	}
 	
 	@TestWithAllModels
@@ -64,35 +65,35 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(StartEvent.class)
 	public void testStartEventTransitionIsCreated(StartEvent startEvent) {
-		assertEquals(1, instancesNamed(elementName(startEvent)).count(), 
+		assertExactlyOne(instancesNamed(elementName(startEvent)), 
 				"There is not exactly one sub page transition for start event "+elementName(startEvent));
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(BoundaryEvent.class)
 	public void testBoundaryEventTransitionIsCreated(BoundaryEvent boundaryEvent) {
-		assertEquals(1, instancesNamed(elementName(boundaryEvent)).count(), 
+		assertExactlyOne(instancesNamed(elementName(boundaryEvent)), 
 				"There is not exactly one sub page transition for boundary event "+elementName(boundaryEvent));
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testActivityTransitionIsCreated(Activity activity) {
-		assertEquals(1, instancesNamed(elementName(activity)).count(), 
+		assertExactlyOne(instancesNamed(elementName(activity)), 
 				"There is not exactly one sub page transition for activity "+elementName(activity));
 	}
 		
 	@TestWithAllModels
 	@ForEachBpmn(StartEvent.class)
 	public void testStartEventSubPageIsCreated(StartEvent startEvent) {
-		assertEquals(1, pagesNamed(elementName(startEvent)).count(), 
+		assertExactlyOne(pagesNamed(elementName(startEvent)), 
 				"There is not exactly one sub page for start event "+elementName(startEvent));
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(BoundaryEvent.class)
 	public void testBoundaryEventSubPageIsCreated(BoundaryEvent boundaryEvent) {
-		assertEquals(1, pagesNamed(elementName(boundaryEvent)).count(), 
+		assertExactlyOne(pagesNamed(elementName(boundaryEvent)), 
 				"There is not exactly one sub page for boundary event "+elementName(boundaryEvent));
 	}
 	
@@ -123,21 +124,21 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(EndEvent.class)
 	public void testEndEventPlaceIsCreated(EndEvent endEvent) {
-		assertEquals(1, placesNamed(elementName(endEvent)).count(), 
+		assertExactlyOne(placesNamed(elementName(endEvent)), 
 				"There is not exactly one place for end event "+elementName(endEvent));
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(Activity.class)
 	public void testActivitySubPageIsCreated(Activity activity) {
-		assertEquals(1, pagesNamed(elementName(activity)).count(), 
+		assertExactlyOne(pagesNamed(elementName(activity)), 
 				"There is not exactly one sub page for activity "+elementName(activity));
 	}
 
 	@TestWithAllModels
 	@ForEachBpmn(SequenceFlow.class)
 	public void testControlFlowIsMapped(SequenceFlow sequenceFlow) {
-		assertEquals(1, controlFlowMappingsBetween(elementName(sequenceFlow.getSource()), elementName(sequenceFlow.getTarget())).count(), 
+		assertExactlyOne(controlFlowMappingsBetween(elementName(sequenceFlow.getSource()), elementName(sequenceFlow.getTarget())), 
 			"There is not exactly one mapping for the control flow between "+elementName(sequenceFlow.getSource())+" and "+elementName(sequenceFlow.getTarget()));
 	}
 	
@@ -154,7 +155,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(ExclusiveGateway.class)
 	public void testExclusiveGatewayPlaceIsCreated(ExclusiveGateway gateway) {
-		assertEquals(1, placesNamed(elementName(gateway)).count(),
+		assertExactlyOne(placesNamed(elementName(gateway)),
 			"There is not exactly one place for exclusive gatewax "+elementName(gateway));
 	}
 	
@@ -172,14 +173,14 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(ParallelGateway.class)
 	public void testParallelGatewayTransitionIsCreated(ParallelGateway gateway) {
-		assertEquals(1, instancesNamed(elementName(gateway)).count(), 
+		assertExactlyOne(instancesNamed(elementName(gateway)), 
 				"There is not exactly one transition for parallel gateway "+elementName(gateway));
 	}
 	
 	@TestWithAllModels
 	@ForEachBpmn(ParallelGateway.class)
 	public void testParallelGatewaySubPageIsCreated(ParallelGateway gateway) {
-		assertEquals(1, pagesNamed(elementName(gateway)).count(), 
+		assertExactlyOne(pagesNamed(elementName(gateway)), 
 				"There is not exactly one sub page for parallel gateway "+elementName(gateway));
 	}
 
@@ -239,7 +240,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	@TestWithAllModels
 	@ForEachBpmn(DataStore.class)
 	public void testDataStorePlacesAreCreated(DataStore dataStore) {
-		assertEquals(1, dataStorePlacesNamed(elementName(dataStore)).count(), 
+		assertExactlyOne(dataStorePlacesNamed(elementName(dataStore)), 
 			"There is not exactly one place for data store "+dataStore.getName());
 	}
 	
@@ -252,11 +253,11 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		
 		readingElements.forEach(element -> {
 			String elementName = elementName(element);
-			assertEquals(1, arcsToNodeNamed(dataStorePlace, elementName).count(),
+			assertExactlyOne(arcsToNodeNamed(dataStorePlace, elementName),
 					"There is not exactly one read arc from data store reference "+elementName(dataStoreReference)+" to node "+elementName);
 			
 			transitionsFor((FlowElement) element).forEach(readingTransition -> {
-				assertEquals(1, arcsFromNodeNamed(readingTransition, elementName(dataStoreReference)).count(),
+				assertExactlyOne(arcsFromNodeNamed(readingTransition, elementName(dataStoreReference)),
 						"There is not exactly one read arc from data store reference "+elementName(dataStoreReference)+" to node "+elementName+" in subpage transition");
 			});
 			
@@ -272,11 +273,11 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 
 		writingElements.forEach(element -> {
 			String elementName = elementName(element);
-			assertEquals(1, arcsFromNodeNamed(dataStorePlace, elementName).count(),
+			assertExactlyOne(arcsFromNodeNamed(dataStorePlace, elementName),
 					"There is not exactly one write arc from node "+elementName+" to data store reference "+elementName(dataStoreReference));
 			
 			transitionsFor((FlowElement) element).forEach(writingTransition -> {
-				assertEquals(1, arcsToNodeNamed(writingTransition, elementName(dataStoreReference)).count(),
+				assertExactlyOne(arcsToNodeNamed(writingTransition, elementName(dataStoreReference)),
 						"There is not exactly write arc from node "+elementName+" to data store reference "+elementName(dataStoreReference)+" in subpage transition");
 			});
 		});
@@ -291,7 +292,7 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		
 		readingElements.forEach(node -> {
 			String elementName = elementName(node);
-			assertEquals(1, arcsFromNodeNamed(dataStorePlace, elementName).count(),
+			assertExactlyOne(arcsFromNodeNamed(dataStorePlace, elementName),
 					"There is not exactly one write back arc from reading node "+elementName+" to data Store reference "+elementName(dataStoreReference));
 		});
 	}
@@ -305,14 +306,14 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		
 		writingElements.forEach(node -> {
 			String elementName = elementName(node);
-			assertEquals(1, arcsToNodeNamed(dataStorePlace, elementName).count(),
+			assertExactlyOne(arcsToNodeNamed(dataStorePlace, elementName),
 					"There is not exactly one read arc from data store reference "+elementName(dataStoreReference)+" to writing node "+elementName);
 		});
 	}
 	
 	@TestWithAllModels
 	public void testRegistryIsCreated() {
-		assertEquals(1, placesNamed("objects").filter(place -> place.getSort().getText().equals("LIST_OF_DATA_OBJECT")).count(),
+		assertExactlyOne(placesNamed("objects").filter(place -> place.getSort().getText().equals("LIST_OF_DATA_OBJECT")),
 				"There is not exactly one place for object registry");
 	}
 	
@@ -323,13 +324,12 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		expectedIOCombinations(activity).forEach(ioCombination -> {
 			Transition transition = transitionForIoCombination(ioCombination, activity).get();
 			expectedCreatedObjects(ioCombination).forEach(createdObject -> {
-				assertEquals(1, arcsToNodeNamed(transition, "objects")
+				assertExactlyOne(arcsToNodeNamed(transition, "objects")
 						.map(arc -> arc.getHlinscription().getText())
 						.filter(inscription -> {
 							String[] split = inscription.split("\\^\\^");
 							return split.length == 2 && split[0].equals("registry") && split[1].contains("{id = "+createdObject.first.first+"Id , caseId = caseId}");
-						})
-						.count(),
+						}),
 					"There is not exactly one arc that registers creation "+createdObject+" in transition "+transition.getName().getText());
 			});
 		});
@@ -340,13 +340,12 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 	public void testEachCreateIsRegisteredForStartEvents(StartEvent startEvent) {
 		Transition transition = transitionsFor(startEvent).findAny().get();
 		dataObjectToStateMap(writtenDataObjectRefs(startEvent)).entrySet().forEach(createdObject -> {
-			assertEquals(1, arcsToNodeNamed(transition, "objects")
+			assertExactlyOne(arcsToNodeNamed(transition, "objects")
 					.map(arc -> arc.getHlinscription().getText())
 					.filter(inscription -> {
 						String[] split = inscription.split("\\^\\^");
 						return split.length == 2 && split[0].equals("registry") && split[1].contains("{id = "+createdObject.getKey()+"Id , caseId = caseId}");
-					})
-					.count(),
+					}),
 				"There is not exactly one arc that registers creation "+createdObject+" in transition "+transition.getName().getText());
 		});
 	}
@@ -358,15 +357,13 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 			Transition transition = transitionForIoCombination(ioCombination, activity).get();
 			expectedCreatedObjects(ioCombination).forEach(createdObject -> {
 				String objectId = createdObject.first.first;
-				assertEquals(1, arcsFromNodeNamed(transition, objectId+"Count")
+				assertExactlyOne(arcsFromNodeNamed(transition, objectId+"Count")
 						.map(arc -> arc.getHlinscription().getText())
-						.filter((objectId+"Count")::equals)
-						.count(),
+						.filter((objectId+"Count")::equals),
 					"There is not exactly one arc that reads the current "+objectId+" count in transition "+transition.getName().getText());
-				assertEquals(1, arcsToNodeNamed(transition, objectId+"Count")
+				assertExactlyOne(arcsToNodeNamed(transition, objectId+"Count")
 						.map(arc -> arc.getHlinscription().getText())
-						.filter((objectId+"Count"+" + 1")::equals)
-						.count(),
+						.filter((objectId+"Count"+" + 1")::equals),
 					"There is not exactly one arc that writes the incremented "+objectId+" count in transition "+transition.getName().getText());
 			});
 		});
@@ -379,15 +376,13 @@ public class GeneralModelStructureTests extends ModelStructureTests {
 		Transition transition = transitionsFor(startEvent).findAny().get();
 		dataObjectToStateMap(writtenDataObjectRefs(startEvent)).entrySet().forEach(createdObject -> {
 			String objectId = createdObject.getKey();
-			assertEquals(1, arcsFromNodeNamed(transition, objectId+"Count")
+			assertExactlyOne(arcsFromNodeNamed(transition, objectId+"Count")
 					.map(arc -> arc.getHlinscription().getText())
-					.filter((objectId+"Count")::equals)
-					.count(),
+					.filter((objectId+"Count")::equals),
 				"There is not exactly one arc that reads the current "+objectId+" count in transition "+transition.getName().getText());
-			assertEquals(1, arcsToNodeNamed(transition, objectId+"Count")
+			assertExactlyOne(arcsToNodeNamed(transition, objectId+"Count")
 					.map(arc -> arc.getHlinscription().getText())
-					.filter((objectId+"Count"+" + 1")::equals)
-					.count(),
+					.filter((objectId+"Count"+" + 1")::equals),
 				"There is not exactly one arc that writes the incremented "+objectId+" count in transition "+transition.getName().getText());
 		});
 	}

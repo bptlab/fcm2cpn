@@ -1,5 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestUtils.assertExactlyOne;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.normalizeElementName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,35 +45,35 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@Test
 	@ModelsToTest("Simple")
 	public void testStartEventTransitionIsCreated() {
-		assertEquals(1, instancesNamed(STARTEVENTNAME).count(), 
+		assertExactlyOne(instancesNamed(STARTEVENTNAME), 
 				"There is not exactly one sub page transition for the start event");
 	}
 	
 	@Test
 	@ModelsToTest("Simple")
 	public void testActivityTransitionIsCreated() {
-		assertEquals(1, instancesNamed(ACTIVITYNAME).count(), 
+		assertExactlyOne(instancesNamed(ACTIVITYNAME), 
 				"There is not exactly one sub page transition for the activity");
 	}
 		
 	@Test
 	@ModelsToTest("Simple")
 	public void testStartEventSubPageIsCreated() {
-		assertEquals(1, pagesNamed(normalizeElementName(STARTEVENTNAME)).count(), 
+		assertExactlyOne(pagesNamed(normalizeElementName(STARTEVENTNAME)), 
 				"There is not exactly one sub page for the start event");
 	}
 	
 	@Test
 	@ModelsToTest("Simple")
 	public void testActivitySubPageIsCreated() {
-		assertEquals(1, pagesNamed(normalizeElementName(ACTIVITYNAME)).count(), 
+		assertExactlyOne(pagesNamed(normalizeElementName(ACTIVITYNAME)), 
 				"There is not exactly one sub page for the activity");
 	}
 	
 	@Test
 	@ModelsToTest("Simple")
 	public void testControlFlowPlaceIsCreated() {
-		assertEquals(1, controlFlowPlacesBetween(STARTEVENTNAME, ACTIVITYNAME).count(), 
+		assertExactlyOne(controlFlowPlacesBetween(STARTEVENTNAME, ACTIVITYNAME), 
 				"There is not exactly one place for the control flow between start event and activity");
 	}
 	
@@ -80,7 +81,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@ModelsToTest("Simple")
 	public void testDataObjectPlacesAreCreated() {
 		Arrays.asList(FIRSTDATAOBJECTNAME, SECONDDATAOBJECTNAME).forEach(dataObjectReference -> {
-			assertEquals(1, dataObjectPlaces(normalizeElementName(dataObjectReference), BpmnPreprocessor.BLANK_STATE).count(), 
+			assertExactlyOne(dataObjectPlaces(normalizeElementName(dataObjectReference), BpmnPreprocessor.BLANK_STATE), 
 				"There is not exactly one place for data object reference "+dataObjectReference);
 		});
 	}
@@ -89,7 +90,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@ModelsToTest("Simple")
 	public void testReadDataObjectsAreConsumed() {
 		Place dataObjectPlace = dataObjectPlaces(normalizeElementName(FIRSTDATAOBJECTNAME), BpmnPreprocessor.BLANK_STATE).findAny().get();
-		assertEquals(1, arcsToNodeNamed(dataObjectPlace, ACTIVITYNAME).count(),
+		assertExactlyOne(arcsToNodeNamed(dataObjectPlace, ACTIVITYNAME),
 				"There is not exactly one read arc from data object to activity");
 	}
 	
@@ -97,7 +98,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	@ModelsToTest("Simple")
 	public void testWrittenDataObjectsAreProduced() {
 		Place dataObjectPlace = dataObjectPlaces(normalizeElementName(SECONDDATAOBJECTNAME), BpmnPreprocessor.BLANK_STATE).findAny().get();
-		assertEquals(1, arcsFromNodeNamed(dataObjectPlace, ACTIVITYNAME).count(),
+		assertExactlyOne(arcsFromNodeNamed(dataObjectPlace, ACTIVITYNAME),
 				"There is not exactly one write arc from activity to data object");
 	}
 	
@@ -106,7 +107,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	public void testStartEventsProduceDataObjects() {
 		Page mainPage = petrinet.getPage().get(0);
 		Place dataObjectPlace = StreamSupport.stream(mainPage.place().spliterator(), true).filter(place -> {return place.getSort().getText().equals("DATA_OBJECT") && place.getName().asString().equals(Utils.dataPlaceName(normalizeElementName(FIRSTDATAOBJECTNAME), BpmnPreprocessor.BLANK_STATE));}).findAny().get();
-		assertEquals(1, arcsFromNodeNamed(dataObjectPlace, STARTEVENTNAME).count(),
+		assertExactlyOne(arcsFromNodeNamed(dataObjectPlace, STARTEVENTNAME),
 				"There is not exactly one write arc from start event to data object");
 	}
 	
@@ -115,7 +116,7 @@ public class ExplicitModelStructureTests extends ModelStructureTests {
 	public void testUnmodifiedDataObjectsArePutBack() {
 		Page mainPage = petrinet.getPage().get(0);
 		Place dataObjectPlace = StreamSupport.stream(mainPage.place().spliterator(), true).filter(place -> {return place.getSort().getText().equals("DATA_OBJECT") && place.getName().asString().equals(Utils.dataPlaceName(normalizeElementName(FIRSTDATAOBJECTNAME), BpmnPreprocessor.BLANK_STATE));}).findAny().get();
-		assertEquals(1, arcsFromNodeNamed(dataObjectPlace, ACTIVITYNAME).count(),
+		assertExactlyOne(arcsFromNodeNamed(dataObjectPlace, ACTIVITYNAME),
 				"There is not exactly one write back arc from activity to data object");
 	}
 	

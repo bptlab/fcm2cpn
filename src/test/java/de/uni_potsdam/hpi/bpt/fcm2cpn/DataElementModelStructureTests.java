@@ -1,5 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestUtils.assertExactlyOne;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -22,7 +23,7 @@ public class DataElementModelStructureTests extends ModelStructureTests {
 	public void testDataObjectStatePlacesAreCreated(DataObject dataObject) {
 		String dataObjectName = elementName(dataObject);
 		for(String state : dataObjectStates(dataObjectName, bpmn)) {
-			assertEquals(1, dataObjectPlaces(dataObjectName, state).count(), 
+			assertExactlyOne(dataObjectPlaces(dataObjectName, state), 
 					"There is not exactly one place for data object \""+elementName(dataObject)+"\" in state \""+state+"\"");
 		}
 	}
@@ -38,7 +39,7 @@ public class DataElementModelStructureTests extends ModelStructureTests {
 			
 			readingElements.forEach(node -> {
 				String elementName = elementName(node);
-				assertEquals(1, arcsToNodeNamed(dataObjectPlace, elementName).count(),
+				assertExactlyOne(arcsToNodeNamed(dataObjectPlace, elementName),
 						"There is not exactly one read arc from data object reference "+elementName(dataObjectReference)+" to node "+elementName);
 			});	
 		});
@@ -55,7 +56,7 @@ public class DataElementModelStructureTests extends ModelStructureTests {
 	
 			writingElements.forEach(writingElement -> {
 				String elementName = elementName(writingElement);
-				assertEquals(1, arcsFromNodeNamed(dataObjectPlace, elementName).count(),
+				assertExactlyOne(arcsFromNodeNamed(dataObjectPlace, elementName),
 						"There is not exactly one write arc from node "+elementName+" to data object reference "+elementName(dataObjectReference));
 			});
 		});

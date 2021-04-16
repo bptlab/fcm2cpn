@@ -1,5 +1,6 @@
 package de.uni_potsdam.hpi.bpt.fcm2cpn;
 
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestUtils.assertExactlyOne;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.elementName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,7 +32,7 @@ public class AssociationTests extends ModelStructureTests {
 	
 	@TestWithAllModels
 	public void testAssociationPlaceIsCreated() {
-		assertEquals(1, placesNamed("associations").count(),
+		assertExactlyOne(placesNamed("associations"),
 				"There is not exactly one place for associations");
 	}
 	
@@ -44,7 +45,7 @@ public class AssociationTests extends ModelStructureTests {
 		assumeTrue(ioSet.reads(first) && ioSet.creates(second), "Activity does not read the first and create the second data object.");
 		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
-		assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
+		assertExactlyOne(arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")),
 				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+elementName(activity)+" transition "+transition.getName().toString()+" for IO set "+ioSet);	
 	}
 	
@@ -57,7 +58,7 @@ public class AssociationTests extends ModelStructureTests {
 		assumeFalse(ioSet.associationShouldAlreadyBeInPlace(first, second), "Activity reads both data objects in the same collection/non-collection way as they are written, so an association is already in place");
 		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
-		assertEquals(1, arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")).count(),
+		assertExactlyOne(arcsToNodeNamed(transition, "associations").filter(writesAssociation(first+"Id", second+"Id")),
 				"There is not exactly one writing association arc for objects "+first+" and "+second+" at activity "+elementName(activity)+" transition "+transition.getName().toString());
 	}
 	
@@ -113,7 +114,7 @@ public class AssociationTests extends ModelStructureTests {
 		assumeTrue(!ioSet.creates(first), "First object is just created, so current cardinality is exactly 1:1 and does not have to be checked.");
 		
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
-		assertEquals(1, guardsOf(transition).filter(guard -> guard.equals("(enforceUpperBound "+first+"Id "+second+" assoc "+upperBound+")")).count(),
+		assertExactlyOne(guardsOf(transition), ("(enforceUpperBound "+first+"Id "+second+" assoc "+upperBound+")")::equals,
 				"There is not exactly one guard for upper limit of assoc "+assoc+" for IOSet "+ioSet+" of activity \""+elementName(activity)+"\"");
 	}
 	
@@ -144,7 +145,7 @@ public class AssociationTests extends ModelStructureTests {
 		assumeTrue(lowerBound > 1, "No lower bound that has to be checked");
 		assumeTrue(ioSet.creates(first) && ioSet.reads(second), "Association is not created in this activity");
 		Transition transition = transitionForIoCombination(ioAssociationsToStateMaps(ioSet), activity).get();
-		assertEquals(1, guardsOf(transition).filter(guard -> isLowerBoundGuardViaCollectionIdentifier(guard, first, second, lowerBound, ioSet)).count(),
+		assertExactlyOne(guardsOf(transition), guard -> isLowerBoundGuardViaCollectionIdentifier(guard, first, second, lowerBound, ioSet),
 				"There is not exactly one guard for lower limit "+lowerBound+" of assoc "+first+"-"+second+" at activity \""+elementName(activity)+"\"");
 	}
 	
@@ -165,9 +166,9 @@ public class AssociationTests extends ModelStructureTests {
 			boolean assocIsCreated = ioSet.creates(dataObjectName) || ioSet.creates(otherDataObject);
 			if(removedAssociationEnd.hasTightGoalLowerBound(assocIsCreated)) {
 				int goalLowerBound = removedAssociationEnd.getGoalLowerBound(assocIsCreated);
-				assertEquals(1, guardsOf(transition).filter(guard -> 
+				assertExactlyOne(guardsOf(transition), guard -> 
 				(isDirectLowerBoundGuard(guard, dataObjectName, otherDataObject, goalLowerBound))
-				&& guard.contains(CustomCPNFunctions.GOAL_CARDINALITY_COMMENT)).count(), 
+				&& guard.contains(CustomCPNFunctions.GOAL_CARDINALITY_COMMENT), 
 					"Activity transition "+transition.getName().asString()+" for io set "+ioSet+" does not check for goal lower bound between "+dataObjectName+" and "+otherDataObject
 					+" although "+dataObjectName+" changes state from "+stateChange.first.getStateName()+" to "+stateChange.second.getStateName()+" where no new associations can be created");
 			}

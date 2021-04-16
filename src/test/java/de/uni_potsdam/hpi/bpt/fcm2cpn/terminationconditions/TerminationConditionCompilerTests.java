@@ -3,13 +3,14 @@ package de.uni_potsdam.hpi.bpt.fcm2cpn.terminationconditions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils.*;
+import static de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestUtils.assertExactlyOne;
 
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -45,7 +46,7 @@ public class TerminationConditionCompilerTests extends ModelStructureTests {
 		
 		for(List<TerminationLiteral> clause : terminationCondition.get().getClauses()) {
 			Map<String, String> stateMap = clause.stream().collect(TerminationLiteral.stateMapCollector());
-			assertEquals(1, transitionsThatMatchStateCombination(stateMap).size(),
+			assertExactlyOne(getClauseTransitions(), matchesStateCombination(stateMap),
 					"There is not exactly one transition for state combination "+stateMap+" of clause "+clause);
 		}
 	}
@@ -61,7 +62,7 @@ public class TerminationConditionCompilerTests extends ModelStructureTests {
 			int bound = assoc.getEnd(dataObjectName).getGoalLowerBound();
 			if(bound > 0) {
 				getClauseTransitions().forEach(transition -> {
-					assertEquals(1, guardsOf(transition).filter(CustomCPNFunctions.enforceGoalLowerBoundForAll(otherDataObjectName+"_list", dataObjectName, bound)::equals).count(), 
+					assertExactlyOne(guardsOf(transition), CustomCPNFunctions.enforceGoalLowerBoundForAll(otherDataObjectName+"_list", dataObjectName, bound)::equals, 
 							"Termination clause transition "+transition.getName().asString()+" does not have exactly one guard that checks that at least "
 							+assoc.getEnd(dataObjectName).getGoalLowerBound()+" "+dataObjectName+"(s) are associated with each "+otherDataObjectName);
 				});
@@ -90,12 +91,12 @@ public class TerminationConditionCompilerTests extends ModelStructureTests {
 		return StreamSupport.stream(getTerminationPage().transition().spliterator(), false);
 	}
 	
-	private List<Transition> transitionsThatMatchStateCombination(Map<String, String> stateMap) {
-		return getClauseTransitions().filter(transition -> {
+	private Predicate<Transition> matchesStateCombination(Map<String, String> stateMap) {
+		return transition -> {
 			return stateMap.entrySet().stream().allMatch(dataObjectAndState -> {
 				return transition.getTargetArc().stream().filter(arc -> arc.getSource().getName().asString().equals(Utils.dataPlaceName(dataObjectAndState.getKey(), dataObjectAndState.getValue()))).count() == 1;
 			});
-		}).collect(Collectors.toList());
+		};
 	}
 	
 	@Override
