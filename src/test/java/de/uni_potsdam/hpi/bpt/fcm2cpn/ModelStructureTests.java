@@ -61,6 +61,8 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	public Optional<TerminationCondition> terminationCondition;
 	
 	public ObjectLifeCycle[] olcs;
+
+	public CompilerAppForTests compilerApp;
 	
 	public List<FlowElement> readingElements(ItemAwareElement dataElementReference) {
 		return bpmn.getModelElementsByType(DataInputAssociation.class).stream()
@@ -412,7 +414,8 @@ public abstract class ModelStructureTests extends ModelConsumerTest {
 	public void compileModel() {
 		parseDataModel();       
 		terminationCondition = parseTerminationCondition();
-        petrinet = CompilerApp.translateBPMN2CPN(bpmn, Optional.of(dataModel), terminationCondition); 
+		compilerApp = new CompilerAppForTests(bpmn, Optional.of(dataModel), terminationCondition);
+        petrinet = compilerApp._translateBPMN2CPN(); 
         parseOLCs();
 	}
 	

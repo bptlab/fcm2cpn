@@ -28,12 +28,13 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelsToTest;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.DataObjectIdIOSet;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Pair;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.validation.ValidationContext;
 
 public class ObjectLifeCycleParserTests extends ModelStructureTests {
 	
 	@Override
 	public void compileModel() {
-		BpmnPreprocessor.process(bpmn);
+		BpmnPreprocessor.process(bpmn, ValidationContext.defaultContext());
 		parseDataModel();
 		parseOLCs();
 	}    

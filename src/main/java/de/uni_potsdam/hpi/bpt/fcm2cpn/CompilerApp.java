@@ -86,6 +86,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.terminationconditions.TerminationCondition
 import de.uni_potsdam.hpi.bpt.fcm2cpn.terminationconditions.TerminationConditionParser;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.AbstractPageScope;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.validation.ValidationContext;
 
 
 public class CompilerApp implements AbstractPageScope {
@@ -134,13 +135,14 @@ public class CompilerApp implements AbstractPageScope {
 	/** Steps that run after (most of) the net is created; used e.g. in {@link #translateBoundaryEvents()} to access all control flow places of an interrupted activity*/
 	private List<Runnable> deferred;
 	
-
-	
 	/** Wrapper for data objects, see {@link DataObjectWrapper}*/
 	private Collection<DataObjectWrapper> dataObjectWrappers;
 
 	/** Wrapper for data stores, see {@link DataStoreWrapper}*/
 	private Collection<DataStoreWrapper> dataStoreWrappers;
+
+	/** Context to send warnings and errors to*/
+	private ValidationContext validationContext;
 
     public static void main(final String[] _args) throws Exception {
         System.out.println(licenseInfo);
@@ -203,7 +205,8 @@ public class CompilerApp implements AbstractPageScope {
         return  null;
     }
 
-    private CompilerApp(BpmnModelInstance bpmn, Optional<DataModel> dataModel, Optional<TerminationCondition> terminationCondition) {
+    //TODO think of creating CompilationInput class with builder-like interface
+    protected CompilerApp(BpmnModelInstance bpmn, Optional<DataModel> dataModel, Optional<TerminationCondition> terminationCondition) {
     	this.bpmn = bpmn;
         this.builder = new BuildCPNUtil();
         this.dataModel = dataModel.orElse(DataModel.none());
@@ -211,6 +214,7 @@ public class CompilerApp implements AbstractPageScope {
         this.subpages = new HashMap<>();
         this.nodeMap = new HashMap<>();
         this.deferred = new ArrayList<>();
+        this.validationContext = new ValidationContext();
 	}
     
     private static BpmnModelInstance loadBPMNFile(File bpmnFile) {
@@ -237,7 +241,7 @@ public class CompilerApp implements AbstractPageScope {
     }
 
 	private void preprocessBpmnModel() {
-		BpmnPreprocessor.process(bpmn);
+		BpmnPreprocessor.process(bpmn, validationContext);
         olcs = ObjectLifeCycleParser.getOLCs(dataModel, bpmn);
 	}
 
@@ -602,6 +606,10 @@ public class CompilerApp implements AbstractPageScope {
 
 	public Place getTerminatedCasesPlace() {
 		return terminatedCasesPlace;
+	}
+
+	public ValidationContext getValidationContext() {
+		return validationContext;
 	}
 
 	public Node nodeFor(BaseElement element) {

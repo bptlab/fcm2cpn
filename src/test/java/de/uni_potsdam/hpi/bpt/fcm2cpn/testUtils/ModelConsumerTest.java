@@ -24,8 +24,9 @@ public abstract class ModelConsumerTest {
 	protected void loadModel(String modelName) {
 		this.modelName = modelName;
 
-		bpmn = Bpmn.readModelFromFile(new File(resourcePath()+modelName+".bpmn"));
+		bpmn = modelNamed(modelName);
 	}
+	
 	protected abstract void compileModel();
 	
 	public Stream<String> allModels() {
@@ -83,7 +84,12 @@ public abstract class ModelConsumerTest {
 		});
 	}
 	
-	protected String resourcePath() {
+	
+	protected static BpmnModelInstance modelNamed(String modelName) {
+		return Bpmn.readModelFromFile(new File(resourcePath()+modelName+".bpmn"));
+	}
+	
+	protected static String resourcePath() {
 		return "./src/test/resources/";
 	}
 

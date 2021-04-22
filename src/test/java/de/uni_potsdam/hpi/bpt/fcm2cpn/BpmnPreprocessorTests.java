@@ -9,12 +9,13 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ForEachBpmn;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.ModelConsumerTest;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.testUtils.TestWithAllModels;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.validation.ValidationContext;
 
 public class BpmnPreprocessorTests extends ModelConsumerTest {
 	
 	@Override
 	public void compileModel() {
-		BpmnPreprocessor.process(bpmn);
+		BpmnPreprocessor.process(bpmn, ValidationContext.defaultContext());
 	}
 	
 	@TestWithAllModels

@@ -14,6 +14,7 @@ import de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.StatefulDataAssociation;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.SubpageElement;
 import de.uni_potsdam.hpi.bpt.fcm2cpn.utils.Utils;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.validation.UnmodeledDataObjectError;
 
 public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObjectReference> {
 
@@ -23,7 +24,8 @@ public class DataObjectWrapper extends DataElementWrapper<DataObject, DataObject
 	public DataObjectWrapper(CompilerApp compilerApp, String normalizedName) {
 		super(compilerApp, normalizedName);
 		
-		assert compilerApp.getDataModel().hasDataObject(getNormalizedName());
+		
+		if(!compilerApp.getDataModel().hasDataObject(getNormalizedName())) compilerApp.getValidationContext().error(new UnmodeledDataObjectError(getNormalizedName()));
 		
         compilerApp.createVariable(dataElementId(), "ID");
         compilerApp.createVariable(dataElementCount(), "INT");

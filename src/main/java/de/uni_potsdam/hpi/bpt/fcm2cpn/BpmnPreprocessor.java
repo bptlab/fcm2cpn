@@ -15,18 +15,23 @@ import org.camunda.bpm.model.bpmn.instance.InputSet;
 import org.camunda.bpm.model.bpmn.instance.IoSpecification;
 import org.camunda.bpm.model.bpmn.instance.OutputSet;
 
+import de.uni_potsdam.hpi.bpt.fcm2cpn.validation.NoIOSpecificationWarning;
+import de.uni_potsdam.hpi.bpt.fcm2cpn.validation.ValidationContext;
+
 public class BpmnPreprocessor {
 	
 	public static final String BLANK_STATE = "BLANK_";
 	
-	private BpmnModelInstance bpmn;
+	private final BpmnModelInstance bpmn;
+	private final ValidationContext validationContext;
 	
-	public static void process(BpmnModelInstance bpmn) {
-		new BpmnPreprocessor(bpmn).process();
+	public static void process(BpmnModelInstance bpmn, ValidationContext validationContext) {
+		new BpmnPreprocessor(bpmn, validationContext).process();
 	}
 	
-	private BpmnPreprocessor(BpmnModelInstance bpmn) {
+	private BpmnPreprocessor(BpmnModelInstance bpmn, ValidationContext validationContext) {
 		this.bpmn = bpmn;
+		this.validationContext = validationContext;
 	}
 	
 	private void process() {
@@ -39,6 +44,7 @@ public class BpmnPreprocessor {
 		
 		bpmn.getModelElementsByType(Activity.class).stream()
 			.filter(activity -> activity.getIoSpecification() == null)
+			.peek(activity -> validationContext.warn(new NoIOSpecificationWarning(activity)))
 			.forEach(activity -> {
 				IoSpecification ioSpecification = bpmn.newInstance(IoSpecification.class, "ioSpecification_generated_"+activity.getId());
 				activity.addChildElement(ioSpecification);
