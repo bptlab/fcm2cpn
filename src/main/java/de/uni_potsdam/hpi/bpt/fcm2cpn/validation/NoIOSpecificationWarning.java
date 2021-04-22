@@ -11,7 +11,7 @@ public class NoIOSpecificationWarning extends Warning {
 	public final Activity activity;
 
 	public NoIOSpecificationWarning(Activity activity) {
-		super("No IO specification found for activity \""+elementName(activity)+"\". Using default specification instead.");
+		super("No IO specification found for activity \""+elementName(activity)+"\". Using generated specification instead.");
 		this.activity = activity;
 	}
 
