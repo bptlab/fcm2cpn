@@ -69,10 +69,8 @@ The CPN will be saved to the current working directory with the same name as the
 To be usable from the engine, the outputs of the compiler differ from the description in the engine
 * The CPN has no input place, so it can support multiple concurrent cases
 * Data objects reference the case to prevent concurrent cases from mixing
-* The state of data objects in stored in the token (not the labels of places) to access it easily from within the engine
 * The generated colored Petri net uses CPNTools syntax for colorsets, operations, etc.
 * Some functionality has been encapsulated into functions to improve readability
-* Termination conditions are not yet supported
 
 ### Sources
 
