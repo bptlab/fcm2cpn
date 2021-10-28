@@ -54,7 +54,7 @@ See the example for details.
 After compiling and building the binary, it will be available in the folder `target`.
 We recommend using the jar file ending in `with-dependencies`.
 ````bash
-java -jar fcm2cpn.jar <path-to-bpmn.bpmn> -d <path-to-uml.uml>
+java -jar fcm2cpn.jar <path-to-bpmn.bpmn> -d <path-to-uml.uml> -t <path-to-termination-condition.json>
 ````
 The CPN will be saved to the current working directory with the same name as the bpmn file.
 *Note, any file with the same name will be overwritten.*
