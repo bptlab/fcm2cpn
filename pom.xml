@@ -8,15 +8,27 @@
 	<artifactId>fcm2cpn</artifactId>
 	<version>1.0-SNAPSHOT</version>
 
-	<repositories>
+	<!--<repositories>
 		<repository>
 			<id>libraries</id>
 			<url>file://${basedir}/lib</url>
 		</repository>
-	</repositories>
+	</repositories>-->
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.0.0</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -28,6 +40,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.0.0</version>
 				<executions>
 					<execution>
 						<phase>install</phase>
@@ -44,6 +57,92 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.0.0-M4</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.3.0</version>
+				<configuration>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+					<archive>
+						<manifest>
+							<mainClass>de.uni_potsdam.hpi.bpt.fcm2cpn.CompilerApp</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-install-plugin</artifactId>
+				<version>3.0.0-M1</version>
+				<executions>
+					<execution>
+						<id>cpnmodel</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<file>${basedir}/lib/org.cpntools.accesscpn.model_2.2.0.jar</file>
+							<groupId>org.cpntools.accesscpn</groupId>
+							<artifactId>model</artifactId>
+							<version>2.2.0</version>
+							<packaging>jar</packaging>
+						</configuration>
+					</execution>
+					<execution>
+						<id>cpnexporter</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<file>${basedir}/lib/org.cpntools.accesscpn.model.exporter_2.2.0.jar</file>
+							<groupId>org.cpntools.accesscpn</groupId>
+							<artifactId>exporter</artifactId>
+							<version>2.2.0</version>
+							<packaging>jar</packaging>
+						</configuration>
+					</execution>
+					<execution>
+						<id>cpnhighlevel</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<file>${basedir}/lib/org.cpntools.accesscpn.engine.highlevel_2.2.0.jar</file>
+							<groupId>org.cpntools.accesscpn</groupId>
+							<artifactId>engine_highlevel</artifactId>
+							<version>2.2.0</version>
+							<packaging>jar</packaging>
+						</configuration>
+					</execution>
+					<execution>
+						<id>cpnengine</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<file>${basedir}/lib/org.cpntools.accesscpn.engine_2.2.0.jar</file>
+							<groupId>org.cpntools.accesscpn</groupId>
+							<artifactId>engine</artifactId>
+							<version>2.2.0</version>
+							<packaging>jar</packaging>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
@@ -81,32 +180,32 @@
 			<groupId>org.cpntools.accesscpn</groupId>
 			<artifactId>model</artifactId>
 			<version>2.2.0</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.cpntools.accesscpn.model_2.2.0.jar</systemPath>
+			<!--<scope>system</scope>
+			<systemPath>${project.basedir}/lib/org.cpntools.accesscpn.model_2.2.0.jar</systemPath>-->
 		</dependency>
 
 		<dependency>
 			<groupId>org.cpntools.accesscpn</groupId>
 			<artifactId>exporter</artifactId>
 			<version>2.2.0</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.cpntools.accesscpn.model.exporter_2.2.0.jar</systemPath>
+			<!--<scope>system</scope>
+			<systemPath>${project.basedir}/lib/org.cpntools.accesscpn.model.exporter_2.2.0.jar</systemPath>-->
 		</dependency>
 
 		<dependency>
 			<groupId>org.cpntools.accesscpn</groupId>
 			<artifactId>engine_highlevel</artifactId>
 			<version>2.2.0</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.cpntools.accesscpn.engine.highlevel_2.2.0.jar</systemPath>
+			<!--<scope>system</scope>
+			<systemPath>${project.basedir}/lib/org.cpntools.accesscpn.engine.highlevel_2.2.0.jar</systemPath>-->
 		</dependency>
 		
 		<dependency>
 			<groupId>org.cpntools.accesscpn</groupId>
 			<artifactId>engine</artifactId>
 			<version>2.2.0</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.cpntools.accesscpn.engine_2.2.0.jar</systemPath>
+			<!--<scope>system</scope>
+			<systemPath>${project.basedir}/lib/org.cpntools.accesscpn.engine_2.2.0.jar</systemPath>-->
 		</dependency>
 
 		<dependency>

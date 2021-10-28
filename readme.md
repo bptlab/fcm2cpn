@@ -1,58 +1,90 @@
-# Cross-Case Data Objects in Business Processes: Semantics and Analysis
+# fCM to CPN Compiler
 
-This page lists complementary files for the paper "CPN-Based Semantics for Cross-Case Data in Case management" accepted for publication at [BPM Forum](https://congreso.us.es/bpm2020/).
-All files except the binary are available in the [Github repository](https://github.com/bptlab/fcm2cpn).
-The binary of the prototype can be downloaded [here](https://owncloud.hpi.de/s/EII5PnKSQEpu0PI).
+Knowledge workers make interconnected decisions to drive processes.
+Therefore, it is necessary to consider the available information, possible actions, and general rules.
+The fragment-based Case Management (fCM) approach supports case models describing processes by a set of fragments, a domain model, object life cycles, and termination conditions. 
 
-## List of Files
+This repository contains a compiler translating fragment-based case management models to colore Petri nets, which are compatible with [CPNTools](https://cpntools.org).
+The resulting Petri net describes the behavior including the involved data objects, their states, associations, and corresponding cardinality constraints.
+This prototype complements the paper "Refining Case Models Using Cardinality Constraints" submitted to CAiSE 2021 (not yet reviewed/accepted/published).
+The resulting model can be used in combination with an accompanying [execution engine](https://github.com/bptlab/fCM-Engine/tree/caise).
+
+## Content of the Repository
 * **Examples:**
-  * `models/budget_processes.bpmn` contains a BPMN file comprising both the *office supply purchasing*. and *business trip booking* process used in the paper (modeled using Signavio).
-  * `models/budget_processes_corrected.bpmn` contains a BPM file comprising the two example processes with boundary events (modeled using Signavio)
-  * `models/coloredPN.cpn` contains a complete CPN formalization of the `budget_processes.bpmn` ([CPNtools file](https://cpntools.org))
-  * `models/k-soundness.cpn` contains a formalization `budget_processes.bpmn` including extensions for checking *k-soundness* ([CPNtools file](https://cpntools.org)).
-  * `models/k-soundnessCorrected.cpn` contains a corrected version of the process including extensions for checking *k-soundness*
-  * `models/correlation/*.cpn` contains examples for different correlation mechanisms
-* **Translator:**
-  * `src/*` contains the source files for the translator that translates a set of fragments to a CPN
-  * `lib/*.jar` the [Access/CPN](http://cpntools.org/access-cpn/) libraries required for the prototype
-  
-## Prototype
+  * `src/main/resources/conference_fragments_knowledge_intensive.bpmn` contains a BPMN file comprising the *paper submission and reviewing* example from the paper (modeled using [Signavio](https://academic.signavio.com), additional input sets have been added manually).
+  * `src/main/resources/conference_domain_model.uml` contains a UML file comprising the domain model for the example (modeled using [Papyrus](https://www.eclipse.org/papyrus/)).
+  * `src/main/resources/conference_petri_net.cpn` contains the colored Petri net created by the compiler and manually laid out.
+* **Compiler:**
+  * `src/main/java` contains the source files for the translator that translates a set of fragments to a CPN.
+  * `src/main/resources` contains example models used for tests.
+  * `lib/*.jar` the [Access/CPN](http://cpntools.org/access-cpn/) libraries required for the prototype.
 
-### Usage
+## Usage
 
-If you use the [binary](https://owncloud.hpi.de/s/EII5PnKSQEpu0PI), you can run the program using the following command.
+
+#### [Watch our short demo (~ 3 min) on Youtube.](https://youtu.be/ODpgQvxxQzY)
+
+#### [Watch our not so short demo (~ 9 min) on Youtube.](https://youtu.be/ogvqiO6a9Wg) 
+
+
+### Compiling and Building the Binaries
+
+We use maven as build tool and for dependency management.
+If you installed java and maven, you can build the compiler using the following commands.
+First, install the CPNtools dependencies locally by executing
 ````bash
-java -jar bpmn2cpn.jar 
+mvn initialize
 ````
-You are prompted to choose  a single BPMN file containing one or multiple processes.
-The program will save a CPN file in the current working directory.
-The CPN has two hierarchy levels: on the top-level all processes and their connections are described, on the low-level a subnet for each activity is detailed.
+Next, build the binaries. 
+````bash
+mvn clean package -DskipTests
+````
+
+Note, you can also run `mvn clean install -DskipTests` and provide libraries manually.
+
+### Creating Inputs
+
+We recommend using [Signavio](https://academic.signavio.com) to create fCM fragments (free for academic purposes) and [Papyrus](https://www.eclipse.org/papyrus/) to create domain models.
+All fragments should be modeled within a single BPMN file.
+Goal cardinalities can be specified by comments owned by the corresponding association and applyied to the end point that should be refined.
+See the example for details.
+
+### Running the Compiler
+
+After compiling and building the binary, it will be available in the folder `target`.
+We recommend using the jar file ending in `with-dependencies`.
+````bash
+java -jar fcm2cpn.jar <path-to-bpmn.bpmn> -d <path-to-uml.uml>
+````
+The CPN will be saved to the current working directory with the same name as the bpmn file.
+*Note, any file with the same name will be overwritten.*
 
 ### Assumptions
 
-* We assume that the input is provided as a single BPMN file (you can, for example use the [Signavio](https://academic.signavio.com))
-* We assume that, if no input- and output-sets are modeled explicitly, all possible combinations are desired
-* We assume that data stores have a label `objectName[state]` or they are assumed to be in state `BLANK`.
+* We assume that the input is provided as a single BPMN file (you can, for example use the [Signavio](https://academic.signavio.com)). Note, the implementation relies on a definition of data objects, data object references, and input/output sets. However, some common modelers do not generate these.
+* We assume that the fragments are object life cycle conform and object life cycle complete. An object lfie cycle will be extracted by the compiler from the fragments.
+
+### Limitations & Deviation From the Paper
+
+To be usable from the engine, the outputs of the compiler differ from the description in the engine
+* The CPN has no input place, so it can support multiple concurrent cases
+* Data objects reference the case to prevent concurrent cases from mixing
+* The state of data objects in stored in the token (not the labels of places) to access it easily from within the engine
+* The generated colored Petri net uses CPNTools syntax for colorsets, operations, etc.
+* Some functionality has been encapsulated into functions to improve readability
+* Termination conditions are not yet supported
 
 ### Sources
 
 All the sources are available in `src/main/*`, note that you have to add the Access/CPN libraries (`lib`) to your classpath in order to run/compile the tool.
 
-### Binary
+### Dependencies & Requirements
 
-The binary `bpmn2cpn.jar` containing all dependencies is available [here](https://owncloud.hpi.de/s/EII5PnKSQEpu0PI).
-
-### Dependencies
-
+The implementation requires java Version 9 or higher.
 Please note, that the tool has dependencies, and that these dependencies may have different licenses. In the following we list the dependencies
 * Camunda bpmn-model for parsing BPMN files. The dependency is linked via maven.
 * Access/CPN to create CPNtools compatible CPNs. The dependency is linked as a set of external libraries (see `lib/`)
 * Eclipse EMF dependency for using Access/CPN
-
-### Checking k-soundness
-
-The example CPNs `k-soundness.cpn` and `k-soundnessCorrected.cpn` can be used to verify the k-soundness property.
-To do so, the user must first load CPN-Tools state space tool, see (http://cpntools.org/2018/01/15/temporal-logic-for-state-spaces/)[http://cpntools.org/2018/01/15/temporal-logic-for-state-spaces/] for more information, and then reevaluate the `FindNodesViolatingKSoundness` function.
 
 ### License
 
